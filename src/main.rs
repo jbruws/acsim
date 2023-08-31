@@ -1,4 +1,4 @@
-use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use std::sync::Mutex;
 use serde::Deserialize;
 
@@ -13,25 +13,23 @@ struct MutexState {
 }
 
 async fn hello(data: web::Data<MutexState>) -> impl Responder {
-    let messages = data.messages_vec.lock().unwrap();
-    if messages.len() == 0 {
-        HttpResponse::Ok().body(format!("Hello world! \n\nThere aren't any messages yet."))
-    } else {
-        HttpResponse::Ok().body(format!("Hello world! \n\nMessages: \n\n{}", messages.join("\n")))
+    let mut counter = data.counter.lock().unwrap();
+    *counter += 1;
+    let mut messages = data.messages_vec.lock().unwrap();
+    let mut inserted_msg = String::from("There aren't any messages yet.");
+    if messages.len() != 0 {
+        (*messages).reverse();
+        inserted_msg = messages.join("<br>");
     }
-
+    // TODO: input validation
+    // try inserting a <script> into the page. it's funny
+    HttpResponse::Ok().body(format!(include_str!("../static/index.html"), counter, inserted_msg))
 }
 
-async fn show_form(form: web::Form<MsgForm>, data: web::Data<MutexState>) -> impl Responder {
+async fn process_form(form: web::Form<MsgForm>, data: web::Data<MutexState>) -> impl Responder {
     let mut messages = data.messages_vec.lock().unwrap();
     messages.push(form.message.clone());
-    HttpResponse::Ok().body(format!("Thank you for your admission: {}", form.message))
-}
-
-async fn forms() -> impl Responder {
-    HttpResponse::Ok()
-        .content_type("text/html; charset=utf-8")
-        .body(include_str!("../static/form.html"))
+    web::Redirect::to("http://192.168.0.110:8080").see_other()
 }
 
 async fn manual_hello(data: web::Data<MutexState>) -> impl Responder {
@@ -50,8 +48,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(count.clone())
             .route("/", web::get().to(hello))
-            .route("/forms", web::get().to(forms))
-            .route("/show_form", web::post().to(show_form))
+            .route("/process_form", web::post().to(process_form))
             .route("/counter", web::get().to(manual_hello))
     })
     .bind(("0.0.0.0", 8080))?
