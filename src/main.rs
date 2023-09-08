@@ -14,8 +14,9 @@ struct MsgForm {
 
 struct ApplicationState {
     counter: Mutex<i32>,
-    messages_vec: Mutex<Vec<(i64, String, String)>>,
+    messages_vec: Mutex<Vec<(i64, i64, String, String)>>,
     db_client: Mutex<tokio_postgres::Client>,
+    last_message_id: Mutex<i64>,
 }
 
 async fn main_page(data: web::Data<ApplicationState>) -> impl Responder {
@@ -27,15 +28,17 @@ async fn main_page(data: web::Data<ApplicationState>) -> impl Responder {
     if messages.len() != 0 {
         for t in (&*messages).into_iter().rev() {
             let offset = FixedOffset::east_opt(3 * 3600).unwrap(); // +3 offset
-            let naive = NaiveDateTime::from_timestamp_opt(t.0, 0).unwrap(); // UNIX epoch to datetime
+            let naive = NaiveDateTime::from_timestamp_opt(t.1, 0).unwrap(); // UNIX epoch to datetime
             let dt = DateTime::<Local>::from_naive_utc_and_offset(naive, offset).to_string();
 
             inserted_msg.push_str(
                 format!(
-                    "<div class=\"message\"> <p class=\"message_header\">{} <br> {}</p><br> {}</div>\n",
+                    "<div class=\"message\" id={}> <p class=\"message_header\">{} <br> {} <br> {}</p><br> {}</div>\n",
+                    &t.0,
                     &dt[..dt.len() - 7], // 7 was chosen experimentally
-                    &t.1,
-                    &t.2
+                    &t.2,
+                    &t.0,
+                    &t.3
                 )
                 .as_str(),
             );
@@ -52,6 +55,7 @@ async fn process_form(
 ) -> impl Responder {
     let mut messages = data.messages_vec.lock().unwrap();
     let client = data.db_client.lock().unwrap();
+    let mut last_message_id = data.last_message_id.lock().unwrap();
 
     // getting time
     let since_epoch: i64 = match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
@@ -62,7 +66,8 @@ async fn process_form(
 
     // if fits, push new message into DB and vector
     if form.author.len() < 254 && form.message.len() < 4094 {
-        messages.push((since_epoch, form.author.clone(), form.message.clone()));
+        *last_message_id += 1;
+        messages.push((*last_message_id, since_epoch, form.author.clone(), form.message.clone()));
         client
             .execute(
                 "INSERT INTO messages(time, author, msg) VALUES (($1), ($2), ($3))",
@@ -97,16 +102,20 @@ async fn main() -> std::io::Result<()> {
     });
 
     // Restoring messages from DB
-    let mut db_messages: Vec<(i64, String, String)> = Vec::new();
+    let mut db_messages: Vec<(i64, i64, String, String)> = Vec::new();
     for row in client.query("SELECT * FROM messages", &[]).await.unwrap() {
-        db_messages.push((row.get(0), row.get(1), row.get(2)));
+        db_messages.push((row.get(0), row.get(1), row.get(2), row.get(3)));
     }
+
+    // getting serial ID of the last message
+    let last_id = db_messages[db_messages.len()-1].0;
 
     // creating application state
     let count = web::Data::new(ApplicationState {
         counter: Mutex::new(0),
         messages_vec: Mutex::new(db_messages),
         db_client: Mutex::new(client),
+        last_message_id: Mutex::new(last_id),
     });
 
     HttpServer::new(move || {
