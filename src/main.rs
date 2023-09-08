@@ -22,7 +22,7 @@ async fn main_page(data: web::Data<ApplicationState>) -> impl Responder {
     let mut counter = data.counter.lock().unwrap();
     *counter += 1;
     let messages = data.messages_vec.lock().unwrap();
-    let mut inserted_msg = String::from("<br>");
+    let mut inserted_msg = String::from("");
 
     if messages.len() != 0 {
         for t in (&*messages).into_iter().rev() {
@@ -32,12 +32,7 @@ async fn main_page(data: web::Data<ApplicationState>) -> impl Responder {
 
             inserted_msg.push_str(
                 format!(
-                    "<div class=\"message\">
-                        <p class=\"message_header\">
-                            {} <br> {}
-                        </p>
-                        <br> {}
-                    </div>\n",
+                    "<div class=\"message\"> <p class=\"message_header\">{} <br> {}</p><br> {}</div>\n",
                     &dt[..dt.len() - 7], // 7 was chosen experimentally
                     &t.1,
                     &t.2
