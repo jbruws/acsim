@@ -17,7 +17,7 @@ struct ApplicationState {
     db_client: Mutex<tokio_postgres::Client>,
 }
 
-async fn hello(data: web::Data<ApplicationState>) -> impl Responder {
+async fn main_page(data: web::Data<ApplicationState>) -> impl Responder {
     let mut counter = data.counter.lock().unwrap();
     *counter += 1;
     let messages = data.messages_vec.lock().unwrap();
@@ -42,10 +42,7 @@ async fn hello(data: web::Data<ApplicationState>) -> impl Responder {
     }
     // TODO: input validation
     // try inserting a <script> into the page. it's funny
-    HttpResponse::Ok().body(format!(
-        include_str!("../static/index.html"),
-        counter, inserted_msg
-    ))
+    HttpResponse::Ok().body(format!(include_str!("../static/index.html"), inserted_msg))
 }
 
 async fn process_form(
@@ -100,7 +97,6 @@ async fn main() -> std::io::Result<()> {
     // Restoring messages from DB
     let mut db_messages: Vec<(i64, String, String)> = Vec::new();
     for row in client.query("SELECT * FROM messages", &[]).await.unwrap() {
-        //println!("{:?}", row);
         db_messages.push((row.get(0), row.get(1), row.get(2)));
     }
 
@@ -114,7 +110,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(count.clone())
-            .route("/", web::get().to(hello))
+            .route("/", web::get().to(main_page))
             .route("/process_form", web::post().to(process_form))
     })
     .bind(("0.0.0.0", 8080))?
