@@ -149,6 +149,7 @@ dependencies = [
  "actix-files",
  "actix-web",
  "chrono",
+ "regex",
  "serde",
  "serde_json",
  "tokio",

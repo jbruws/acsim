@@ -1,6 +1,7 @@
 use actix_files;
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use chrono::{DateTime, FixedOffset, Local, NaiveDateTime};
+use regex::Regex;
 use serde::Deserialize;
 use std::sync::Mutex;
 use tokio;
@@ -66,12 +67,21 @@ async fn process_form(
 
     // if fits, push new message into DB and vector
     if form.author.len() < 254 && form.message.len() < 4094 {
+        let filter = Regex::new(r##"<.*?>"##).unwrap(); // removing html tags
+        let filtered_author = filter.replace_all(form.author.as_str(), "");
+        let filtered_msg = filter.replace_all(form.message.as_str(), "");
         *last_message_id += 1;
-        messages.push((*last_message_id, since_epoch, form.author.clone(), form.message.clone()));
+
+        messages.push((
+            *last_message_id,
+            since_epoch,
+            String::from(filtered_author.clone()),
+            String::from(filtered_msg.clone()),
+        ));
         client
             .execute(
                 "INSERT INTO messages(time, author, msg) VALUES (($1), ($2), ($3))",
-                &[&since_epoch, &form.author, &form.message],
+                &[&since_epoch, &filtered_author, &filtered_msg],
             )
             .await; // i'll just pretend this `Result` doesn't exist
     }
@@ -108,7 +118,7 @@ async fn main() -> std::io::Result<()> {
     }
 
     // getting serial ID of the last message
-    let last_id = db_messages[db_messages.len()-1].0;
+    let last_id = db_messages[db_messages.len() - 1].0;
 
     // creating application state
     let count = web::Data::new(ApplicationState {
