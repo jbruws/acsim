@@ -1,3 +1,4 @@
+use actix_files;
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use chrono::{DateTime, FixedOffset, Local, NaiveDateTime};
 use serde::Deserialize;
@@ -25,13 +26,18 @@ async fn main_page(data: web::Data<ApplicationState>) -> impl Responder {
 
     if messages.len() != 0 {
         for t in (&*messages).into_iter().rev() {
-            let offset = FixedOffset::east_opt(3 * 3600).unwrap(); // UTC+3 offset
+            let offset = FixedOffset::east_opt(3 * 3600).unwrap(); // +3 offset
             let naive = NaiveDateTime::from_timestamp_opt(t.0, 0).unwrap(); // UNIX epoch to datetime
             let dt = DateTime::<Local>::from_naive_utc_and_offset(naive, offset).to_string();
 
             inserted_msg.push_str(
                 format!(
-                    "{} # {}: {}<br>",
+                    "<div class=\"message\">
+                        <p class=\"message_header\">
+                            {} <br> {}
+                        </p>
+                        <br> {}
+                    </div>\n",
                     &dt[..dt.len() - 7], // 7 was chosen experimentally
                     &t.1,
                     &t.2
@@ -42,7 +48,7 @@ async fn main_page(data: web::Data<ApplicationState>) -> impl Responder {
     }
     // TODO: input validation
     // try inserting a <script> into the page. it's funny
-    HttpResponse::Ok().body(format!(include_str!("../static/index.html"), inserted_msg))
+    HttpResponse::Ok().body(format!(include_str!("../html/index.html"), inserted_msg))
 }
 
 async fn process_form(
@@ -59,15 +65,16 @@ async fn process_form(
         Err(_) => 1,
     };
 
-    // pushing new message into DB and vector
-    messages.push((since_epoch, form.author.clone(), form.message.clone()));
-    client
-        .execute(
-            "INSERT INTO messages(time, author, msg) VALUES (($1), ($2), ($3))",
-            &[&since_epoch, &form.author, &form.message],
-        )
-        .await
-        .unwrap();
+    // if fits, push new message into DB and vector
+    if form.author.len() < 254 && form.message.len() < 4094 {
+        messages.push((since_epoch, form.author.clone(), form.message.clone()));
+        client
+            .execute(
+                "INSERT INTO messages(time, author, msg) VALUES (($1), ($2), ($3))",
+                &[&since_epoch, &form.author, &form.message],
+            )
+            .await; // i'll just pretend this `Result` doesn't exist
+    }
     web::Redirect::to("http://192.168.0.110:8080").see_other()
 }
 
@@ -110,6 +117,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(count.clone())
+            .service(actix_files::Files::new("/html", "./html"))
             .route("/", web::get().to(main_page))
             .route("/process_form", web::post().to(process_form))
     })
