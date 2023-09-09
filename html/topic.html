@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+
+<head>
+	<title>Message no. {}</title>
+	<link rel="stylesheet" type="text/css" href="../html/topic-style.css">
+</head>
+
+<body>
+	<div id="grid_root">
+		{}
+		{}
+		<form action="message_page" method="post" autocomplete="off">
+			<table id="message_form">
+				<tr>
+					<td><span>Name:</span></td>
+					<td><textarea type="text" name="author" maxlength="250" required rows="1"></textarea></td>
+				</tr>
+				<tr>
+					<td><span>Message: </span></td>
+					<td><textarea type="text" name="message" maxlength="4090" required rows="20"></textarea></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td><input type="submit" value="Submit"></td>
+				</tr>
+			</table>
+		</form>
+	</div>
+</body>

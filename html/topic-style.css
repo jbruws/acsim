@@ -1,0 +1,64 @@
+/* GENERAL ELEMENTS */
+
+textarea {
+	resize: none;
+}
+body {
+	line-height: 1.5;
+	font-size: 20px;
+}
+
+/* GRID ELEMENTS */
+
+#grid_root {
+	display: grid;
+	grid-template-areas:
+		"hd"
+		"ms"
+		"fm";
+	gap: 1rem 1rem;
+	padding: 3rem;
+}
+#submessage_container {
+	margin-top: 0;
+	grid-area: ms;
+}
+#head_message {
+	grid-area: hd;
+	margin-bottom: 1rem;
+	grid-row-gap: 1rem;
+	border-width: 3px 2px;
+	border-style: solid dotted;
+	padding: 5px 30px 15px;
+	background-color: #ffff99;
+	margin-left: auto;
+	margin-right: auto;
+}
+.message_header {
+	text-align: center;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+/* LESSER ELEMENTS */
+
+.submessage {
+	border-width: 1px 0px;
+	border-style: solid dotted;
+	background-color: #ffff99;
+	max-width: 75%;
+	padding: 5px 30px 15px;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+#message_form {
+	grid-area: fm;
+	width: 75%;
+	border-width: 2px;
+	border-style: solid;
+	padding: 5px;
+	background-color: #ffff99;
+	margin-left: auto;
+	margin-right: auto;
+}
