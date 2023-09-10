@@ -2,10 +2,14 @@
 
 textarea {
 	resize: none;
+	display: block;
+	width: 90%;
+	margin-left: auto;
+	margin-right: auto;
 }
 body {
 	line-height: 1.5;
-	font-size: 20px;
+	font-size: 18px;
 }
 
 /* GRID ELEMENTS */
@@ -13,9 +17,9 @@ body {
 #grid_root {
 	display: grid;
 	grid-template-areas:
-		"hd hd hd"
-		"sb ms ms"
-		".  ms ms";
+		"hd hd hd hd"
+		"sb ms ms ms"
+		".  ms ms ms";
 	gap: 1rem 1rem;
 	padding: 3rem;
 }
@@ -38,13 +42,41 @@ body {
 	top: 0.5rem;
 }
 
+/* FORM ELEMENTS */
+
+textarea[name="author"] {
+	grid-area: t_a;
+}
+textarea[name="message"] {
+	grid-area: t_m;
+}
+label[for="author"] {
+	grid-area: l_a;
+}
+label[for="message"] {
+	grid-area: l_m;
+}
+input[type="submit"] {
+	grid-area: sbt;
+	width: 50%;
+	margin-left: auto;
+	margin-right: auto;
+}
+
 /* LESSER ELEMENTS */
 
 #message_form {
 	border-width: 2px;
 	border-style: solid;
+	display: grid;
+	grid-template-columns: 1fr 5fr;
+	grid-template-areas:
+		"l_a t_a"
+		"l_m t_m"
+		"sbt sbt";
 	padding: 5px;
 	background-color: #ffff99;
+	text-align: center;
 }
 .message {
 	margin-bottom: 1rem;

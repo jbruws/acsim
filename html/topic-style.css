@@ -1,11 +1,19 @@
 /* GENERAL ELEMENTS */
 
 textarea {
+	grid-area: t;
 	resize: none;
+	display: block;
+	width: 90%;
+	margin-left: auto;
+	margin-right: auto;
+}
+label {
+	grid-area: l;
 }
 body {
 	line-height: 1.5;
-	font-size: 20px;
+	font-size: 18px;
 }
 
 /* GRID ELEMENTS */
@@ -26,16 +34,34 @@ body {
 #head_message {
 	grid-area: hd;
 	margin-bottom: 1rem;
-	grid-row-gap: 1rem;
 	border-width: 3px 2px;
 	border-style: solid dotted;
 	padding: 5px 30px 15px;
 	background-color: #ffff99;
-	margin-left: auto;
-	margin-right: auto;
 }
 .message_header {
 	text-align: center;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+/* FORM ELEMENTS */
+
+textarea[name="author"] {
+	grid-area: t_a;
+}
+textarea[name="message"] {
+	grid-area: t_m;
+}
+label[for="author"] {
+	grid-area: l_a;
+}
+label[for="message"] {
+	grid-area: l_m;
+}
+input[type="submit"] {
+	grid-area: sbt;
+	width: 50%;
 	margin-left: auto;
 	margin-right: auto;
 }
@@ -50,15 +76,21 @@ body {
 	padding: 5px 30px 15px;
 	margin-left: auto;
 	margin-right: auto;
+	margin-bottom: 1rem;
 }
-
 #message_form {
 	grid-area: fm;
-	width: 75%;
+	display: grid;
+	grid-template-columns: 1fr 5fr;
+	grid-template-areas:
+		"l_a t_a"
+		"l_m t_m"
+		"sbt sbt";
 	border-width: 2px;
 	border-style: solid;
+	position: sticky;
+	top: 0.5rem;
 	padding: 5px;
 	background-color: #ffff99;
-	margin-left: auto;
-	margin-right: auto;
+	text-align: center;
 }

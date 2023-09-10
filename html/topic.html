@@ -1,29 +1,23 @@
 <!DOCTYPE html>
 
 <head>
-	<title>Message no. {}</title>
+	<title>Topic {}</title>
 	<link rel="stylesheet" type="text/css" href="../html/topic-style.css">
 </head>
 
 <body>
 	<div id="grid_root">
 		{}
+		<div id="submessage_container">
 		{}
-		<form action="/topic/{}" method="post" autocomplete="off">
-			<table id="message_form">
-				<tr>
-					<td><span>Name:</span></td>
-					<td><textarea type="text" name="author" maxlength="250" required rows="1"></textarea></td>
-				</tr>
-				<tr>
-					<td><span>Message: </span></td>
-					<td><textarea type="text" name="message" maxlength="4090" required rows="20"></textarea></td>
-				</tr>
-				<tr>
-					<td></td>
-					<td><input type="submit" value="Submit"></td>
-				</tr>
-			</table>
+		</div>
+		<form id="message_form" action="/topic/{}" method="post" autocomplete="off">
+			<label for="author">Name: </label>
+			<textarea type="text" name="author" maxlength="250" required rows="1"></textarea>
+			<br>
+			<label for="message">Message: </label>
+			<textarea type="text" name="message" maxlength="4090" required rows="20"></textarea>
+			<input type="submit" value="Submit">
 		</form>
 	</div>
 </body>

@@ -12,21 +12,13 @@
 			<p>bruh...</p>
 		</header>
 		<div id="sidebar">
-			<form action="/" method="post" autocomplete="off">
-				<table id="message_form">
-					<tr>
-						<td><span>Name:</span></td>
-						<td><textarea type="text" name="author" maxlength="250" required rows="1"></textarea></td>
-					</tr>
-					<tr>
-						<td><span>Message: </span></td>
-						<td><textarea type="text" name="message" maxlength="4090" required rows="20"></textarea></td>
-					</tr>
-					<tr>
-						<td></td>
-						<td><input type="submit" value="Submit"></td>
-					</tr>
-				</table>
+			<form id="message_form" action="/" method="post" autocomplete="off">
+				<label for="author">Name: </label>
+				<textarea type="text" name="author" maxlength="250" required rows="1"></textarea>
+				<br>
+				<label for="message">Message: </label>
+				<textarea type="text" name="message" maxlength="4090" required rows="20"></textarea>
+				<input type="submit" value="Submit">
 			</form>
 		</div>
 		<div id="message_container">
