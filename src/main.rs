@@ -70,18 +70,32 @@ async fn filter_string(inp_string: &String) -> String {
 
 async fn prepare_msg(inp_string: &String) -> String {
     let mut result = inp_string.clone(); // bruh
-    let link_match = Regex::new(r##"#>\d+"##).unwrap();
+    let link_match = Regex::new(r##"#>\d+(\.\d+)?"##).unwrap();
     let matches_iter = link_match.find_iter(&inp_string);
     for m_raw in matches_iter {
-        let m = m_raw.as_str();
-        result = inp_string.replace(
-            &m,
-            &format!(
-                include_str!("../message_templates/msglink.html"),
-                &m[2..],
-                &m
-            ),
-        );
+        let m = m_raw.as_str().to_string();
+        if m.contains(".") {
+            let link_parts = m.split(".").collect::<Vec<&str>>();
+            result = inp_string.replace(
+                &m,
+                &format!(
+                    include_str!("../message_templates/msglink.html"),
+                    &link_parts[0][2..],
+                    &link_parts[1],
+                    &m
+                ),
+            );
+        } else {
+            result = inp_string.replace(
+                &m,
+                &format!(
+                    include_str!("../message_templates/msglink.html"),
+                    &m[2..],
+                    "",
+                    &m
+                ),
+            );
+        }
     }
     result
 }
