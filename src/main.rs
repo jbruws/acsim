@@ -2,7 +2,8 @@ use actix_files;
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 use chrono::{DateTime, FixedOffset, Local, NaiveDateTime};
 use regex::Regex;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use serde_json;
 use std::sync::Mutex;
 use tokio;
 use tokio_postgres;
@@ -11,6 +12,22 @@ enum BoardMessageType {
     Message,       // messages on main page
     ParentMessage, // parent message on topic pages
     Submessage,    // submessages on topic pages
+}
+
+#[derive(Serialize, Deserialize)]
+struct BoardConfig {
+    // address of the server where database is hosted
+    db_host: String,
+    // username used for database connection
+    db_user: String,
+    // password used for database connection
+    db_password: String,
+    // http server's IP. MUST be set even if you're binding to 0.0.0.0
+    server_ip: String,
+    // http server's port.
+    server_port: u16,
+    // `true` binds server to values set above, `false` binds to 0.0.0.0
+    bind_to_one_ip: bool,
 }
 
 #[derive(Deserialize)]
@@ -25,10 +42,8 @@ struct PathInfo {
 }
 
 struct ApplicationState {
-    counter: Mutex<i32>,
-    messages_vec: Mutex<Vec<(i64, i64, String, String)>>,
+    server_address: Mutex<String>,
     db_client: Mutex<tokio_postgres::Client>,
-    last_message_id: Mutex<i64>,
 }
 
 async fn get_time(since_epoch: i64) -> String {
@@ -40,6 +55,7 @@ async fn get_time(since_epoch: i64) -> String {
 
 async fn format_into_html(
     message_type: BoardMessageType,
+    address: &str,
     id: &i64,
     time: &str,
     author: &str,
@@ -48,15 +64,26 @@ async fn format_into_html(
     let f_result = match message_type {
         BoardMessageType::Message => format!(
             include_str!("../message_templates/message.html"),
-            id, time, author, id, id, msg
+            id = id,
+            address = address,
+            time = time,
+            author = author,
+            msg = msg
         ),
         BoardMessageType::ParentMessage => format!(
             include_str!("../message_templates/parent_message.html"),
-            time, author, id, id, msg
+            address = address,
+            time = time,
+            author = author,
+            id = id,
+            msg = msg
         ),
         BoardMessageType::Submessage => format!(
             include_str!("../message_templates/submessage.html"),
-            id, time, author, id, msg
+            id = id,
+            time = time,
+            author = author,
+            msg = msg
         ),
     };
     f_result
@@ -68,7 +95,7 @@ async fn filter_string(inp_string: &String) -> String {
     String::from(filter.replace_all(inp_string.as_str(), ""))
 }
 
-async fn prepare_msg(inp_string: &String) -> String {
+async fn prepare_msg(inp_string: &String, addr: &String) -> String {
     let mut result = inp_string.clone(); // bruh
     let link_match = Regex::new(r##"#>\d+(\.\d+)?"##).unwrap();
     let matches_iter = link_match.find_iter(&inp_string);
@@ -80,6 +107,7 @@ async fn prepare_msg(inp_string: &String) -> String {
                 &m,
                 &format!(
                     include_str!("../message_templates/msglink.html"),
+                    addr,
                     &link_parts[0][2..],
                     &link_parts[1],
                     &m
@@ -90,6 +118,7 @@ async fn prepare_msg(inp_string: &String) -> String {
                 &m,
                 &format!(
                     include_str!("../message_templates/msglink.html"),
+                    addr,
                     &m[2..],
                     "",
                     &m
@@ -102,25 +131,30 @@ async fn prepare_msg(inp_string: &String) -> String {
 
 #[get("/")]
 async fn main_page(data: web::Data<ApplicationState>) -> impl Responder {
-    let mut counter = data.counter.lock().unwrap();
-    *counter += 1;
-    let messages = data.messages_vec.lock().unwrap();
+    let server_address = data.server_address.lock().unwrap();
+    let client = data.db_client.lock().unwrap();
     let mut inserted_msg = String::from("");
 
-    if messages.len() != 0 {
-        for t in (&*messages).into_iter().rev() {
-            inserted_msg.push_str(
-                format_into_html(
-                    BoardMessageType::Message,
-                    &t.0,
-                    &get_time(t.1).await,
-                    &t.2,
-                    &prepare_msg(&t.3).await,
-                )
-                .await
-                .as_str(),
-            );
-        }
+    // Restoring messages from DB
+    for row in client
+        .query("SELECT * FROM messages", &[])
+        .await
+        .unwrap()
+        .into_iter()
+        .rev()
+    {
+        inserted_msg.push_str(
+            format_into_html(
+                BoardMessageType::Message,
+                &*server_address,
+                &row.get::<usize, i64>(0),    // message id
+                &get_time(row.get(1)).await,  // time of creation
+                &row.get::<usize, String>(2), // author
+                &prepare_msg(&row.get::<usize, String>(3), &*server_address).await, // message contents
+            )
+            .await
+            .as_str(),
+        );
     }
     HttpResponse::Ok().body(format!(include_str!("../html/index.html"), inserted_msg))
 }
@@ -130,9 +164,8 @@ async fn process_form(
     form: web::Form<MsgForm>,
     data: web::Data<ApplicationState>,
 ) -> impl Responder {
-    let mut messages = data.messages_vec.lock().unwrap();
+    let server_address = data.server_address.lock().unwrap();
     let client = data.db_client.lock().unwrap();
-    let mut last_message_id = data.last_message_id.lock().unwrap();
 
     // getting time
     let since_epoch: i64 = match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
@@ -145,14 +178,7 @@ async fn process_form(
     if form.author.len() < 254 && form.message.len() < 4094 {
         let filtered_author = filter_string(&form.author).await;
         let filtered_msg = filter_string(&form.message).await;
-        *last_message_id += 1;
 
-        messages.push((
-            *last_message_id,
-            since_epoch,
-            filtered_author.clone(),
-            filtered_msg.clone(),
-        ));
         client
             .execute(
                 "INSERT INTO messages(time, author, msg) VALUES (($1), ($2), ($3))",
@@ -160,7 +186,7 @@ async fn process_form(
             )
             .await; // i'll just pretend this `Result` doesn't exist
     }
-    web::Redirect::to("http://192.168.0.110:8080").see_other()
+    web::Redirect::to((*server_address).clone()).see_other() // TODO: remove this clone()
 }
 
 #[get("/topic/{message_num}")]
@@ -170,6 +196,7 @@ async fn message_page(
     //form: web::Form<MsgForm>,
 ) -> impl Responder {
     let client = data.db_client.lock().unwrap();
+    let server_address = data.server_address.lock().unwrap();
     let head_msg: String;
     let head_msg_data = client
         .query_one(
@@ -180,10 +207,11 @@ async fn message_page(
     if let Ok(d) = head_msg_data {
         head_msg = format_into_html(
             BoardMessageType::ParentMessage,
-            &d.get::<usize, i64>(0),                        // message id
-            &get_time(d.get(1)).await,                      // time of creation
-            &d.get::<usize, String>(2),                     // author
-            &prepare_msg(&d.get::<usize, String>(3)).await, // message contents
+            &*server_address,
+            &d.get::<usize, i64>(0),    // message id
+            &get_time(d.get(1)).await,  // time of creation
+            &d.get::<usize, String>(2), // author
+            &prepare_msg(&d.get::<usize, String>(3), &*server_address).await, // message contents
         )
         .await;
     } else {
@@ -203,10 +231,11 @@ async fn message_page(
         inserted_submsg.push_str(
             format_into_html(
                 BoardMessageType::Submessage,
+                &*server_address,
                 &submessage_counter,          // ordinal number
                 &get_time(row.get(1)).await,  // time of creation
                 &row.get::<usize, String>(2), // author
-                &prepare_msg(&row.get::<usize, String>(3)).await, // message contents
+                &prepare_msg(&row.get::<usize, String>(3), &*server_address).await, // message contents
             )
             .await
             .as_str(),
@@ -229,6 +258,7 @@ async fn process_submessage_form(
     info: web::Path<PathInfo>,
 ) -> impl Responder {
     let client = data.db_client.lock().unwrap();
+    let server_address = data.server_address.lock().unwrap();
 
     // getting time
     let since_epoch: i64 = match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
@@ -248,22 +278,20 @@ async fn process_submessage_form(
             )
             .await; // i'll just pretend this `Result` doesn't exist
     }
-    web::Redirect::to(format!(
-        "http://192.168.0.110:8080/topic/{}",
-        info.message_num
-    ))
-    .see_other()
+    web::Redirect::to(format!("{}/topic/{}", &*server_address, info.message_num)).see_other()
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // Reading database credentials and connecting
-    // (credentials not included in repo. create the file yourself)
-    let db_credentials: Vec<_> = include_str!("../db_user").split(" ").collect();
+    let config: BoardConfig =
+        serde_json::from_str(include_str!("../config.json")).expect("Can't parse config.json");
+
     let (client, connection) = tokio_postgres::connect(
         format!(
-            "host=localhost user={} password={}",
-            db_credentials[0], db_credentials[1]
+            "host={} user={} password={}",
+            config.db_host.as_str(),
+            config.db_user.as_str(),
+            config.db_password.as_str()
         )
         .as_str(),
         tokio_postgres::NoTls,
@@ -278,33 +306,31 @@ async fn main() -> std::io::Result<()> {
         }
     });
 
-    // Restoring messages from DB
-    let mut db_messages: Vec<(i64, i64, String, String)> = Vec::new();
-    for row in client.query("SELECT * FROM messages", &[]).await.unwrap() {
-        db_messages.push((row.get(0), row.get(1), row.get(2), row.get(3)));
+    // creating unified address for the server
+    let unified_address = format!("http://{}:{}", config.server_ip, config.server_port);
+
+    // selecting where to bind the server
+    let mut bound_ip = "0.0.0.0";
+    if config.bind_to_one_ip {
+        bound_ip = config.server_ip.as_str();
     }
 
-    // getting serial ID of the last message
-    let last_id = db_messages[db_messages.len() - 1].0;
-
     // creating application state
-    let count = web::Data::new(ApplicationState {
-        counter: Mutex::new(0),
-        messages_vec: Mutex::new(db_messages),
+    let application_data = web::Data::new(ApplicationState {
+        server_address: Mutex::new(unified_address),
         db_client: Mutex::new(client),
-        last_message_id: Mutex::new(last_id),
     });
 
     HttpServer::new(move || {
         App::new()
-            .app_data(count.clone())
+            .app_data(application_data.clone())
             .service(actix_files::Files::new("/html", "./html"))
             .service(message_page)
             .service(process_form)
             .service(process_submessage_form)
             .service(main_page)
     })
-    .bind(("0.0.0.0", 8080))?
+    .bind((bound_ip, config.server_port))?
     .run()
     .await
 }
