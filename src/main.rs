@@ -68,6 +68,24 @@ async fn filter_string(inp_string: &String) -> String {
     String::from(filter.replace_all(inp_string.as_str(), ""))
 }
 
+async fn prepare_msg(inp_string: &String) -> String {
+    let mut result = inp_string.clone(); // bruh
+    let link_match = Regex::new(r##"#>\d+"##).unwrap();
+    let matches_iter = link_match.find_iter(&inp_string);
+    for m_raw in matches_iter {
+        let m = m_raw.as_str();
+        result = inp_string.replace(
+            &m,
+            &format!(
+                include_str!("../message_templates/msglink.html"),
+                &m[2..],
+                &m
+            ),
+        );
+    }
+    result
+}
+
 #[get("/")]
 async fn main_page(data: web::Data<ApplicationState>) -> impl Responder {
     let mut counter = data.counter.lock().unwrap();
@@ -83,7 +101,7 @@ async fn main_page(data: web::Data<ApplicationState>) -> impl Responder {
                     &t.0,
                     &get_time(t.1).await,
                     &t.2,
-                    &t.3,
+                    &prepare_msg(&t.3).await,
                 )
                 .await
                 .as_str(),
@@ -138,7 +156,7 @@ async fn message_page(
     //form: web::Form<MsgForm>,
 ) -> impl Responder {
     let client = data.db_client.lock().unwrap();
-    let mut head_msg: String;
+    let head_msg: String;
     let head_msg_data = client
         .query_one(
             "SELECT * FROM messages WHERE msgid=($1)",
@@ -148,10 +166,10 @@ async fn message_page(
     if let Ok(d) = head_msg_data {
         head_msg = format_into_html(
             BoardMessageType::ParentMessage,
-            &d.get::<usize, i64>(0),    // message id
-            &get_time(d.get(1)).await,  // time of creation
-            &d.get::<usize, String>(2), // author
-            &d.get::<usize, String>(3), // message contents
+            &d.get::<usize, i64>(0),                        // message id
+            &get_time(d.get(1)).await,                      // time of creation
+            &d.get::<usize, String>(2),                     // author
+            &prepare_msg(&d.get::<usize, String>(3)).await, // message contents
         )
         .await;
     } else {
@@ -174,7 +192,7 @@ async fn message_page(
                 &submessage_counter,          // ordinal number
                 &get_time(row.get(1)).await,  // time of creation
                 &row.get::<usize, String>(2), // author
-                &row.get::<usize, String>(3), // message contents
+                &prepare_msg(&row.get::<usize, String>(3)).await, // message contents
             )
             .await
             .as_str(),
