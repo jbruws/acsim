@@ -46,13 +46,15 @@ struct ApplicationState {
     db_client: Mutex<tokio_postgres::Client>,
 }
 
+// returns current date in time in 'YYYY-MM-DD hh:mm:ss' 24-hour format
 async fn get_time(since_epoch: i64) -> String {
-    let offset = FixedOffset::east_opt(3 * 3600).unwrap(); // +3 offset
+    let offset = FixedOffset::east_opt(3 * 3600).unwrap(); // +3 (hours) offset
     let naive = NaiveDateTime::from_timestamp_opt(since_epoch, 0).unwrap(); // UNIX epoch to datetime
     let dt = DateTime::<Local>::from_naive_utc_and_offset(naive, offset).to_string();
     dt[..dt.len() - 7].to_string() // 7 was chosen experimentally
 }
 
+// fits form data into one of several html templates
 async fn format_into_html(
     message_type: BoardMessageType,
     address: &str,
@@ -89,44 +91,72 @@ async fn format_into_html(
     f_result
 }
 
+// removes html tags from message
 async fn filter_string(inp_string: &String) -> String {
-    // removing html tags
     let filter = Regex::new(r##"<.*?>"##).unwrap();
     String::from(filter.replace_all(inp_string.as_str(), ""))
 }
 
+// processes messages entered by users by adding things usually implemented with html tags
 async fn prepare_msg(inp_string: &String, addr: &String) -> String {
-    let mut result = inp_string.clone(); // bruh
-    let link_match = Regex::new(r##"#>\d+(\.\d+)?"##).unwrap();
-    let matches_iter = link_match.find_iter(&inp_string);
-    for m_raw in matches_iter {
+    // "#>" followed by numbers
+    let msg_link_match = Regex::new(r##"#>\d+(\.\d+)?"##).unwrap();
+    // direct link to an image
+    let img_link_match = Regex::new(r##"https?:\/\/.*?\.(png|gif|jpg|jpeg|webp)"##).unwrap();
+
+    let mut result = String::new();
+    let mut start_of_next: usize = 0; // start of next match
+    let mut end_of_last: usize = 0; // end of previous match
+
+    // inserting links to other messages
+    let msg_matches_iter = msg_link_match.find_iter(&inp_string);
+    for m_raw in msg_matches_iter {
         let m = m_raw.as_str().to_string();
+        start_of_next = m_raw.start();
+        let mut finished_link = String::new();
+        result.push_str(&inp_string[end_of_last..start_of_next]); // text between matches
+
+        // if it's a link to a submessage("#>dddd.dd")
         if m.contains(".") {
             let link_parts = m.split(".").collect::<Vec<&str>>();
-            result = inp_string.replace(
-                &m,
-                &format!(
-                    include_str!("../message_templates/msglink.html"),
-                    addr,
-                    &link_parts[0][2..],
-                    &link_parts[1],
-                    &m
-                ),
+            finished_link = format!(
+                include_str!("../message_templates/msglink.html"),
+                addr,
+                &link_parts[0][2..],
+                &link_parts[1],
+                &m
             );
         } else {
-            result = inp_string.replace(
-                &m,
-                &format!(
-                    include_str!("../message_templates/msglink.html"),
-                    addr,
-                    &m[2..],
-                    "",
-                    &m
-                ),
+            finished_link = format!(
+                include_str!("../message_templates/msglink.html"),
+                addr,
+                &m[2..],
+                "",
+                &m
             );
         }
+        // trimming a newline (that is there for some reason)
+        result.push_str(&finished_link[..finished_link.len() - 1]);
+        end_of_last = m_raw.end();
     }
-    result
+
+    result.push_str(&inp_string[end_of_last..]);
+    start_of_next = 0; // resetting for second loop
+    end_of_last = 0;
+
+    // inserting <img> tags in place of image links
+    let mut second_result = String::new();
+    let img_matches_iter = img_link_match.find_iter(&result);
+    for m_raw in img_matches_iter {
+        let m = m_raw.as_str();
+        start_of_next = m_raw.start();
+        second_result.push_str(&result[end_of_last..start_of_next]);
+        second_result.push_str(&format!("<img class=\"userimage\" src=\"{}\">", &m));
+        end_of_last = m_raw.end();
+    }
+
+    second_result.push_str(&result[end_of_last..]);
+    second_result
 }
 
 #[get("/")]
@@ -186,7 +216,7 @@ async fn process_form(
             )
             .await; // i'll just pretend this `Result` doesn't exist
     }
-    web::Redirect::to((*server_address).clone()).see_other() // TODO: remove this clone()
+    web::Redirect::to((*server_address).clone()).see_other() // TODO: remove clone() (if possible)
 }
 
 #[get("/topic/{message_num}")]

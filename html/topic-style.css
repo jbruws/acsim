@@ -7,7 +7,7 @@ textarea {
 	width: 90%;
 	margin-left: auto;
 	margin-right: auto;
-	white-space: pre-line;
+	white-space: pre-wrap;
 }
 label {
 	grid-area: l;
@@ -69,6 +69,12 @@ input[type="submit"] {
 
 /* LESSER ELEMENTS */
 
+.userimage {
+	max-width: 25%;
+	height: auto;
+	display: inline-block;
+	margin-left: auto;
+}
 .submessage {
 	border-width: 1px 0px;
 	border-style: solid dotted;
@@ -94,4 +100,7 @@ input[type="submit"] {
 	padding: 5px;
 	background-color: #ffff99;
 	text-align: center;
+}
+.message_contents {
+	white-space: pre-line;
 }
