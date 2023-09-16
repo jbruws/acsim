@@ -16,7 +16,7 @@ enum BoardMessageType {
 
 #[derive(Serialize, Deserialize)]
 struct BoardConfig {
-    // address of the server where database is hosted
+    // IP address (numeric!) of the server where database is hosted
     db_host: String,
     // username used for database connection
     db_user: String,
@@ -318,7 +318,7 @@ async fn main() -> std::io::Result<()> {
 
     let (client, connection) = tokio_postgres::connect(
         format!(
-            "host={} user={} password={}",
+            "dbname=actixtest hostaddr={} user={} password={}",
             config.db_host.as_str(),
             config.db_user.as_str(),
             config.db_password.as_str()
