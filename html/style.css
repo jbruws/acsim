@@ -11,6 +11,7 @@ textarea {
 body {
 	line-height: 1.5;
 	font-size: 18px;
+	background-color: #eeeedd;
 }
 
 /* GRID ELEMENTS */
@@ -66,25 +67,6 @@ input[type="submit"] {
 
 /* LESSER ELEMENTS */
 
-.userimage {
-	max-width: 25%;
-	height: auto;
-	display: inline-block;
-	margin-left: auto;
-}
-#message_form {
-	border-width: 2px;
-	border-style: solid;
-	display: grid;
-	grid-template-columns: 1fr 5fr;
-	grid-template-areas:
-		"l_a t_a"
-		"l_m t_m"
-		"sbt sbt";
-	padding: 5px;
-	background-color: #ffff99;
-	text-align: center;
-}
 .message {
 	margin-bottom: 1rem;
 	grid-row-gap: 1rem;
@@ -101,4 +83,27 @@ input[type="submit"] {
 .message_contents {
 	white-space: pre-line;
 }
-
+.message_images {
+	padding: 5px;
+	background-color: #ffff77;
+	border-width: 0px 1px;
+	border-style: solid;
+}
+.userimage {
+	max-width: 10%;
+	height: auto;
+	padding: 0.5rem;
+}
+#message_form {
+	border-width: 2px;
+	border-style: solid;
+	display: grid;
+	grid-template-columns: 1fr 5fr;
+	grid-template-areas:
+		"l_a t_a"
+		"l_m t_m"
+		"sbt sbt";
+	padding: 5px;
+	background-color: #ffff99;
+	text-align: center;
+}

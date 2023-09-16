@@ -65,7 +65,7 @@ async fn format_into_html(
 ) -> String {
     let f_result = match message_type {
         BoardMessageType::Message => format!(
-            include_str!("../message_templates/message.html"),
+            include_str!("../templates/message_blocks/message.html"),
             id = id,
             address = address,
             time = time,
@@ -73,7 +73,7 @@ async fn format_into_html(
             msg = msg
         ),
         BoardMessageType::ParentMessage => format!(
-            include_str!("../message_templates/parent_message.html"),
+            include_str!("../templates/message_blocks/parent_message.html"),
             address = address,
             time = time,
             author = author,
@@ -81,7 +81,7 @@ async fn format_into_html(
             msg = msg
         ),
         BoardMessageType::Submessage => format!(
-            include_str!("../message_templates/submessage.html"),
+            include_str!("../templates/message_blocks/submessage.html"),
             id = id,
             time = time,
             author = author,
@@ -97,7 +97,8 @@ async fn filter_string(inp_string: &String) -> String {
     String::from(filter.replace_all(inp_string.as_str(), ""))
 }
 
-// processes messages entered by users by adding things usually implemented with html tags
+// turns message raw text from the database into workable html,
+// which is later piped into format_into_html()
 async fn prepare_msg(inp_string: &String, addr: &String) -> String {
     // "#>" followed by numbers
     let msg_link_match = Regex::new(r##"#>\d+(\.\d+)?"##).unwrap();
@@ -105,7 +106,7 @@ async fn prepare_msg(inp_string: &String, addr: &String) -> String {
     let img_link_match = Regex::new(r##"https?:\/\/.*?\.(png|gif|jpg|jpeg|webp)"##).unwrap();
 
     let mut result = String::new();
-    let mut start_of_next: usize = 0; // start of next match
+    let mut start_of_next: usize; // start of next match
     let mut end_of_last: usize = 0; // end of previous match
 
     // inserting links to other messages
@@ -113,14 +114,14 @@ async fn prepare_msg(inp_string: &String, addr: &String) -> String {
     for m_raw in msg_matches_iter {
         let m = m_raw.as_str().to_string();
         start_of_next = m_raw.start();
-        let mut finished_link = String::new();
+        let finished_link: String;
         result.push_str(&inp_string[end_of_last..start_of_next]); // text between matches
 
         // if it's a link to a submessage("#>dddd.dd")
         if m.contains(".") {
             let link_parts = m.split(".").collect::<Vec<&str>>();
             finished_link = format!(
-                include_str!("../message_templates/msglink.html"),
+                include_str!("../templates/message_contents/msglink.html"),
                 addr,
                 &link_parts[0][2..],
                 &link_parts[1],
@@ -128,7 +129,7 @@ async fn prepare_msg(inp_string: &String, addr: &String) -> String {
             );
         } else {
             finished_link = format!(
-                include_str!("../message_templates/msglink.html"),
+                include_str!("../templates/message_contents/msglink.html"),
                 addr,
                 &m[2..],
                 "",
@@ -145,18 +146,35 @@ async fn prepare_msg(inp_string: &String, addr: &String) -> String {
     end_of_last = 0;
 
     // inserting <img> tags in place of image links
+    let mut image_block = String::new();
     let mut second_result = String::new();
     let img_matches_iter = img_link_match.find_iter(&result);
     for m_raw in img_matches_iter {
         let m = m_raw.as_str();
         start_of_next = m_raw.start();
         second_result.push_str(&result[end_of_last..start_of_next]);
-        second_result.push_str(&format!("<img class=\"userimage\" src=\"{}\">", &m));
+        image_block.push_str(&format!(
+            include_str!("../templates/message_contents/single_image.html"),
+            &m, &m
+        ));
         end_of_last = m_raw.end();
     }
 
     second_result.push_str(&result[end_of_last..]);
-    second_result
+    let final_res: String;
+    if image_block == String::new() {
+        // if there's no images
+        final_res = format!(
+            include_str!("../templates/message_contents/contents_noimg.html"),
+            second_result
+        );
+    } else {
+        final_res = format!(
+            include_str!("../templates/message_contents/contents_img.html"),
+            image_block, second_result
+        );
+    }
+    final_res
 }
 
 #[get("/")]
@@ -194,7 +212,6 @@ async fn process_form(
     form: web::Form<MsgForm>,
     data: web::Data<ApplicationState>,
 ) -> impl Responder {
-    let server_address = data.server_address.lock().unwrap();
     let client = data.db_client.lock().unwrap();
 
     // getting time
@@ -216,7 +233,7 @@ async fn process_form(
             )
             .await; // i'll just pretend this `Result` doesn't exist
     }
-    web::Redirect::to((*server_address).clone()).see_other() // TODO: remove clone() (if possible)
+    web::Redirect::to("/").see_other()
 }
 
 #[get("/topic/{message_num}")]

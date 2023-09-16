@@ -69,12 +69,6 @@ input[type="submit"] {
 
 /* LESSER ELEMENTS */
 
-.userimage {
-	max-width: 25%;
-	height: auto;
-	display: inline-block;
-	margin-left: auto;
-}
 .submessage {
 	border-width: 1px 0px;
 	border-style: solid dotted;
@@ -84,6 +78,25 @@ input[type="submit"] {
 	margin-left: auto;
 	margin-right: auto;
 	margin-bottom: 1rem;
+}
+.message_header {
+	text-align: center;
+	margin-left: auto;
+	margin-right: auto;
+}
+.message_contents {
+	white-space: pre-line;
+}
+.message_images {
+	padding: 5px;
+	background-color: #ffff77;
+	border-width: 0px 1px;
+	border-style: solid;
+}
+.userimage {
+	max-width: 10%;
+	height: auto;
+	padding: 0.5rem;
 }
 #message_form {
 	grid-area: fm;
