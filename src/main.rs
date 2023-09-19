@@ -1,18 +1,14 @@
 use actix_files;
+use actix_multipart::Multipart;
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
-use chrono::{DateTime, FixedOffset, Local, NaiveDateTime};
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::sync::Mutex;
 use tokio;
 use tokio_postgres;
 
-enum BoardMessageType {
-    Message,       // messages on main page
-    ParentMessage, // parent message on topic pages
-    Submessage,    // submessages on topic pages
-}
+// functions for turning plaintext db data into html
+mod html_proc;
 
 #[derive(Serialize, Deserialize)]
 struct BoardConfig {
@@ -46,137 +42,6 @@ struct ApplicationState {
     db_client: Mutex<tokio_postgres::Client>,
 }
 
-// returns current date in time in 'YYYY-MM-DD hh:mm:ss' 24-hour format
-async fn get_time(since_epoch: i64) -> String {
-    let offset = FixedOffset::east_opt(3 * 3600).unwrap(); // +3 (hours) offset
-    let naive = NaiveDateTime::from_timestamp_opt(since_epoch, 0).unwrap(); // UNIX epoch to datetime
-    let dt = DateTime::<Local>::from_naive_utc_and_offset(naive, offset).to_string();
-    dt[..dt.len() - 7].to_string() // 7 was chosen experimentally
-}
-
-// fits form data into one of several html templates
-async fn format_into_html(
-    message_type: BoardMessageType,
-    address: &str,
-    id: &i64,
-    time: &str,
-    author: &str,
-    msg: &str,
-) -> String {
-    let f_result = match message_type {
-        BoardMessageType::Message => format!(
-            include_str!("../templates/message_blocks/message.html"),
-            id = id,
-            address = address,
-            time = time,
-            author = author,
-            msg = msg
-        ),
-        BoardMessageType::ParentMessage => format!(
-            include_str!("../templates/message_blocks/parent_message.html"),
-            address = address,
-            time = time,
-            author = author,
-            id = id,
-            msg = msg
-        ),
-        BoardMessageType::Submessage => format!(
-            include_str!("../templates/message_blocks/submessage.html"),
-            id = id,
-            time = time,
-            author = author,
-            msg = msg
-        ),
-    };
-    f_result
-}
-
-// removes html tags from message
-async fn filter_string(inp_string: &String) -> String {
-    let filter = Regex::new(r##"<.*?>"##).unwrap();
-    String::from(filter.replace_all(inp_string.as_str(), ""))
-}
-
-// turns message raw text from the database into workable html,
-// which is later piped into format_into_html()
-async fn prepare_msg(inp_string: &String, addr: &String) -> String {
-    // "#>" followed by numbers
-    let msg_link_match = Regex::new(r##"#>\d+(\.\d+)?"##).unwrap();
-    // direct link to an image
-    let img_link_match = Regex::new(r##"https?:\/\/.*?\.(png|gif|jpg|jpeg|webp)"##).unwrap();
-
-    let mut result = String::new();
-    let mut start_of_next: usize; // start of next match
-    let mut end_of_last: usize = 0; // end of previous match
-
-    // inserting links to other messages
-    let msg_matches_iter = msg_link_match.find_iter(&inp_string);
-    for m_raw in msg_matches_iter {
-        let m = m_raw.as_str().to_string();
-        start_of_next = m_raw.start();
-        let finished_link: String;
-        result.push_str(&inp_string[end_of_last..start_of_next]); // text between matches
-
-        // if it's a link to a submessage("#>dddd.dd")
-        if m.contains(".") {
-            let link_parts = m.split(".").collect::<Vec<&str>>();
-            finished_link = format!(
-                include_str!("../templates/message_contents/msglink.html"),
-                addr,
-                &link_parts[0][2..],
-                &link_parts[1],
-                &m
-            );
-        } else {
-            finished_link = format!(
-                include_str!("../templates/message_contents/msglink.html"),
-                addr,
-                &m[2..],
-                "",
-                &m
-            );
-        }
-        // trimming a newline (that is there for some reason)
-        result.push_str(&finished_link[..finished_link.len() - 1]);
-        end_of_last = m_raw.end();
-    }
-
-    result.push_str(&inp_string[end_of_last..]);
-    start_of_next = 0; // resetting for second loop
-    end_of_last = 0;
-
-    // inserting <img> tags in place of image links
-    let mut image_block = String::new();
-    let mut second_result = String::new();
-    let img_matches_iter = img_link_match.find_iter(&result);
-    for m_raw in img_matches_iter {
-        let m = m_raw.as_str();
-        start_of_next = m_raw.start();
-        second_result.push_str(&result[end_of_last..start_of_next]);
-        image_block.push_str(&format!(
-            include_str!("../templates/message_contents/single_image.html"),
-            &m, &m
-        ));
-        end_of_last = m_raw.end();
-    }
-
-    second_result.push_str(&result[end_of_last..]);
-    let final_res: String;
-    if image_block == String::new() {
-        // if there's no images
-        final_res = format!(
-            include_str!("../templates/message_contents/contents_noimg.html"),
-            second_result
-        );
-    } else {
-        final_res = format!(
-            include_str!("../templates/message_contents/contents_img.html"),
-            image_block, second_result
-        );
-    }
-    final_res
-}
-
 #[get("/")]
 async fn main_page(data: web::Data<ApplicationState>) -> impl Responder {
     let server_address = data.server_address.lock().unwrap();
@@ -192,13 +57,13 @@ async fn main_page(data: web::Data<ApplicationState>) -> impl Responder {
         .rev()
     {
         inserted_msg.push_str(
-            format_into_html(
-                BoardMessageType::Message,
+            html_proc::format_into_html(
+                html_proc::BoardMessageType::Message,
                 &*server_address,
-                &row.get::<usize, i64>(0),    // message id
-                &get_time(row.get(1)).await,  // time of creation
-                &row.get::<usize, String>(2), // author
-                &prepare_msg(&row.get::<usize, String>(3), &*server_address).await, // message contents
+                &row.get::<usize, i64>(0),              // message id
+                &html_proc::get_time(row.get(1)).await, // time of creation
+                &row.get::<usize, String>(2),           // author
+                &html_proc::prepare_msg(&row.get::<usize, String>(3), &*server_address).await, // message contents
             )
             .await
             .as_str(),
@@ -223,8 +88,8 @@ async fn process_form(
 
     // if fits, push new message into DB and vector
     if form.author.len() < 254 && form.message.len() < 4094 {
-        let filtered_author = filter_string(&form.author).await;
-        let filtered_msg = filter_string(&form.message).await;
+        let filtered_author = html_proc::filter_string(&form.author).await;
+        let filtered_msg = html_proc::filter_string(&form.message).await;
 
         client
             .execute(
@@ -252,13 +117,13 @@ async fn message_page(
         )
         .await;
     if let Ok(d) = head_msg_data {
-        head_msg = format_into_html(
-            BoardMessageType::ParentMessage,
+        head_msg = html_proc::format_into_html(
+            html_proc::BoardMessageType::ParentMessage,
             &*server_address,
-            &d.get::<usize, i64>(0),    // message id
-            &get_time(d.get(1)).await,  // time of creation
-            &d.get::<usize, String>(2), // author
-            &prepare_msg(&d.get::<usize, String>(3), &*server_address).await, // message contents
+            &d.get::<usize, i64>(0),              // message id
+            &html_proc::get_time(d.get(1)).await, // time of creation
+            &d.get::<usize, String>(2),           // author
+            &html_proc::prepare_msg(&d.get::<usize, String>(3), &*server_address).await, // message contents
         )
         .await;
     } else {
@@ -276,13 +141,13 @@ async fn message_page(
     {
         submessage_counter += 1;
         inserted_submsg.push_str(
-            format_into_html(
-                BoardMessageType::Submessage,
+            html_proc::format_into_html(
+                html_proc::BoardMessageType::Submessage,
                 &*server_address,
-                &submessage_counter,          // ordinal number
-                &get_time(row.get(1)).await,  // time of creation
-                &row.get::<usize, String>(2), // author
-                &prepare_msg(&row.get::<usize, String>(3), &*server_address).await, // message contents
+                &submessage_counter,                    // ordinal number
+                &html_proc::get_time(row.get(1)).await, // time of creation
+                &row.get::<usize, String>(2),           // author
+                &html_proc::prepare_msg(&row.get::<usize, String>(3), &*server_address).await, // message contents
             )
             .await
             .as_str(),
@@ -316,8 +181,8 @@ async fn process_submessage_form(
 
     // if fits, push new message into DB and vector
     if form.author.len() < 254 && form.message.len() < 4094 {
-        let filtered_author = filter_string(&form.author).await;
-        let filtered_msg = filter_string(&form.message).await;
+        let filtered_author = html_proc::filter_string(&form.author).await;
+        let filtered_msg = html_proc::filter_string(&form.message).await;
         client
             .execute(
                 "INSERT INTO submessages(parent_msg, time, author, submsg) VALUES (($1), ($2), ($3), ($4))",
