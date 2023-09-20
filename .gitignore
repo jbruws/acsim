@@ -1,3 +1,4 @@
 /target
 /user_images/*
 config.json
+actixtest.log

@@ -3,7 +3,7 @@
 textarea {
 	resize: none;
 	display: block;
-	width: 90%;
+	width: 70%;
 	margin-left: auto;
 	margin-right: auto;
 	white-space: pre-wrap;
@@ -37,7 +37,6 @@ body {
 #message_container {
 	margin-top: 0;
 	grid-area: ms;
-	width: 100%;
 }
 #sidebar {
 	grid-area: sb;
@@ -61,20 +60,21 @@ label[for="message"] {
 }
 input[type="submit"] {
 	grid-area: sbt;
-	width: 50%;
 	margin-left: auto;
 	margin-right: auto;
+	width: 70%;
 }
 input[type="file"] {
 	grid-area: fil;
-	width: 50%;
 	margin-left: auto;
 	margin-right: auto;
+	width: 70%;
 }
 
 /* LESSER ELEMENTS */
 
 .message {
+	max-width: 100%;
 	margin-bottom: 1rem;
 	grid-row-gap: 1rem;
 	border-width: 1px 0px;
@@ -88,6 +88,7 @@ input[type="file"] {
 	margin-right: auto;
 }
 .message_contents {
+	overflow-wrap: break-word;
 	white-space: pre-line;
 }
 .message_images {

@@ -1,15 +1,18 @@
+// std
+use std::path::PathBuf;
+use std::sync::Mutex;
+// actix and serde
 use actix_files;
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{middleware::Logger, get, post, web, App, HttpResponse, HttpServer, Responder};
-use env_logger::Env;
-use rand;
 use serde::{Deserialize, Serialize};
 use serde_json;
-use std::path::PathBuf;
-use std::sync::Mutex;
-use std::env;
+// misc
 use tokio;
 use tokio_postgres;
+use rand;
+use fern;
+use log;
 
 // functions for turning plaintext db data into html
 mod html_proc;
@@ -67,7 +70,7 @@ async fn main_page(data: web::Data<ApplicationState>) -> impl Responder {
                 html_proc::BoardMessageType::Message,
                 &*server_address,
                 &row.get::<usize, i64>(0),              // message id
-                &html_proc::get_time(row.get(1)).await, // time of creation
+                &html_proc::get_time(row.get(1)), // time of creation
                 &html_proc::filter_string(&row.get::<usize, String>(2)).await, // author
                 &html_proc::prepare_msg(&row.get::<usize, String>(3), &*server_address).await, // message contents
                 &row.get::<usize, String>(4), // associated image
@@ -104,11 +107,7 @@ async fn process_form(
     }
 
     // getting time
-    let since_epoch: i64 = match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
-    {
-        Ok(n) => n.as_secs().try_into().unwrap(),
-        Err(_) => 1,
-    };
+    let since_epoch = html_proc::since_epoch();
 
     // if fits, push new message into DB and vector
     if form.author.len() < 254 && form.message.len() < 4094 {
@@ -151,7 +150,7 @@ async fn message_page(
             html_proc::BoardMessageType::ParentMessage,
             &*server_address,
             &d.get::<usize, i64>(0),              // message id
-            &html_proc::get_time(d.get(1)).await, // time of creation
+            &html_proc::get_time(d.get(1)), // time of creation
             &html_proc::filter_string(&d.get::<usize, String>(2)).await, // author
             &html_proc::prepare_msg(&d.get::<usize, String>(3), &*server_address).await, // message contents
             &d.get::<usize, String>(4), // associated image
@@ -176,7 +175,7 @@ async fn message_page(
                 html_proc::BoardMessageType::Submessage,
                 &*server_address,
                 &submessage_counter,                    // ordinal number
-                &html_proc::get_time(row.get(1)).await, // time of creation
+                &html_proc::get_time(row.get(1)), // time of creation
                 &html_proc::filter_string(&row.get::<usize, String>(2)).await, // author
                 &html_proc::prepare_msg(&row.get::<usize, String>(3), &*server_address).await, // message contents
                 &row.get::<usize, String>(4), // associated image
@@ -222,11 +221,7 @@ async fn process_submessage_form(
     }
 
     // getting time
-    let since_epoch: i64 = match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
-    {
-        Ok(n) => n.as_secs().try_into().unwrap(),
-        Err(_) => 1,
-    };
+    let since_epoch = html_proc::since_epoch();
 
     // if fits, push new message into DB and vector
     if form.author.len() < 254 && form.message.len() < 4094 {
@@ -250,7 +245,19 @@ async fn process_submessage_form(
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    env_logger::init_from_env(Env::default().default_filter_or("info"));
+    fern::Dispatch::new()
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "[{} {}] {}",
+                html_proc::get_time(html_proc::since_epoch()),
+                record.level(),
+                message,
+            ))
+        })
+        .level(log::LevelFilter::Debug)
+        .chain(std::io::stdout())
+        .chain(fern::log_file("actixtest.log").unwrap())
+        .apply();
 
     let config: BoardConfig =
         serde_json::from_str(include_str!("../config.json")).expect("Can't parse config.json");

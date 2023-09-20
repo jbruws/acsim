@@ -9,8 +9,18 @@ pub enum BoardMessageType {
     Submessage,    // submessages on topic pages
 }
 
+// get seconds elapsed since unix epoch
+pub fn since_epoch() -> i64 {
+    let res = match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
+    {
+        Ok(n) => n.as_secs().try_into().unwrap(),
+        Err(_) => 1,
+    };
+    res
+}
+
 // returns current date in time in 'YYYY-MM-DD hh:mm:ss' 24-hour format
-pub async fn get_time(since_epoch: i64) -> String {
+pub fn get_time(since_epoch: i64) -> String {
     let offset = FixedOffset::east_opt(3 * 3600).unwrap(); // +3 (hours) offset
     let naive = NaiveDateTime::from_timestamp_opt(since_epoch, 0).unwrap(); // UNIX epoch to datetime
     let dt = DateTime::<Local>::from_naive_utc_and_offset(naive, offset).to_string();
