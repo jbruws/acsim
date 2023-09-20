@@ -1,8 +1,10 @@
 use actix_files;
-use actix_multipart::Multipart;
+use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
+use rand;
 use serde::{Deserialize, Serialize};
 use serde_json;
+use std::path::PathBuf;
 use std::sync::Mutex;
 use tokio;
 use tokio_postgres;
@@ -26,10 +28,12 @@ struct BoardConfig {
     bind_to_one_ip: bool,
 }
 
-#[derive(Deserialize)]
+#[derive(MultipartForm)]
 struct MsgForm {
-    message: String,
-    author: String,
+    message: Text<String>,
+    author: Text<String>,
+    #[multipart(limit = "5 MiB")]
+    image: Option<TempFile>,
 }
 
 #[derive(Deserialize)]
@@ -62,8 +66,9 @@ async fn main_page(data: web::Data<ApplicationState>) -> impl Responder {
                 &*server_address,
                 &row.get::<usize, i64>(0),              // message id
                 &html_proc::get_time(row.get(1)).await, // time of creation
-                &row.get::<usize, String>(2),           // author
+                &html_proc::filter_string(&row.get::<usize, String>(2)).await, // author
                 &html_proc::prepare_msg(&row.get::<usize, String>(3), &*server_address).await, // message contents
+                &row.get::<usize, String>(4), // associated image
             )
             .await
             .as_str(),
@@ -74,10 +79,27 @@ async fn main_page(data: web::Data<ApplicationState>) -> impl Responder {
 
 #[post("/")]
 async fn process_form(
-    form: web::Form<MsgForm>,
+    form: MultipartForm<MsgForm>,
     data: web::Data<ApplicationState>,
 ) -> impl Responder {
     let client = data.db_client.lock().unwrap();
+    let mut new_filepath: PathBuf = PathBuf::new();
+
+    if let Some(f) = &form.image {
+        let temp_file_path = f.file.path();
+        if f.file_name != Some(String::from("")) {
+            let orig_name = f
+                .file_name
+                .as_ref()
+                .expect("no file name")
+                .split(".")
+                .collect::<Vec<&str>>();
+            let new_name = rand::random::<u64>().to_string();
+            new_filepath = PathBuf::from(format!("./user_images/{}.{}", new_name, orig_name[1]));
+            let _copy_status = std::fs::copy(temp_file_path, new_filepath.clone());
+            let _delete_status = std::fs::remove_file(temp_file_path);
+        }
+    }
 
     // getting time
     let since_epoch: i64 = match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
@@ -93,8 +115,13 @@ async fn process_form(
 
         client
             .execute(
-                "INSERT INTO messages(time, author, msg) VALUES (($1), ($2), ($3))",
-                &[&since_epoch, &filtered_author, &filtered_msg],
+                "INSERT INTO messages(time, author, msg, image) VALUES (($1), ($2), ($3), ($4))",
+                &[
+                    &since_epoch,
+                    &filtered_author,
+                    &filtered_msg,
+                    &new_filepath.to_str().unwrap(),
+                ],
             )
             .await; // i'll just pretend this `Result` doesn't exist
     }
@@ -122,8 +149,9 @@ async fn message_page(
             &*server_address,
             &d.get::<usize, i64>(0),              // message id
             &html_proc::get_time(d.get(1)).await, // time of creation
-            &d.get::<usize, String>(2),           // author
+            &html_proc::filter_string(&d.get::<usize, String>(2)).await, // author
             &html_proc::prepare_msg(&d.get::<usize, String>(3), &*server_address).await, // message contents
+            &d.get::<usize, String>(4), // associated image
         )
         .await;
     } else {
@@ -146,8 +174,9 @@ async fn message_page(
                 &*server_address,
                 &submessage_counter,                    // ordinal number
                 &html_proc::get_time(row.get(1)).await, // time of creation
-                &row.get::<usize, String>(2),           // author
+                &html_proc::filter_string(&row.get::<usize, String>(2)).await, // author
                 &html_proc::prepare_msg(&row.get::<usize, String>(3), &*server_address).await, // message contents
+                &row.get::<usize, String>(4), // associated image
             )
             .await
             .as_str(),
@@ -166,11 +195,28 @@ async fn message_page(
 #[post("/topic/{message_num}")]
 async fn process_submessage_form(
     data: web::Data<ApplicationState>,
-    form: web::Form<MsgForm>,
+    form: MultipartForm<MsgForm>,
     info: web::Path<PathInfo>,
 ) -> impl Responder {
     let client = data.db_client.lock().unwrap();
     let server_address = data.server_address.lock().unwrap();
+    let mut new_filepath: PathBuf = PathBuf::new();
+
+    if let Some(f) = &form.image {
+        let temp_file_path = f.file.path();
+        if f.file_name != Some(String::from("")) {
+            let orig_name = f
+                .file_name
+                .as_ref()
+                .expect("no file name")
+                .split(".")
+                .collect::<Vec<&str>>();
+            let new_name = rand::random::<u64>().to_string();
+            new_filepath = PathBuf::from(format!("./user_images/{}.{}", new_name, orig_name[1]));
+            let _copy_status = std::fs::copy(temp_file_path, new_filepath.clone());
+            let _remove_status = std::fs::remove_file(temp_file_path);
+        }
+    }
 
     // getting time
     let since_epoch: i64 = match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
@@ -185,8 +231,8 @@ async fn process_submessage_form(
         let filtered_msg = html_proc::filter_string(&form.message).await;
         client
             .execute(
-                "INSERT INTO submessages(parent_msg, time, author, submsg) VALUES (($1), ($2), ($3), ($4))",
-                &[&info.message_num, &since_epoch, &filtered_author, &filtered_msg],
+                "INSERT INTO submessages(parent_msg, time, author, submsg, image) VALUES (($1), ($2), ($3), ($4), ($5))",
+                &[&info.message_num, &since_epoch, &filtered_author, &filtered_msg, &new_filepath.to_str().unwrap()],
             )
             .await; // i'll just pretend this `Result` doesn't exist
     }
@@ -237,6 +283,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(application_data.clone())
             .service(actix_files::Files::new("/html", "./html"))
+            .service(actix_files::Files::new("/user_images", "./user_images"))
             .service(message_page)
             .service(process_form)
             .service(process_submessage_form)

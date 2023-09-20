@@ -37,6 +37,7 @@ body {
 #message_container {
 	margin-top: 0;
 	grid-area: ms;
+	width: 100%;
 }
 #sidebar {
 	grid-area: sb;
@@ -96,7 +97,7 @@ input[type="file"] {
 	border-style: solid;
 }
 .userimage {
-	max-width: 10%;
+	max-width: 30%;
 	height: auto;
 	padding: 0.5rem;
 }
@@ -104,11 +105,12 @@ input[type="file"] {
 	border-width: 2px;
 	border-style: solid;
 	display: grid;
-	grid-template-columns: 1fr 5fr;
+	grid-template-columns: 1fr 4fr;
 	grid-template-areas:
 		"l_a t_a"
 		"l_m t_m"
-		"fil sbt";
+		"fil fil"
+		"sbt sbt";
 	padding: 5px;
 	background-color: #ffff99;
 	text-align: center;
