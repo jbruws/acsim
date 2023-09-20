@@ -1,11 +1,13 @@
 use actix_files;
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
-use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{middleware::Logger, get, post, web, App, HttpResponse, HttpServer, Responder};
+use env_logger::Env;
 use rand;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::path::PathBuf;
 use std::sync::Mutex;
+use std::env;
 use tokio;
 use tokio_postgres;
 
@@ -54,7 +56,7 @@ async fn main_page(data: web::Data<ApplicationState>) -> impl Responder {
 
     // Restoring messages from DB
     for row in client
-        .query("SELECT * FROM messages", &[])
+        .query("SELECT * FROM messages ORDER BY latest_submsg ASC", &[])
         .await
         .unwrap()
         .into_iter()
@@ -115,12 +117,13 @@ async fn process_form(
 
         client
             .execute(
-                "INSERT INTO messages(time, author, msg, image) VALUES (($1), ($2), ($3), ($4))",
+                "INSERT INTO messages(time, author, msg, image, latest_submsg) VALUES (($1), ($2), ($3), ($4), ($5))",
                 &[
                     &since_epoch,
                     &filtered_author,
                     &filtered_msg,
                     &new_filepath.to_str().unwrap(),
+                    &since_epoch,
                 ],
             )
             .await; // i'll just pretend this `Result` doesn't exist
@@ -229,18 +232,26 @@ async fn process_submessage_form(
     if form.author.len() < 254 && form.message.len() < 4094 {
         let filtered_author = html_proc::filter_string(&form.author).await;
         let filtered_msg = html_proc::filter_string(&form.message).await;
-        client
+        let result_update = client
             .execute(
                 "INSERT INTO submessages(parent_msg, time, author, submsg, image) VALUES (($1), ($2), ($3), ($4), ($5))",
                 &[&info.message_num, &since_epoch, &filtered_author, &filtered_msg, &new_filepath.to_str().unwrap()],
             )
             .await; // i'll just pretend this `Result` doesn't exist
+        let result_update2 = client
+            .execute(
+                "UPDATE messages SET latest_submsg = ($1) WHERE msgid = ($2)",
+                &[&since_epoch, &info.message_num],
+            )
+            .await;
     }
     web::Redirect::to(format!("{}/topic/{}", &*server_address, info.message_num)).see_other()
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    env_logger::init_from_env(Env::default().default_filter_or("info"));
+
     let config: BoardConfig =
         serde_json::from_str(include_str!("../config.json")).expect("Can't parse config.json");
 
@@ -281,6 +292,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .wrap(Logger::default())
             .app_data(application_data.clone())
             .service(actix_files::Files::new("/html", "./html"))
             .service(actix_files::Files::new("/user_images", "./user_images"))
