@@ -51,6 +51,13 @@ struct ApplicationState {
     db_client: Mutex<tokio_postgres::Client>,
 }
 
+fn log_query_status(status: Result<u64, tokio_postgres::error::Error>, operation: &str) {
+    match status {
+        Ok(v) => log::debug!("{} success: {}", operation, v),
+        Err(e) => log::error!("{} failure: {}", operation, e),
+    };
+}
+
 #[get("/")]
 async fn main_page(data: web::Data<ApplicationState>) -> impl Responder {
     let server_address = data.server_address.lock().unwrap();
@@ -114,7 +121,7 @@ async fn process_form(
         let filtered_author = html_proc::filter_string(&form.author).await;
         let filtered_msg = html_proc::filter_string(&form.message).await;
 
-        client
+        let result_update = client
             .execute(
                 "INSERT INTO messages(time, author, msg, image, latest_submsg) VALUES (($1), ($2), ($3), ($4), ($5))",
                 &[
@@ -125,7 +132,8 @@ async fn process_form(
                     &since_epoch,
                 ],
             )
-            .await; // i'll just pretend this `Result` doesn't exist
+            .await;
+            log_query_status(result_update, "Message table insertion");
     }
     web::Redirect::to("/").see_other()
 }
@@ -232,36 +240,27 @@ async fn process_submessage_form(
                 "INSERT INTO submessages(parent_msg, time, author, submsg, image) VALUES (($1), ($2), ($3), ($4), ($5))",
                 &[&info.message_num, &since_epoch, &filtered_author, &filtered_msg, &new_filepath.to_str().unwrap()],
             )
-            .await; // i'll just pretend this `Result` doesn't exist
+            .await;
+        log_query_status(result_update, "Submessage table insertion");
+        
         let result_update2 = client
             .execute(
                 "UPDATE messages SET latest_submsg = ($1) WHERE msgid = ($2)",
                 &[&since_epoch, &info.message_num],
             )
             .await;
+        log_query_status(result_update2, "Message table update");
     }
     web::Redirect::to(format!("{}/topic/{}", &*server_address, info.message_num)).see_other()
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    fern::Dispatch::new()
-        .format(|out, message, record| {
-            out.finish(format_args!(
-                "[{} {}] {}",
-                html_proc::get_time(html_proc::since_epoch()),
-                record.level(),
-                message,
-            ))
-        })
-        .level(log::LevelFilter::Debug)
-        .chain(std::io::stdout())
-        .chain(fern::log_file("actixtest.log").unwrap())
-        .apply();
-
+    // reading board config
     let config: BoardConfig =
         serde_json::from_str(include_str!("../config.json")).expect("Can't parse config.json");
 
+    // connecting to the database
     let (client, connection) = tokio_postgres::connect(
         format!(
             "dbname=actixtest hostaddr={} user={} password={}",
@@ -274,16 +273,11 @@ async fn main() -> std::io::Result<()> {
     )
     .await
     .unwrap();
-
-    // copypasted from docs.rs/tokio-postgres
     tokio::spawn(async move {
         if let Err(e) = connection.await {
             eprintln!("connection error: {}", e);
         }
     });
-
-    // creating unified address for the server
-    let unified_address = format!("http://{}:{}", config.server_ip, config.server_port);
 
     // selecting where to bind the server
     let mut bound_ip = "0.0.0.0";
@@ -292,11 +286,32 @@ async fn main() -> std::io::Result<()> {
     }
 
     // creating application state
+    let unified_address = format!("http://{}:{}", config.server_ip, config.server_port);
     let application_data = web::Data::new(ApplicationState {
         server_address: Mutex::new(unified_address),
         db_client: Mutex::new(client),
     });
 
+    // starting the logger
+    let logger = fern::Dispatch::new()
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "[{} {}] {}",
+                html_proc::get_time(html_proc::since_epoch()),
+                record.level(),
+                message,
+            ))
+        })
+        .level(log::LevelFilter::Info) // change `Info` to `Debug` for db query logs
+        .chain(std::io::stdout())
+        .chain(fern::log_file("actixtest.log").unwrap())
+        .apply();
+    match logger {
+        Ok(_) => log::info!("Logger started"),
+        Err(e) => println!("WARNING: Failed to start logger: {}", e)
+    };
+
+    // starting the server
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())

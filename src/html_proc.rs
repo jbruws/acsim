@@ -37,7 +37,7 @@ pub async fn format_into_html(
     msg: &str,
     image: &str,
 ) -> String {
-    let mut msg_contents: String;
+    let msg_contents: String;
     // if message has an image...
     if image != "" {
         let mut formatted_img: String;
