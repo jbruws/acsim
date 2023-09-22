@@ -1,118 +1,53 @@
-/* GENERAL ELEMENTS */
+/* MAIN GRID ELEMENTS */
+body {
+}
+
+div#grid_root {
+}
+
+header {
+}
+
+div#message_container {
+}
+
+div#sidebar {
+}
+
+/* SUBMIT FORM */
+table#message_form {
+}
 
 textarea {
-	resize: none;
-	display: block;
-	width: 70%;
-	margin-left: auto;
-	margin-right: auto;
-	white-space: pre-wrap;
 }
-body {
-	line-height: 1.5;
-	font-size: 18px;
-	background-color: #eeeedd;
-}
-
-/* GRID ELEMENTS */
-
-#grid_root {
-	display: grid;
-	grid-template-areas:
-		"hd hd hd hd"
-		"sb ms ms ms"
-		".  ms ms ms";
-	gap: 1rem 1rem;
-	padding: 3rem;
-}
-#header {
-	grid-area: hd;
-	font-size: 1.5rem;
-	padding: 1.2rem;
-	text-align: center;
-	margin-bottom: 1rem;
-	background-color: #ffff99;
-	border: 2px solid black;
-}
-#message_container {
-	margin-top: 0;
-	grid-area: ms;
-}
-#sidebar {
-	grid-area: sb;
-	position: sticky;
-	top: 0.5rem;
-}
-
-/* FORM ELEMENTS */
 
 textarea[name="author"] {
-	grid-area: t_a;
 }
+
 textarea[name="message"] {
-	grid-area: t_m;
 }
+
 label[for="author"] {
-	grid-area: l_a;
 }
+
 label[for="message"] {
-	grid-area: l_m;
 }
+
 input[type="submit"] {
-	grid-area: sbt;
-	margin-left: auto;
-	margin-right: auto;
-	width: 70%;
 }
+
 input[type="file"] {
-	grid-area: fil;
-	margin-left: auto;
-	margin-right: auto;
-	width: 70%;
 }
 
-/* LESSER ELEMENTS */
+/* MESSAGE STRUCTURE */
+div.message {
+}
 
-.message {
-	max-width: 100%;
-	margin-bottom: 1rem;
-	grid-row-gap: 1rem;
-	border-width: 1px 0px;
-	border-style: solid dotted;
-	padding: 5px 30px 15px;
-	background-color: #ffff99;
+p.message_header {
 }
-.message_header {
-	text-align: center;
-	margin-left: auto;
-	margin-right: auto;
+
+a.userimage {
 }
-.message_contents {
-	overflow-wrap: break-word;
-	white-space: pre-line;
-}
-.message_images {
-	padding: 5px;
-	background-color: #ffff77;
-	border-width: 0px 1px;
-	border-style: solid;
-}
-.userimage {
-	max-width: 30%;
-	height: auto;
-	padding: 0.5rem;
-}
-#message_form {
-	border-width: 2px;
-	border-style: solid;
-	display: grid;
-	grid-template-columns: 1fr 4fr;
-	grid-template-areas:
-		"l_a t_a"
-		"l_m t_m"
-		"fil fil"
-		"sbt sbt";
-	padding: 5px;
-	background-color: #ffff99;
-	text-align: center;
+
+div.message_contents {
 }

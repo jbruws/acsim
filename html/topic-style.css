@@ -1,135 +1,51 @@
-/* GENERAL ELEMENTS */
+/* MAIN GRID ELEMENTS */
+body {
+}
+
+div#grid_root {
+}
+
+div#submessage_container {
+}
+
+div#sidebar {
+}
+
+div#head_message {
+}
+
+/* SUBMIT FORM */
+table#message_form {
+}
 
 textarea {
-	grid-area: t;
-	resize: none;
-	display: block;
-	width: 70%;
-	margin-left: auto;
-	margin-right: auto;
-	white-space: pre-wrap;
 }
-label {
-	grid-area: l;
-}
-body {
-	line-height: 1.5;
-	font-size: 18px;
-}
-
-/* GRID ELEMENTS */
-
-#grid_root {
-	display: grid;
-	grid-template-areas:
-		"hd"
-		"ms"
-		"fm";
-	gap: 1rem 1rem;
-	padding: 3rem;
-}
-#message_form {
-	max-width: 60%;
-	grid-area: fm;
-	display: grid;
-	grid-template-columns: 1fr 5fr;
-	grid-template-areas:
-		"l_a t_a"
-		"l_m t_m"
-		"fil fil"
-		"sbt sbt";
-	border-width: 2px;
-	border-style: solid;
-	position: sticky;
-	top: 0.5rem;
-	padding: 5px;
-	background-color: #ffff99;
-	text-align: center;
-	margin-left: auto;
-	margin-right: auto;
-}
-#submessage_container {
-	margin-top: 0;
-	grid-area: ms;
-	max-width: 60%;
-	margin-left: auto;
-	margin-right: auto;
-}
-#head_message {
-	grid-area: hd;
-	width: 80%;
-	max-width: 80%;
-	margin-bottom: 1rem;
-	border-width: 3px 2px;
-	border-style: solid dotted;
-	padding: 5px 30px 15px;
-	background-color: #ffff99;
-	margin-left: auto;
-	margin-right: auto;
-}
-
-/* FORM ELEMENTS */
 
 textarea[name="author"] {
-	grid-area: t_a;
 }
+
 textarea[name="message"] {
-	grid-area: t_m;
 }
+
 label[for="author"] {
-	grid-area: l_a;
 }
+
 label[for="message"] {
-	grid-area: l_m;
 }
+
 input[type="submit"] {
-	grid-area: sbt;
-	margin-left: auto;
-	margin-right: auto;
-	width: 70%;
 }
+
 input[type="file"] {
-	grid-area: fil;
-	margin-left: auto;
-	margin-right: auto;
-	width: 70%;
 }
 
-/* LESSER ELEMENTS */
+/* HEAD MESSAGE STRUCTURE */
+p.head_message_header {
+}
 
-.message_header {
-	text-align: center;
-	margin-left: auto;
-	margin-right: auto;
+/* SUBMESSAGE STRUCTURE */
+div.submessage {
 }
-.submessage {
-	border-width: 1px 0px;
-	border-style: solid dotted;
-	background-color: #ffff99;
-	padding: 5px 30px 15px;
-	margin-left: auto;
-	margin-right: auto;
-	margin-bottom: 1rem;
-}
-.message_header {
-	text-align: center;
-	margin-left: auto;
-	margin-right: auto;
-}
-.message_contents {
-	white-space: pre-line;
-}
-.message_images {
-	padding: 5px;
-	background-color: #ffff77;
-	border-width: 0px 1px;
-	border-style: solid;
-}
-.userimage {
-	max-width: 30%;
-	height: auto;
-	padding: 0.5rem;
-}
-.message_contents {
-	white-space: pre-line;
+
+p.submessage_header {
 }
