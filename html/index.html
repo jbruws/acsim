@@ -13,12 +13,10 @@
 		</header>
 		<div id="sidebar">
 			<form enctype="multipart/form-data" id="message_form" action="/" method="post" autocomplete="off">
-				<label for="author">Name: </label>
-				<textarea type="text" name="author" maxlength="250" required rows="1"></textarea>
+				<textarea placeholder="Author" type="text" name="author" maxlength="250" required></textarea>
 				<br>
-				<label for="message">Message: </label>
-				<textarea type="text" name="message" maxlength="4090" required rows="20"></textarea>
-				<hr>
+				<textarea placeholder="Message" type="text" name="message" maxlength="4090" required></textarea>
+				<br>
 				<input type="file" accept="image/*" name="image">
 				<input type="submit" value="Submit">
 			</form>

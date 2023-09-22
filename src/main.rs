@@ -307,7 +307,7 @@ async fn main() -> std::io::Result<()> {
         .chain(fern::log_file("actixtest.log").unwrap())
         .apply();
     match logger {
-        Ok(_) => log::info!("Logger started"),
+        Ok(_) => log::info!("Board engine starting"),
         Err(e) => println!("WARNING: Failed to start logger: {}", e)
     };
 
