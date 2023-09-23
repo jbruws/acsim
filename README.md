@@ -1,6 +1,6 @@
-# qibe
-**Q**uick **I**mage**b**oard **E**ngine
-Basic message board written in Rust and Actix Web
+# qibe - Quick ImageBoard Engine
+
+Basic message board engine written in Rust and Actix Web.
 
 # Installation
 ## Manual
