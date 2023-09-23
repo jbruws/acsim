@@ -263,7 +263,7 @@ async fn main() -> std::io::Result<()> {
     // connecting to the database
     let (client, connection) = tokio_postgres::connect(
         format!(
-            "dbname=actixtest hostaddr={} user={} password={}",
+            "dbname=qibe_db hostaddr={} user={} password={}",
             config.db_host.as_str(),
             config.db_user.as_str(),
             config.db_password.as_str()
@@ -304,7 +304,7 @@ async fn main() -> std::io::Result<()> {
         })
         .level(log::LevelFilter::Info) // change `Info` to `Debug` for db query logs
         .chain(std::io::stdout())
-        .chain(fern::log_file("actixtest.log").unwrap())
+        .chain(fern::log_file("qibe.log").unwrap())
         .apply();
     match logger {
         Ok(_) => log::info!("Board engine starting"),
