@@ -1,4 +1,4 @@
-# qibe - Quick ImageBoard Engine
+# `qibe` - Quick ImageBoard Engine
 
 Basic message board engine written in Rust and Actix Web.
 
@@ -25,46 +25,15 @@ Basic message board engine written in Rust and Actix Web.
 
 #### 2. PostgreSQL Configuration
 
-1. After installation, user `postgres` should be created automatically. Change its password:
+1. After installation, enter the Postgres shell through `psql`:
     
-    `# passwd postgres *[password_here]*`
+    `$ psql -U postgres`
     
-    Then `su` into it and start `psql`:
+2. Next, create a database named `qibe_db`:
     
-    `# su - postgres`
+    `postgres=# CREATE DATABASE qibe_db;`
     
-    `$ psql`
-    
-2. You are now in the postgresql shell. Create a database named `qibe_db` and connect to it:
-    
-    `CREATE DATABASE qibe_db;`
-    
-    `\c qibe_db`
-    
-3. Create relevant tables:
-    
-  ```
-      qibe_db=# CREATE TABLE messages (
-      qibe_db=#  msgid BIGINT PRIMARY KEY,
-      qibe_db=#  time BIGINT,
-      qibe_db=#  author VARCHAR (255),
-      qibe_db=#  latest_submsg BIGINT,
-      qibe_db=#  image VARCHAR (128),
-      qibe_db=#  msg VARCHAR (4096)
-      qibe_db=# );
-  ```
-    
-  ```
-      qibe_db=# CREATE TABLE submessages (
-      qibe_db=#  parent_msg BIGINT,
-      qibe_db=#  time BIGINT,
-      qibe_db=#  author VARCHAR (255),
-      qibe_db=#  image VARCHAR (128),
-      qibe_db=#  submsg VARCHAR (4096)
-      qibe_db=# );
-  ```
-    
-4. Now, you can enter `exit` twice to exit `psql` and `su`, then proceed to the next step.
+3. Now, you can `exit` from `psql`, then proceed to the next step.
 
 ### 3. QIBE configuration
 
@@ -74,14 +43,28 @@ Basic message board engine written in Rust and Actix Web.
     
     `cd qibe`
     
-2. Once you're in the correct directory, run the `setup.sh` script.
+2. Once you're in the `qibe` directory, run the `setup.sh` script.
     
     `./setup.sh`
+
+3. OPTIONAL: you can add password protection to Postgres. This will be especially useful if you're running Postgres on a machine with multiple users. Enter the shell:
+
+    `psql -U postgres`
+
+    and change the password for user `postgres`:
+
+    `postgres=# \password`
+
+    A prompt will appear. Enter the new password twice and `exit` from the shell.
+
+    Edit the `config.json` file from the `qibe`'s project directory to include the new password in the `db_password` field.
+
+    Finally, you need to edit the `/var/lib/postgres/data/pg_hba.conf` and replace `trust` (in the `METHOD` field) with `md5` in all lines where it's present.
+
+    Now your Postgres installation requires a password for interacting with databases. Qibe will use the password from the config for connection.
     
-    Open the `config.json` file and change the `db_password` entry to include password to `postgres` user you set in 1.2.
-    
-3. Finally, run the program:
+5. Finally, run the program:
     
     `cargo run`
     
-Once the compilation finishes, application logs will start appearing in the console and in `qibe.log` file. Navigate to `127.0.0.1:8080` in your browser, and you should be greeted with QIBE's home page. By default, the server will be accessible with any IP (`0.0.0.0`), **as long as the port 8080 is open.**
+Once the compilation finishes, application logs will start appearing in the console and in `qibe.log` file. Navigate to `127.0.0.1:8080` in your browser, and you should be greeted with Qibe's home page. By default, the server will be accessible with any IP (`0.0.0.0`), **as long as the port 8080 is open.**
