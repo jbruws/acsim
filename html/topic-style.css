@@ -1,19 +1,22 @@
 :root {
-	--bg-dark: rgb(10, 7, 11);
-	--bg-light: rgb(19, 17, 18);
-	--text: rgb(227, 239, 223);
+	--bg: rgb(23,82,87);
+	--bg-msg: rgb(219,213,245);
+	--text: rgb(5,17,18);
 }
 
 /* MAIN GRID ELEMENTS */
 body {
 	line-height: 1.4;
 	font-size: 20px;
-	background-color: var(--bg-dark);
+	background-color: var(--bg);
 	color: var(--text); 
+	overflow: scroll;
+	overflow-wrap: break-word;
 }
 
 div#grid_root {
 	display: grid;
+	grid-template-columns: minmax(0, 1fr);
 	grid-template-areas: 
 		"hd"
 		"ms"
@@ -31,15 +34,18 @@ div#submessage_container {
 div#sidebar {
 	grid-area: sb;
 	display: block;
-	background-color: var(--bg-light);
+	background-color: var(--bg-msg);
 	border: 1px solid var(--text);
 	border-radius: 0.5rem;
-	padding: 0.5rem;
+	width: 75%;
+	margin-left: auto;
+	margin-right: auto;
+	padding: 1rem;
 }
 
 div#head_message {
 	grid-area: hd;
-	background-color: var(--bg-light);
+	background-color: var(--bg-msg);
 	font-size: 125%;
 	border: 2px solid var(--text);
 	border-radius: 0.5rem;
@@ -50,9 +56,8 @@ div#head_message {
 table#message_form {
 	display: inline-grid;
 	grid-template-areas:
-		"fa"
-		"fm"
-		"im sb";
+		"fa im"
+		"fm sb";
 	padding: 1rem;
 	gap: 0.5rem;
 }
@@ -110,7 +115,7 @@ p.head_message_header {
 
 /* SUBMESSAGE STRUCTURE */
 div.submessage {
-	background-color: var(--bg-light);
+	background-color: var(--bg-msg);
 	border: 1px solid var(--text);
 	border-radius: 0.5rem;
 	margin-left: auto;
