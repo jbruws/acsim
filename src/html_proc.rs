@@ -9,10 +9,11 @@ pub enum BoardMessageType {
     Submessage,    // submessages on topic pages
 }
 
+// TODO: i'll probably have to move all those functions to one struct since i have to use DBs
+
 // get seconds elapsed since unix epoch
 pub fn since_epoch() -> i64 {
-    let res = match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
-    {
+    let res = match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
         Ok(n) => n.as_secs().try_into().unwrap(),
         Err(_) => 1,
     };
@@ -36,6 +37,7 @@ pub async fn format_into_html(
     author: &str,
     msg: &str,
     image: &str,
+    board: &str,
 ) -> String {
     let msg_contents: String;
     // if message has an image...
@@ -67,6 +69,7 @@ pub async fn format_into_html(
             include_str!("../templates/message_blocks/message.html"),
             id = id,
             address = address,
+            board = board,
             time = time,
             author = author,
             msg = msg_contents,
@@ -74,6 +77,7 @@ pub async fn format_into_html(
         BoardMessageType::ParentMessage => format!(
             include_str!("../templates/message_blocks/parent_message.html"),
             address = address,
+            board = board,
             time = time,
             author = author,
             id = id,
@@ -90,7 +94,7 @@ pub async fn format_into_html(
     f_result
 }
 
-// removes html tags from message
+// removes html tags from message.
 pub async fn filter_string(inp_string: &String) -> String {
     let filter = Regex::new(r##"<.*?>"##).unwrap();
     String::from(filter.replace_all(inp_string.as_str(), ""))

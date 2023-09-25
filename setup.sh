@@ -8,7 +8,8 @@ echo '
 	"db_password": "change_this",
 	"server_ip": "127.0.0.1",
 	"server_port": 8080,
-	"bind_to_one_ip": false
+	"bind_to_one_ip": false,
+	"boards": ["b", "s", "ca"]
 }
 ' > config.json
 
@@ -17,6 +18,7 @@ echo 'CREATE TABLE IF NOT EXISTS messages (
 		msgid SERIAL PRIMARY KEY,
 		time BIGINT NOT NULL,
 		author VARCHAR (255) NOT NULL,
+		board VARCHAR (16) NOT NULL,
 		latest_submsg BIGINT,
 		image VARCHAR (128),
 		msg VARCHAR (4096) NOT NULL
