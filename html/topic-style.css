@@ -10,6 +10,9 @@ body {
 	font-size: 20px;
 	background-color: var(--bg);
 	color: var(--text); 
+	background-image: url("qibe.png");
+	background-size: 60px;
+	background-repeat: repeat;
 	overflow: scroll;
 	overflow-wrap: break-word;
 }
@@ -21,8 +24,11 @@ div#grid_root {
 		"hd"
 		"ms"
 		"sb";
-	gap: 1rem 1rem;
+	gap: 2rem 1rem;
+	margin-left: auto;
+	margin-right: auto;
 	padding: 2rem;
+	max-width: 60%;
 }
 
 div#submessage_container {
@@ -35,9 +41,9 @@ div#sidebar {
 	grid-area: sb;
 	display: block;
 	background-color: var(--bg-msg);
-	border: 1px solid var(--text);
-	border-radius: 0.5rem;
-	width: 75%;
+	box-shadow: 0.2rem 0.2rem 0.4rem black;
+	border-radius: 0.25rem;
+	width: 100%;
 	margin-left: auto;
 	margin-right: auto;
 	padding: 1rem;
@@ -46,9 +52,10 @@ div#sidebar {
 div#head_message {
 	grid-area: hd;
 	background-color: var(--bg-msg);
-	font-size: 125%;
-	border: 2px solid var(--text);
-	border-radius: 0.5rem;
+	box-shadow: 0.2rem 0.2rem 0.4rem black;
+	width: 100%;
+	border-radius: 0.25rem;
+	margin-right: auto;
 	padding: 1rem;
 }
 
@@ -116,9 +123,8 @@ p.head_message_header {
 /* SUBMESSAGE STRUCTURE */
 div.submessage {
 	background-color: var(--bg-msg);
-	border: 1px solid var(--text);
-	border-radius: 0.5rem;
-	margin-left: auto;
+	box-shadow: 0.2rem 0.2rem 0.4rem black;
+	border-radius: 0.25rem;
 	margin-right: auto;
 	margin-bottom: 1rem;
 	width: 75%;
