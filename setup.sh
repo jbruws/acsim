@@ -6,7 +6,8 @@ echo '
 	"db_host": "127.0.0.1",
 	"db_user": "postgres",
 	"db_password": "change_this",
-	"server_ip": "127.0.0.1",
+	"server_ipv4": "127.0.0.1",
+	"server_ipv6": "::1",
 	"server_port": 8080,
 	"bind_to_one_ip": false,
 	"boards": ["b", "s", "ca"]

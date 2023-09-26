@@ -26,7 +26,9 @@ struct BoardConfig {
     // password used for database connection
     db_password: String,
     // http server's IP. MUST be set even if you're binding to 0.0.0.0
-    server_ip: String,
+    server_ipv4: String,
+    // server's IPv6 address. Leave as ::1 if you don't want to use ipv6
+    server_ipv6: String,
     // http server's port.
     server_port: u16,
     // `true` binds server to values set above, `false` binds to 0.0.0.0
@@ -73,10 +75,13 @@ async fn root() -> impl Responder {
 }
 
 #[get("/{board}")]
-async fn main_page(data: web::Data<ApplicationState>, info: web::Path<BoardInfo>) -> impl Responder {
+async fn main_page(
+    data: web::Data<ApplicationState>,
+    info: web::Path<BoardInfo>,
+) -> impl Responder {
     let boards = data.boards.lock().unwrap();
     if !boards.contains(&info.board) {
-        return HttpResponse::Ok().body("Does not exist")
+        return HttpResponse::Ok().body("Does not exist");
     }
     let server_address = data.server_address.lock().unwrap();
     let client = data.db_client.lock().unwrap();
@@ -84,7 +89,10 @@ async fn main_page(data: web::Data<ApplicationState>, info: web::Path<BoardInfo>
 
     // Restoring messages from DB
     for row in client
-        .query("SELECT * FROM messages WHERE board=($1) ORDER BY latest_submsg ASC", &[&info.board])
+        .query(
+            "SELECT * FROM messages WHERE board=($1) ORDER BY latest_submsg ASC",
+            &[&info.board],
+        )
         .await
         .unwrap()
         .into_iter()
@@ -105,7 +113,11 @@ async fn main_page(data: web::Data<ApplicationState>, info: web::Path<BoardInfo>
             .as_str(),
         );
     }
-    HttpResponse::Ok().body(format!(include_str!("../html/index.html"), board_designation = &info.board.to_string(), messages = inserted_msg))
+    HttpResponse::Ok().body(format!(
+        include_str!("../html/index.html"),
+        board_designation = &info.board.to_string(),
+        messages = inserted_msg
+    ))
 }
 
 #[post("/{board}")]
@@ -171,7 +183,7 @@ async fn message_page(
 ) -> impl Responder {
     let boards = data.boards.lock().unwrap();
     if !boards.contains(&info.board) {
-        return HttpResponse::Ok().body("Does not exist")
+        return HttpResponse::Ok().body("Does not exist");
     }
     let client = data.db_client.lock().unwrap();
     let server_address = data.server_address.lock().unwrap();
@@ -286,7 +298,11 @@ async fn process_submessage_form(
             .await;
         log_query_status(result_update2, "Message table update");
     }
-    web::Redirect::to(format!("{}/{}/topic/{}", &*server_address, info.board, info.message_num)).see_other()
+    web::Redirect::to(format!(
+        "{}/{}/topic/{}",
+        &*server_address, info.board, info.message_num
+    ))
+    .see_other()
 }
 
 #[actix_web::main]
@@ -315,13 +331,15 @@ async fn main() -> std::io::Result<()> {
     });
 
     // selecting where to bind the server
-    let mut bound_ip = "0.0.0.0";
+    let mut bound_ipv4 = "0.0.0.0";
+    let mut bound_ipv6 = "::1";
     if config.bind_to_one_ip {
-        bound_ip = config.server_ip.as_str();
+        bound_ipv4 = config.server_ipv4.as_str();
+        bound_ipv6 = config.server_ipv6.as_str();
     }
 
     // creating application state
-    let unified_address = format!("http://{}:{}", config.server_ip, config.server_port);
+    let unified_address = format!("http://{}:{}", config.server_ipv4, config.server_port);
     let application_data = web::Data::new(ApplicationState {
         server_address: Mutex::new(unified_address),
         db_client: Mutex::new(client),
@@ -343,7 +361,7 @@ async fn main() -> std::io::Result<()> {
         .chain(fern::log_file("qibe.log").unwrap())
         .apply();
     match logger {
-        Ok(_) => log::info!("Board engine starting"),
+        Ok(_) => log::info!("QIBE starting"),
         Err(e) => println!("WARNING: Failed to start logger: {}", e),
     };
 
@@ -360,7 +378,9 @@ async fn main() -> std::io::Result<()> {
             .service(process_submessage_form)
             .service(main_page)
     })
-    .bind((bound_ip, config.server_port))?
+    .bind(format!("localhost:{}", config.server_port).as_str())? // we always bind to localhost
+    .bind((bound_ipv4, config.server_port))?
+    .bind(format!("[{}]:{}", bound_ipv6, config.server_port).as_str())?
     .run()
     .await
 }
