@@ -32,6 +32,7 @@ pub fn get_time(since_epoch: i64) -> String {
 // fits form data into one of several html templates
 pub async fn format_into_html(
     message_type: BoardMessageType,
+    board: &str,
     id: &i64,
     time: &str,
     author: &str,
@@ -46,7 +47,7 @@ pub async fn format_into_html(
         if message_type == BoardMessageType::ParentMessage
             || message_type == BoardMessageType::Submessage
         {
-            formatted_img = String::from(".");
+            formatted_img = String::from("."); // additional dot as a prefix
             formatted_img.push_str(image);
         } else {
             formatted_img = String::from(image);
@@ -66,6 +67,7 @@ pub async fn format_into_html(
     let f_result = match message_type {
         BoardMessageType::Message => format!(
             include_str!("../templates/message_blocks/message.html"),
+            board = board,
             id = id,
             time = time,
             author = author,

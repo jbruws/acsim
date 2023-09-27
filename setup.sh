@@ -10,7 +10,15 @@ echo '
 	"server_ipv6": "::1",
 	"server_port": 8080,
 	"bind_to_one_ip": false,
-	"boards": ["b", "s", "ca"]
+	"boards": {
+		"b": "Random", 
+		"s": "Software",
+		"ca": "Cryptoanarchy"
+	},
+	"taglines": [
+		"you should back your data up NOW!!!",
+		"In Rust We Trust"
+	]
 }
 ' > config.json
 

@@ -8,14 +8,12 @@
 <body>
 	<div id="grid_root">
 		<header id="header">
-			<h1>/{board_designation}/</h1>
-			<p>you should back your data up NOW!!!</p>
+			<h1>/{board_designation}/ - {board_desc}</h1>
+			<p>{random_tagline}</p>
 		</header>
 		<div id="sidebar">
 			<div id="linkbar">
-				<a href="/b">/b/</a>
-				<a href="/s">/s/</a>
-				<a href="/ca">/ca/</a>
+				{board_links}
 			</div>
 			<form enctype="multipart/form-data" id="message_form" action="/{board_designation}" method="post" autocomplete="off">
 				<textarea placeholder="Author" type="text" name="author" maxlength="250" required></textarea>
