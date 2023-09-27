@@ -10,6 +10,7 @@ pub enum BoardMessageType {
 }
 
 // TODO: i'll probably have to move all those functions to one struct since i have to use DBs
+// ...or do i?
 
 // get seconds elapsed since unix epoch
 pub fn since_epoch() -> i64 {
@@ -31,13 +32,11 @@ pub fn get_time(since_epoch: i64) -> String {
 // fits form data into one of several html templates
 pub async fn format_into_html(
     message_type: BoardMessageType,
-    address: &str,
     id: &i64,
     time: &str,
     author: &str,
     msg: &str,
     image: &str,
-    board: &str,
 ) -> String {
     let msg_contents: String;
     // if message has an image...
@@ -68,16 +67,12 @@ pub async fn format_into_html(
         BoardMessageType::Message => format!(
             include_str!("../templates/message_blocks/message.html"),
             id = id,
-            address = address,
-            board = board,
             time = time,
             author = author,
             msg = msg_contents,
         ),
         BoardMessageType::ParentMessage => format!(
             include_str!("../templates/message_blocks/parent_message.html"),
-            address = address,
-            board = board,
             time = time,
             author = author,
             id = id,
@@ -102,9 +97,9 @@ pub async fn filter_string(inp_string: &String) -> String {
 
 // turns message raw text from the database into workable html,
 // which is later piped into format_into_html()
-pub async fn prepare_msg(inp_string: &String, addr: &String) -> String {
-    // "#>" followed by numbers
-    let msg_link_match = Regex::new(r##"#>\d+(\.\d+)?"##).unwrap();
+pub async fn prepare_msg(inp_string: &String) -> String {
+    // in the format "{letters}>{digits}.{digits}"
+    let msg_link_match = Regex::new(r##"\w{1,16}>\d+(\.\d+)?"##).unwrap();
 
     let mut result = String::new();
     let mut start_of_next: usize; // start of next match
@@ -114,16 +109,18 @@ pub async fn prepare_msg(inp_string: &String, addr: &String) -> String {
     let msg_matches_iter = msg_link_match.find_iter(&inp_string);
     for m_raw in msg_matches_iter {
         let m = m_raw.as_str().to_string();
+
         start_of_next = m_raw.start();
         let finished_link: String;
         result.push_str(&inp_string[end_of_last..start_of_next]); // text between matches
+        let board = m.split(">").collect::<Vec<&str>>()[0];
 
-        // if it's a link to a submessage("#>dddd.dd")
+        // if it's a link to a submessage
         if m.contains(".") {
             let link_parts = m.split(".").collect::<Vec<&str>>();
             finished_link = format!(
                 include_str!("../templates/message_contents/msglink.html"),
-                addr,
+                board,
                 &link_parts[0][2..],
                 &link_parts[1],
                 &m
@@ -131,7 +128,7 @@ pub async fn prepare_msg(inp_string: &String, addr: &String) -> String {
         } else {
             finished_link = format!(
                 include_str!("../templates/message_contents/msglink.html"),
-                addr,
+                board,
                 &m[2..],
                 "",
                 &m

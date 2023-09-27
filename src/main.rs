@@ -57,7 +57,6 @@ struct PathInfo {
 }
 
 struct ApplicationState {
-    server_address: Mutex<String>,
     db_client: Mutex<tokio_postgres::Client>,
     boards: Mutex<Vec<String>>,
 }
@@ -83,7 +82,6 @@ async fn main_page(
     if !boards.contains(&info.board) {
         return HttpResponse::Ok().body("Does not exist");
     }
-    let server_address = data.server_address.lock().unwrap();
     let client = data.db_client.lock().unwrap();
     let mut inserted_msg = String::from("");
 
@@ -101,13 +99,11 @@ async fn main_page(
         inserted_msg.push_str(
             html_proc::format_into_html(
                 html_proc::BoardMessageType::Message,
-                &*server_address,
                 &row.get::<usize, i64>(0),        // message id
                 &html_proc::get_time(row.get(1)), // time of creation
                 &html_proc::filter_string(&row.get::<usize, String>(2)).await, // author
-                &html_proc::prepare_msg(&row.get::<usize, String>(3), &*server_address).await, // message contents
+                &html_proc::prepare_msg(&row.get::<usize, String>(3)).await, // message contents
                 &row.get::<usize, String>(4), // associated image
-                &info.board,
             )
             .await
             .as_str(),
@@ -186,7 +182,6 @@ async fn message_page(
         return HttpResponse::Ok().body("Does not exist");
     }
     let client = data.db_client.lock().unwrap();
-    let server_address = data.server_address.lock().unwrap();
     let head_msg: String;
     let head_msg_data = client
         .query_one(
@@ -197,13 +192,11 @@ async fn message_page(
     if let Ok(d) = head_msg_data {
         head_msg = html_proc::format_into_html(
             html_proc::BoardMessageType::ParentMessage,
-            &*server_address,
             &d.get::<usize, i64>(0),        // message id
             &html_proc::get_time(d.get(1)), // time of creation
             &html_proc::filter_string(&d.get::<usize, String>(2)).await, // author
-            &html_proc::prepare_msg(&d.get::<usize, String>(3), &*server_address).await, // message contents
+            &html_proc::prepare_msg(&d.get::<usize, String>(3)).await, // message contents
             &d.get::<usize, String>(4), // associated image
-            &info.board,
         )
         .await;
     } else {
@@ -223,13 +216,11 @@ async fn message_page(
         inserted_submsg.push_str(
             html_proc::format_into_html(
                 html_proc::BoardMessageType::Submessage,
-                &*server_address,
                 &submessage_counter,              // ordinal number
                 &html_proc::get_time(row.get(1)), // time of creation
                 &html_proc::filter_string(&row.get::<usize, String>(2)).await, // author
-                &html_proc::prepare_msg(&row.get::<usize, String>(3), &*server_address).await, // message contents
+                &html_proc::prepare_msg(&row.get::<usize, String>(3)).await, // message contents
                 &row.get::<usize, String>(4), // associated image
-                &info.board,
             )
             .await
             .as_str(),
@@ -256,7 +247,6 @@ async fn process_submessage_form(
         return web::Redirect::to(format!("{}/topic/{}", info.board, info.message_num)).see_other();
     }
     let client = data.db_client.lock().unwrap();
-    let server_address = data.server_address.lock().unwrap();
     let mut new_filepath: PathBuf = PathBuf::new();
 
     if let Some(f) = &form.image {
@@ -299,8 +289,8 @@ async fn process_submessage_form(
         log_query_status(result_update2, "Message table update");
     }
     web::Redirect::to(format!(
-        "{}/{}/topic/{}",
-        &*server_address, info.board, info.message_num
+        "/{}/topic/{}",
+        info.board, info.message_num
     ))
     .see_other()
 }
@@ -339,9 +329,7 @@ async fn main() -> std::io::Result<()> {
     }
 
     // creating application state
-    let unified_address = format!("http://{}:{}", config.server_ipv4, config.server_port);
     let application_data = web::Data::new(ApplicationState {
-        server_address: Mutex::new(unified_address),
         db_client: Mutex::new(client),
         boards: Mutex::new(config.boards),
     });
