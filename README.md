@@ -2,7 +2,7 @@
 
 Basic message board engine written in Rust and Actix Web.
 
-# `config.json` file
+## `config.json` file breakdown
 
 `"db_host"`: IP of the server where `qibe_db` database is hosted.
 
@@ -30,8 +30,7 @@ Basic message board engine written in Rust and Actix Web.
 
 `"taglines"`: List of phrases randomly displayed in board header. Usually humourous. Feel free to put whatever you want here.
 
-# Installation
-## Manual
+## Manual Installation
 #### 1. PostgreSQL Installation
 1. Debian/Ubuntu-based systems:
     
