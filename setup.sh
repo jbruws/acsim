@@ -10,6 +10,10 @@ echo '
 	"server_ipv6": "::1",
 	"server_port": 8080,
 	"bind_to_one_ip": false,
+	"deletion_timer": 600,
+	"bumplimit": 200,
+	"soft_limit": 100,
+	"hard_limit": 125,
 	"boards": {
 		"b": "Random", 
 		"s": "Software",

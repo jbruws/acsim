@@ -21,23 +21,18 @@ mod html_proc;
 
 #[derive(Serialize, Deserialize, Clone)]
 struct BoardConfig {
-    // IP address (numeric!) of the server where database is hosted
     db_host: String,
-    // username used for database connection
     db_user: String,
-    // password used for database connection
     db_password: String,
-    // http server's IP. MUST be set even if you're binding to 0.0.0.0
     server_ipv4: String,
-    // server's IPv6 address. Leave as ::1 if you don't want to use ipv6
     server_ipv6: String,
-    // http server's port.
     server_port: u16,
-    // `true` binds server to values set above, `false` binds to 0.0.0.0
     bind_to_one_ip: bool,
-    // list of boards the site offers and their subject matter
+    deletion_timer: u16,
+    bumplimit: u16,
+    soft_limit: u16,
+    hard_limit: u16,
     boards: HashMap<String, String>,
-    // the funny
     taglines: Vec<String>,
 }
 
@@ -108,13 +103,13 @@ async fn main_page(
                 &html_proc::get_time(row.get(1)), // time of creation
                 &html_proc::filter_string(&row.get::<usize, String>(2)).await, // author
                 &html_proc::prepare_msg(&row.get::<usize, String>(3)).await, // message contents
-                &row.get::<usize, String>(4), // associated image
+                &row.get::<usize, String>(4),     // associated image
             )
             .await
             .as_str(),
         );
     }
-    
+
     let mut board_links = String::new();
     for c in config.boards.keys() {
         board_links.push_str(&format!("<a href=\"/{}\">/{}/</a>\n ", c, c));
@@ -123,7 +118,7 @@ async fn main_page(
     HttpResponse::Ok().body(format!(
         include_str!("../html/index.html"),
         board_designation = &info.board.to_string(),
-        board_desc = &config.boards.get(&info.board).unwrap_or(&String::from("")), 
+        board_desc = &config.boards.get(&info.board).unwrap_or(&String::from("")),
         random_tagline = &config.taglines.choose(&mut rand::thread_rng()).unwrap(),
         board_links = board_links,
         messages = inserted_msg
@@ -167,6 +162,7 @@ async fn process_form(
         let filtered_author = html_proc::filter_string(&form.author).await;
         let filtered_msg = html_proc::filter_string(&form.message).await;
 
+
         let result_update = client
             .execute(
                 "INSERT INTO messages(time, author, msg, image, latest_submsg, board) VALUES (($1), ($2), ($3), ($4), ($5), ($6))",
@@ -181,6 +177,22 @@ async fn process_form(
             )
             .await;
         log_query_status(result_update, "Message table insertion");
+
+        // after sending, get number of messages on the board
+        let msg_count = client
+            .query_one(
+                "SELECT COUNT(msgid) FROM messages WHERE board=($1)",
+                &[&info.board],
+            )
+            .await
+            .unwrap()
+            .get::<usize, i64>(0);
+
+        // delete a message if total message number is over the hard limit
+        if msg_count > config.hard_limit.into() {
+            let deletion_status = client.execute("DELETE FROM messages WHERE latest_submsg = (SELECT MIN(latest_submsg) FROM messages WHERE board=($1))", &[&info.board]).await;
+            log_query_status(deletion_status, "Inactive topic deletion (soft limit)");
+        }
     }
     web::Redirect::to(format!("/{}", info.board)).see_other()
 }
@@ -211,7 +223,7 @@ async fn message_page(
             &html_proc::get_time(d.get(1)), // time of creation
             &html_proc::filter_string(&d.get::<usize, String>(2)).await, // author
             &html_proc::prepare_msg(&d.get::<usize, String>(3)).await, // message contents
-            &d.get::<usize, String>(4), // associated image
+            &d.get::<usize, String>(4),     // associated image
         )
         .await;
     } else {
@@ -236,7 +248,7 @@ async fn message_page(
                 &html_proc::get_time(row.get(1)), // time of creation
                 &html_proc::filter_string(&row.get::<usize, String>(2)).await, // author
                 &html_proc::prepare_msg(&row.get::<usize, String>(3)).await, // message contents
-                &row.get::<usize, String>(4), // associated image
+                &row.get::<usize, String>(4),     // associated image
             )
             .await
             .as_str(),
@@ -296,19 +308,52 @@ async fn process_submessage_form(
             .await;
         log_query_status(result_update, "Submessage table insertion");
 
-        let result_update2 = client
-            .execute(
-                "UPDATE messages SET latest_submsg = ($1) WHERE msgid = ($2)",
-                &[&since_epoch, &info.message_num],
+        // counting submessages for given message
+        let submsg_count = client
+            .query_one(
+                "SELECT COUNT(*) FROM submessages WHERE parent_msg=($1)",
+                &[&info.message_num],
             )
-            .await;
-        log_query_status(result_update2, "Message table update");
+            .await
+            .unwrap()
+            .get::<usize, i64>(0);
+
+        // if number of submessages is below the bumplimit, update activity of parent msg
+        if submsg_count <= config.bumplimit.into() {
+            let result_update2 = client
+                .execute(
+                    "UPDATE messages SET latest_submsg = ($1) WHERE msgid = ($2)",
+                    &[&since_epoch, &info.message_num],
+                )
+                .await;
+            log_query_status(result_update2, "Message table update");
+        }
     }
-    web::Redirect::to(format!(
-        "/{}/topic/{}",
-        info.board, info.message_num
-    ))
-    .see_other()
+    web::Redirect::to(format!("/{}/topic/{}", info.board, info.message_num)).see_other()
+}
+
+// this function does not yet work, since i somehow need to pass Client
+// to the function (to make queries work) without cloning it
+async fn deletion_loop(client: tokio_postgres::Client, config: &BoardConfig) {
+    loop {
+        // interval between deletion attempts
+        tokio::time::sleep(tokio::time::Duration::from_secs(
+            config.deletion_timer.into(),
+        )).await;
+
+        // looking across all boards
+        for i in config.boards.keys() {
+            let msg_count = client
+                .query_one("SELECT COUNT(msgid) FROM messages WHERE board=($1)", &[&i])
+                .await
+                .unwrap()
+                .get::<usize, i64>(0);
+            if msg_count > config.soft_limit.into() {
+                let deletion_status = client.execute("DELETE FROM messages WHERE latest_submsg = (SELECT MIN(latest_submsg) FROM messages WHERE board=($1))", &[&i]).await;
+                log_query_status(deletion_status, "Inactive topic deletion (soft limit)");
+            }
+        }
+    }
 }
 
 #[actix_web::main]
@@ -330,6 +375,7 @@ async fn main() -> std::io::Result<()> {
     )
     .await
     .unwrap();
+
     tokio::spawn(async move {
         if let Err(e) = connection.await {
             eprintln!("connection error: {}", e);
@@ -368,6 +414,9 @@ async fn main() -> std::io::Result<()> {
         Ok(_) => log::info!("QIBE starting"),
         Err(e) => println!("WARNING: Failed to start logger: {}", e),
     };
+
+    // start soft limit message deletion loop
+    //deletion_loop(client, &config);
 
     // starting the server
     HttpServer::new(move || {

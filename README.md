@@ -2,6 +2,34 @@
 
 Basic message board engine written in Rust and Actix Web.
 
+# `config.json` file
+
+`"db_host"`: IP of the server where `qibe_db` database is hosted.
+
+`"db_user"`: User which is used to log into the database. Usually it's the default, `postgres`.
+
+`"db_password"`: Password for the DB.
+
+`"server_ipv4"`: IPv4 address of the web server.
+
+`"server_ipv6"`: IPv6 address of the web server.
+
+`"server_port"`: Port which is used for serving pages.
+
+`"bind_to_one_ip"`: Only bind to IPs specified in `server_ipv4` and `server_ipv6` instead of binding to all available addresses
+
+`"deletion_timer"`: After this many seconds, the server will delete the least active topic (if number of topics on a given board is above `soft_limit`)
+
+`"bumplimit"`: After this many submessages, a topic stops updating its `latest_submsg` field (becoming inactive in the server's eyes)
+
+`"soft_limit"`: Number of messages on a board required to attempt inactive topic deletion every `deletion_timer` seconds.
+
+`"hard_limit"`: If the number of messages on a board exceeds this number, board's least active topic will be deleted when a new one is submitted.
+
+`"boards"`: Dictionary (`HashMap`) containing letters (board designations) and their main topics.
+
+`"taglines"`: List of phrases randomly displayed in board header. Usually humourous. Feel free to put whatever you want here.
+
 # Installation
 ## Manual
 #### 1. PostgreSQL Installation

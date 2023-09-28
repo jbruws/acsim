@@ -9,9 +9,6 @@ pub enum BoardMessageType {
     Submessage,    // submessages on topic pages
 }
 
-// TODO: i'll probably have to move all those functions to one struct since i have to use DBs
-// ...or do i?
-
 // get seconds elapsed since unix epoch
 pub fn since_epoch() -> i64 {
     let res = match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
