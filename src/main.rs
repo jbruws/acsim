@@ -365,7 +365,7 @@ async fn main() -> std::io::Result<()> {
     // connecting to the database
     let (client, connection) = tokio_postgres::connect(
         format!(
-            "dbname=qibe_db hostaddr={} user={} password={}",
+            "dbname=acsim_db hostaddr={} user={} password={}",
             config.db_host.as_str(),
             config.db_user.as_str(),
             config.db_password.as_str()
@@ -408,10 +408,10 @@ async fn main() -> std::io::Result<()> {
         })
         .level(log::LevelFilter::Info) // change `Info` to `Debug` for db query logs
         .chain(std::io::stdout())
-        .chain(fern::log_file("qibe.log").unwrap())
+        .chain(fern::log_file("acsim.log").unwrap())
         .apply();
     match logger {
-        Ok(_) => log::info!("QIBE starting"),
+        Ok(_) => log::info!("ACSIM starting"),
         Err(e) => println!("WARNING: Failed to start logger: {}", e),
     };
 

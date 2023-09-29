@@ -112,23 +112,23 @@ pub async fn prepare_msg(inp_string: &String) -> String {
         start_of_next = m_raw.start();
         let finished_link: String;
         result.push_str(&inp_string[end_of_last..start_of_next]); // text between matches
-        let board = m.split(">").collect::<Vec<&str>>()[0];
+        let separated = m.split(">").collect::<Vec<&str>>();
 
         // if it's a link to a submessage
         if m.contains(".") {
-            let link_parts = m.split(".").collect::<Vec<&str>>();
+            let link_parts = separated[1].split(".").collect::<Vec<&str>>();
             finished_link = format!(
                 include_str!("../templates/message_contents/msglink.html"),
-                board,
-                &link_parts[0][2..],
-                &link_parts[1],
+                separated[0],
+                link_parts[0],
+                link_parts[1],
                 &m
             );
         } else {
             finished_link = format!(
                 include_str!("../templates/message_contents/msglink.html"),
-                board,
-                &m[2..],
+                separated[0],
+                separated[1],
                 "",
                 &m
             );

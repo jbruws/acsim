@@ -10,8 +10,8 @@ body {
 	font-size: 20px;
 	background-color: var(--bg);
 	color: var(--text); 
-	background-image: url("qibe.png");
-	background-size: 60px;
+	background-image: url("acsim.png");
+	background-size: 80px;
 	background-repeat: repeat;
 	overflow: scroll;
 	overflow-wrap: break-word;

@@ -1,6 +1,8 @@
 # Setting up environment for the server
+echo 'Creating directory for user images'
 mkdir ./user_images
-touch config.json
+
+echo 'Creating default config file for server'
 echo '
 {
 	"db_host": "127.0.0.1",
@@ -27,6 +29,10 @@ echo '
 ' > config.json
 
 # Creating database tables
+echo 'Creating postgres database'
+createdb -U postgres acsim_db 
+
+echo 'Creating table scheme'
 echo 'CREATE TABLE IF NOT EXISTS messages (
 		msgid SERIAL PRIMARY KEY,
 		time BIGINT NOT NULL,
@@ -42,4 +48,6 @@ echo 'CREATE TABLE IF NOT EXISTS messages (
 		author VARCHAR (255) NOT NULL,
 		image VARCHAR (128),
 		submsg VARCHAR (4096) NOT NULL
-	);' | psql -U postgres -d qibe_db;
+	);' | psql -U postgres -d acsim_db;
+
+echo 'Success'
