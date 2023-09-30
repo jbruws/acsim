@@ -60,17 +60,17 @@ Basic message board engine written in Rust and Actix Web.
     
     `cd acsim`
     
-2. Once you're in the `acsim` directory, run the `setup.sh` script.
+2. Once you're in the `acsim` directory, run the `setup.sh` script with the username you wish to use to create and modify databases.
     
-    `./setup.sh`
+    `./setup.sh [postgres_username]`
 
 3. OPTIONAL: you can add password protection to Postgres. This will be especially useful if you're running Postgres on a machine with multiple users. Enter the shell:
 
-    `psql -U postgres`
+    `psql -U [postgres_username]`
 
-    and change the password for user `postgres`:
+    and change the password for your user:
 
-    `postgres=# \password`
+    `[postgres_username]=# \password`
 
     A prompt will appear. Enter the new password twice and `exit` from the shell.
 

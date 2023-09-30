@@ -6,7 +6,7 @@ echo 'Creating default config file for server'
 echo '
 {
 	"db_host": "127.0.0.1",
-	"db_user": "postgres",
+	"db_user": "$1",
 	"db_password": "change_this",
 	"server_ipv4": "127.0.0.1",
 	"server_ipv6": "::1",
@@ -30,24 +30,24 @@ echo '
 
 # Creating database tables
 echo 'Creating postgres database'
-createdb -U postgres acsim_db 
+createdb -U $1 acsim_db 
 
 echo 'Creating table scheme'
 echo 'CREATE TABLE IF NOT EXISTS messages (
-		msgid SERIAL PRIMARY KEY,
+		msgid BIGSERIAL PRIMARY KEY,
 		time BIGINT NOT NULL,
 		author VARCHAR (255) NOT NULL,
-		board VARCHAR (16) NOT NULL,
-		latest_submsg BIGINT,
+		msg VARCHAR (4096) NOT NULL,
 		image VARCHAR (128),
-		msg VARCHAR (4096) NOT NULL
+		latest_submsg BIGINT,
+		board VARCHAR (16) NOT NULL
 	);
 	CREATE TABLE IF NOT EXISTS submessages (
 		parent_msg BIGINT NOT NULL,
 		time BIGINT NOT NULL,
 		author VARCHAR (255) NOT NULL,
-		image VARCHAR (128),
-		submsg VARCHAR (4096) NOT NULL
-	);' | psql -U postgres -d acsim_db;
+		submsg VARCHAR (4096) NOT NULL,
+		image VARCHAR (128)
+	);' | psql -U $1 -d acsim_db;
 
 echo 'Success'
