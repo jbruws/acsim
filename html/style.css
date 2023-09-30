@@ -23,19 +23,29 @@ div#grid_root {
 	grid-template-areas: 
 		"hd hd"
 		"sb ms"
-		".  ms";
+		".  ms"
+		"ft ft";
 	gap: 2rem 1rem;
 	padding: 2rem;
 }
 
-header {
-	grid-area: hd;
+header, footer {
 	display: block;
 	background-color: var(--bg-msg);
 	box-shadow: 0.2rem 0.2rem 0.4rem black;
-	font-size: 125%;
 	text-align: center;
 	border-radius: 0.25rem;
+}
+
+header {
+	grid-area: hd;
+	font-size: 125%;
+}
+
+footer {
+	grid-area: ft;
+	font-size: 75%;
+	padding: 1rem;
 }
 
 div#message_container {
