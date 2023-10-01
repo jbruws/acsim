@@ -126,7 +126,7 @@ async fn process_form(
                 .file_name
                 .as_ref()
                 .expect("no file name")
-                .split(".")
+                .split('.')
                 .collect::<Vec<&str>>();
             let new_name = rand::random::<u64>().to_string();
             new_filepath = PathBuf::from(format!("./user_images/{}.{}", new_name, orig_name[1]));
@@ -148,7 +148,7 @@ async fn process_form(
                 since_epoch,
                 &filtered_author,
                 &filtered_msg,
-                &new_filepath.to_str().unwrap(),
+                new_filepath.to_str().unwrap(),
                 since_epoch,
                 &info.board,
             )

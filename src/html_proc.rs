@@ -37,7 +37,7 @@ pub async fn format_into_html(
 ) -> String {
     let msg_contents: String;
     // if message has an image...
-    if image != "" {
+    if !image.is_empty() {
         let mut formatted_img: String;
         // for messages in topics, we need do descend to parent dir
         if message_type == BoardMessageType::ParentMessage
@@ -87,14 +87,14 @@ pub async fn format_into_html(
 }
 
 // removes html tags from message.
-pub async fn filter_string(inp_string: &String) -> String {
+pub async fn filter_string(inp_string: &str) -> String {
     let filter = Regex::new(r##"<.*?>"##).unwrap();
-    String::from(filter.replace_all(inp_string.as_str(), ""))
+    String::from(filter.replace_all(inp_string, ""))
 }
 
 // turns message raw text from the database into workable html,
 // which is later piped into format_into_html()
-pub async fn prepare_msg(inp_string: &String) -> String {
+pub async fn prepare_msg(inp_string: &str) -> String {
     // in the format "{letters}>{digits}.{digits}"
     let msg_link_match = Regex::new(r##"\w{1,16}>\d+(\.\d+)?"##).unwrap();
 
@@ -103,28 +103,28 @@ pub async fn prepare_msg(inp_string: &String) -> String {
     let mut end_of_last: usize = 0; // end of previous match
 
     // inserting links to other messages
-    let msg_matches_iter = msg_link_match.find_iter(&inp_string);
+    let msg_matches_iter = msg_link_match.find_iter(inp_string);
     for m_raw in msg_matches_iter {
         let m = m_raw.as_str().to_string();
 
         start_of_next = m_raw.start();
-        let finished_link: String;
         result.push_str(&inp_string[end_of_last..start_of_next]); // text between matches
-        let separated = m.split(">").collect::<Vec<&str>>();
+        let separated = m.split('>').collect::<Vec<&str>>();
 
         // if it's a link to a submessage
-        if m.contains(".") {
-            let link_parts = separated[1].split(".").collect::<Vec<&str>>();
-            finished_link = format!(
+        let finished_link: String = if m.contains('.') {
+            let link_parts = separated[1].split('.').collect::<Vec<&str>>();
+            format!(
                 include_str!("../templates/message_contents/msglink.html"),
                 separated[0], link_parts[0], link_parts[1], &m
-            );
+            )
         } else {
-            finished_link = format!(
+            format!(
                 include_str!("../templates/message_contents/msglink.html"),
                 separated[0], separated[1], "", &m
-            );
-        }
+            )
+        };
+
         // trimming a newline (that is there for some reason)
         result.push_str(&finished_link[..finished_link.len() - 1]);
         end_of_last = m_raw.end();

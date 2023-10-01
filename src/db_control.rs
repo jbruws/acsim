@@ -44,8 +44,8 @@ impl DatabaseWrapper {
             )
             .await
         {
-            Ok(r) => return Ok(r.get::<usize, i64>(0)),
-            Err(e) => return Err(e),
+            Ok(r) => Ok(r.get::<usize, i64>(0)),
+            Err(e) => Err(e),
         }
     }
 
@@ -58,8 +58,8 @@ impl DatabaseWrapper {
             )
             .await
         {
-            Ok(r) => return Ok(r.get::<usize, i64>(0)),
-            Err(e) => return Err(e),
+            Ok(r) => Ok(r.get::<usize, i64>(0)),
+            Err(e) => Err(e),
         }
     }
 
