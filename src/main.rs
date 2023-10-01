@@ -3,17 +3,11 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Mutex;
 // actix and serde
-use actix_files;
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{get, middleware::Logger, post, web, App, HttpResponse, HttpServer, Responder};
 use serde::{Deserialize, Serialize};
-use serde_json;
 // misc
-use fern;
-use log;
-use rand;
 use rand::seq::SliceRandom;
-use tokio;
 
 // functions for turning plaintext db data into html
 mod html_proc;
@@ -104,8 +98,8 @@ async fn main_page(
     HttpResponse::Ok().body(format!(
         include_str!("../html/index.html"),
         board_designation = &info.board.to_string(),
-        board_desc = &config.boards.get(&info.board).unwrap_or(&String::from("")),
-        random_tagline = &config.taglines.choose(&mut rand::thread_rng()).unwrap(),
+        board_desc = *config.boards.get(&info.board).unwrap_or(&String::from("")),
+        random_tagline = *config.taglines.choose(&mut rand::thread_rng()).unwrap(),
         board_links = board_links,
         messages = inserted_msg
     ))
@@ -117,12 +111,13 @@ async fn process_form(
     info: web::Path<BoardInfo>,
     data: web::Data<ApplicationState>,
 ) -> impl Responder {
-    let client = data.db_client.lock().unwrap();
-    let mut new_filepath: PathBuf = PathBuf::new();
     let config = data.config.lock().unwrap();
     if !config.boards.contains_key(&info.board) {
-        return web::Redirect::to(format!("/{}", info.board)).see_other();
+        return web::Redirect::to("/").see_other();
     }
+
+    let client = data.db_client.lock().unwrap();
+    let mut new_filepath: PathBuf = PathBuf::new();
 
     if let Some(f) = &form.image {
         let temp_file_path = f.file.path();
@@ -167,6 +162,7 @@ async fn process_form(
             client.delete_least_active(&info.board).await;
         }
     }
+
     web::Redirect::to(format!("/{}", info.board)).see_other()
 }
 
@@ -245,7 +241,7 @@ async fn process_submessage_form(
                 .file_name
                 .as_ref()
                 .expect("no file name")
-                .split(".")
+                .split('.')
                 .collect::<Vec<&str>>();
             let new_name = rand::random::<u64>().to_string();
             new_filepath = PathBuf::from(format!("./user_images/{}.{}", new_name, orig_name[1]));
@@ -267,7 +263,7 @@ async fn process_submessage_form(
                 since_epoch,
                 &filtered_author,
                 &filtered_msg,
-                &new_filepath.to_str().unwrap(),
+                new_filepath.to_str().unwrap(),
             )
             .await;
 
@@ -296,9 +292,9 @@ async fn deletion_loop(client: db_control::DatabaseWrapper, config: &BoardConfig
 
         // looking across all boards
         for i in config.boards.keys() {
-            let msg_count = client.count_messages(&i).await.unwrap();
+            let msg_count = client.count_messages(i).await.unwrap();
             if msg_count > config.soft_limit.into() {
-                client.delete_least_active(&i).await;
+                client.delete_least_active(i).await;
             }
         }
     }

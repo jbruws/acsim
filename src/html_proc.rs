@@ -11,11 +11,10 @@ pub enum BoardMessageType {
 
 // get seconds elapsed since unix epoch
 pub fn since_epoch() -> i64 {
-    let res = match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
+    match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
         Ok(n) => n.as_secs().try_into().unwrap(),
         Err(_) => 1,
-    };
-    res
+    }
 }
 
 // returns current date in time in 'YYYY-MM-DD hh:mm:ss' 24-hour format
@@ -61,7 +60,7 @@ pub async fn format_into_html(
         );
     }
 
-    let f_result = match message_type {
+    match message_type {
         BoardMessageType::Message => format!(
             include_str!("../templates/message_blocks/message.html"),
             board = board,
@@ -84,8 +83,7 @@ pub async fn format_into_html(
             author = author,
             msg = msg_contents,
         ),
-    };
-    f_result
+    }
 }
 
 // removes html tags from message.

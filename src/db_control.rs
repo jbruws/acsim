@@ -1,5 +1,3 @@
-use tokio;
-use tokio_postgres;
 use tokio_postgres::error::Error;
 use tokio_postgres::row::Row;
 
