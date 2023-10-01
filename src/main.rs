@@ -14,7 +14,6 @@ use log;
 use rand;
 use rand::seq::SliceRandom;
 use tokio;
-use tokio_postgres;
 
 // functions for turning plaintext db data into html
 mod html_proc;
@@ -59,15 +58,8 @@ struct PathInfo {
 }
 
 struct ApplicationState {
-    db_client: Mutex<tokio_postgres::Client>,
+    db_client: Mutex<db_control::DatabaseWrapper>,
     config: Mutex<BoardConfig>,
-}
-
-fn log_query_status(status: Result<u64, tokio_postgres::error::Error>, operation: &str) {
-    match status {
-        Ok(v) => log::debug!("{} success: {}", operation, v),
-        Err(e) => log::error!("{} failure: {}", operation, e),
-    };
 }
 
 #[get("/")]
@@ -88,16 +80,7 @@ async fn main_page(
     let mut inserted_msg = String::from("");
 
     // Restoring messages from DB
-    for row in client
-        .query(
-            "SELECT * FROM messages WHERE board=($1) ORDER BY latest_submsg ASC",
-            &[&info.board],
-        )
-        .await
-        .unwrap()
-        .into_iter()
-        .rev()
-    {
+    for row in client.get_messages(&info.board).await.unwrap().into_iter() {
         inserted_msg.push_str(
             html_proc::format_into_html(
                 html_proc::BoardMessageType::Message,
@@ -165,35 +148,23 @@ async fn process_form(
         let filtered_author = html_proc::filter_string(&form.author).await;
         let filtered_msg = html_proc::filter_string(&form.message).await;
 
-        let result_update = client
-            .execute(
-                "INSERT INTO messages(time, author, msg, image, latest_submsg, board) VALUES (($1), ($2), ($3), ($4), ($5), ($6))",
-                &[
-                    &since_epoch,
-                    &filtered_author,
-                    &filtered_msg,
-                    &new_filepath.to_str().unwrap(),
-                    &since_epoch,
-                    &info.board,
-                ],
+        client
+            .insert_to_messages(
+                since_epoch,
+                &filtered_author,
+                &filtered_msg,
+                &new_filepath.to_str().unwrap(),
+                since_epoch,
+                &info.board,
             )
             .await;
-        log_query_status(result_update, "Message table insertion");
 
         // after sending, get number of messages on the board
-        let msg_count = client
-            .query_one(
-                "SELECT COUNT(msgid) FROM messages WHERE board=($1)",
-                &[&info.board],
-            )
-            .await
-            .unwrap()
-            .get::<usize, i64>(0);
+        let msg_count = client.count_messages(&info.board).await.unwrap();
 
         // delete a message if total message number is over the hard limit
         if msg_count > config.hard_limit.into() {
-            let deletion_status = client.execute("DELETE FROM messages WHERE latest_submsg = (SELECT MIN(latest_submsg) FROM messages WHERE board=($1))", &[&info.board]).await;
-            log_query_status(deletion_status, "Inactive topic deletion (soft limit)");
+            client.delete_least_active(&info.board).await;
         }
     }
     web::Redirect::to(format!("/{}", info.board)).see_other()
@@ -211,12 +182,7 @@ async fn message_page(
     }
     let client = data.db_client.lock().unwrap();
     let head_msg: String;
-    let head_msg_data = client
-        .query_one(
-            "SELECT * FROM messages WHERE msgid=($1)",
-            &[&info.message_num],
-        )
-        .await;
+    let head_msg_data = client.get_single_message(info.message_num).await;
     if let Ok(d) = head_msg_data {
         head_msg = html_proc::format_into_html(
             html_proc::BoardMessageType::ParentMessage,
@@ -233,14 +199,7 @@ async fn message_page(
     }
     let mut inserted_submsg = String::from("");
     let mut submessage_counter = 0;
-    for row in client
-        .query(
-            "SELECT * FROM submessages WHERE parent_msg=($1)",
-            &[&info.message_num],
-        )
-        .await
-        .unwrap()
-    {
+    for row in client.get_submessages(info.message_num).await.unwrap() {
         submessage_counter += 1;
         inserted_submsg.push_str(
             html_proc::format_into_html(
@@ -298,37 +257,28 @@ async fn process_submessage_form(
     // getting time
     let since_epoch = html_proc::since_epoch();
 
-    // if fits, push new message into DB and vector
+    // if fits, push new message into DB
     if form.author.len() < 254 && form.message.len() < 4094 {
         let filtered_author = html_proc::filter_string(&form.author).await;
         let filtered_msg = html_proc::filter_string(&form.message).await;
-        let result_update = client
-            .execute(
-                "INSERT INTO submessages(parent_msg, time, author, submsg, image) VALUES (($1), ($2), ($3), ($4), ($5))",
-                &[&info.message_num, &since_epoch, &filtered_author, &filtered_msg, &new_filepath.to_str().unwrap()],
+        client
+            .insert_to_submessages(
+                info.message_num,
+                since_epoch,
+                &filtered_author,
+                &filtered_msg,
+                &new_filepath.to_str().unwrap(),
             )
             .await;
-        log_query_status(result_update, "Submessage table insertion");
 
         // counting submessages for given message
-        let submsg_count = client
-            .query_one(
-                "SELECT COUNT(*) FROM submessages WHERE parent_msg=($1)",
-                &[&info.message_num],
-            )
-            .await
-            .unwrap()
-            .get::<usize, i64>(0);
+        let submsg_count = client.count_submessages(info.message_num).await.unwrap();
 
         // if number of submessages is below the bumplimit, update activity of parent msg
         if submsg_count <= config.bumplimit.into() {
-            let result_update2 = client
-                .execute(
-                    "UPDATE messages SET latest_submsg = ($1) WHERE msgid = ($2)",
-                    &[&since_epoch, &info.message_num],
-                )
+            client
+                .update_message_activity(since_epoch, info.message_num)
                 .await;
-            log_query_status(result_update2, "Message table update");
         }
     }
     web::Redirect::to(format!("/{}/topic/{}", info.board, info.message_num)).see_other()
@@ -336,7 +286,7 @@ async fn process_submessage_form(
 
 // this function does not yet work, since i somehow need to pass Client
 // to the function (to make queries work) without cloning it
-async fn deletion_loop(client: tokio_postgres::Client, config: &BoardConfig) {
+async fn deletion_loop(client: db_control::DatabaseWrapper, config: &BoardConfig) {
     loop {
         // interval between deletion attempts
         tokio::time::sleep(tokio::time::Duration::from_secs(
@@ -346,14 +296,9 @@ async fn deletion_loop(client: tokio_postgres::Client, config: &BoardConfig) {
 
         // looking across all boards
         for i in config.boards.keys() {
-            let msg_count = client
-                .query_one("SELECT COUNT(msgid) FROM messages WHERE board=($1)", &[&i])
-                .await
-                .unwrap()
-                .get::<usize, i64>(0);
+            let msg_count = client.count_messages(&i).await.unwrap();
             if msg_count > config.soft_limit.into() {
-                let deletion_status = client.execute("DELETE FROM messages WHERE latest_submsg = (SELECT MIN(latest_submsg) FROM messages WHERE board=($1))", &[&i]).await;
-                log_query_status(deletion_status, "Inactive topic deletion (soft limit)");
+                client.delete_least_active(&i).await;
             }
         }
     }
@@ -365,25 +310,10 @@ async fn main() -> std::io::Result<()> {
     let config: BoardConfig =
         serde_json::from_str(include_str!("../config.json")).expect("Can't parse config.json");
 
-    // connecting to the database
-    let (client, connection) = tokio_postgres::connect(
-        format!(
-            "dbname=acsim_db hostaddr={} user={} password={}",
-            config.db_host.as_str(),
-            config.db_user.as_str(),
-            config.db_password.as_str()
-        )
-        .as_str(),
-        tokio_postgres::NoTls,
-    )
-    .await
-    .unwrap();
-
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            eprintln!("connection error: {}", e);
-        }
-    });
+    // creating db connection through DatabaseWrapper
+    let client =
+        db_control::DatabaseWrapper::new(&config.db_host, &config.db_user, &config.db_password)
+            .await;
 
     // selecting where to bind the server
     let mut bound_ipv4 = "0.0.0.0";
