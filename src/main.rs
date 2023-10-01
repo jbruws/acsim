@@ -19,6 +19,9 @@ use tokio_postgres;
 // functions for turning plaintext db data into html
 mod html_proc;
 
+// database functionality
+mod db_control;
+
 #[derive(Serialize, Deserialize, Clone)]
 struct BoardConfig {
     db_host: String,
@@ -161,7 +164,6 @@ async fn process_form(
     if form.author.len() < 254 && form.message.len() < 4094 {
         let filtered_author = html_proc::filter_string(&form.author).await;
         let filtered_msg = html_proc::filter_string(&form.message).await;
-
 
         let result_update = client
             .execute(
@@ -339,7 +341,8 @@ async fn deletion_loop(client: tokio_postgres::Client, config: &BoardConfig) {
         // interval between deletion attempts
         tokio::time::sleep(tokio::time::Duration::from_secs(
             config.deletion_timer.into(),
-        )).await;
+        ))
+        .await;
 
         // looking across all boards
         for i in config.boards.keys() {
@@ -406,7 +409,7 @@ async fn main() -> std::io::Result<()> {
                 message,
             ))
         })
-        .level(log::LevelFilter::Info) // change `Info` to `Debug` for db query logs
+        .level(log::LevelFilter::Debug) // change `Info` to `Debug` for db query logs
         .chain(std::io::stdout())
         .chain(fern::log_file("acsim.log").unwrap())
         .apply();

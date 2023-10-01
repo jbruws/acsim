@@ -119,18 +119,12 @@ pub async fn prepare_msg(inp_string: &String) -> String {
             let link_parts = separated[1].split(".").collect::<Vec<&str>>();
             finished_link = format!(
                 include_str!("../templates/message_contents/msglink.html"),
-                separated[0],
-                link_parts[0],
-                link_parts[1],
-                &m
+                separated[0], link_parts[0], link_parts[1], &m
             );
         } else {
             finished_link = format!(
                 include_str!("../templates/message_contents/msglink.html"),
-                separated[0],
-                separated[1],
-                "",
-                &m
+                separated[0], separated[1], "", &m
             );
         }
         // trimming a newline (that is there for some reason)
