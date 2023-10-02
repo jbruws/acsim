@@ -136,3 +136,33 @@ p.submessage_header {
 	margin-bottom: 0.5rem;
 	margin-top: 0.5rem;
 }
+
+/* MOBILE MODIFICATIONS */
+
+@media only screen and (max-device-width: 761px) {
+	div#head_message {
+		width: 100%;
+	}
+
+	div.submessage {
+		width: 90%;
+	}
+
+	body {
+		font-size: 30px;
+		background-size: 120px;
+	}
+
+	div#grid_root {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-areas:
+			"hd"
+			"ms"
+			"sb";
+		gap: 1rem 0.5rem;
+		padding: 0.5rem;
+		max-width: 90%;
+	}
+}
+

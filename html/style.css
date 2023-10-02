@@ -141,3 +141,28 @@ div#linkbar {
 	margin-left: auto;
 	margin-right: auto;
 }
+
+/* MOBILE MODIFICATIONS */
+
+@media only screen and (max-device-width: 761px) {
+	div.message {
+		max-width: 90%;
+	}
+
+	body {
+		font-size: 25px;
+	}
+
+	div#grid_root {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-areas:
+			"hd"
+			"sb"
+			"ms"
+			"ft";
+		gap: 1rem 0.5rem;
+		padding: 0.5rem;
+	}
+}
+
