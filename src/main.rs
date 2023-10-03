@@ -1,13 +1,13 @@
 // std
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::Mutex;
 // actix and serde
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{get, middleware::Logger, post, web, App, HttpResponse, HttpServer, Responder};
 use serde::{Deserialize, Serialize};
 // misc
 use rand::seq::SliceRandom;
+use tokio::sync::Mutex;
 
 // functions for turning plaintext db data into html
 mod html_proc;
@@ -28,6 +28,7 @@ struct BoardConfig {
     bumplimit: u16,
     soft_limit: u16,
     hard_limit: u16,
+    site_name: String,
     boards: HashMap<String, String>,
     taglines: Vec<String>,
 }
@@ -66,11 +67,11 @@ async fn main_page(
     data: web::Data<ApplicationState>,
     info: web::Path<BoardInfo>,
 ) -> impl Responder {
-    let config = data.config.lock().unwrap();
+    let config = data.config.lock().await;
     if !config.boards.contains_key(&info.board) {
         return HttpResponse::Ok().body("Does not exist");
     }
-    let client = data.db_client.lock().unwrap();
+    let client = data.db_client.lock().await;
     let mut inserted_msg = String::from("");
 
     // Restoring messages from DB
@@ -97,6 +98,7 @@ async fn main_page(
 
     HttpResponse::Ok().body(format!(
         include_str!("../html/index.html"),
+        site_name = config.site_name,
         board_designation = &info.board.to_string(),
         board_desc = *config.boards.get(&info.board).unwrap_or(&String::from("")),
         random_tagline = *config.taglines.choose(&mut rand::thread_rng()).unwrap(),
@@ -111,12 +113,12 @@ async fn process_form(
     info: web::Path<BoardInfo>,
     data: web::Data<ApplicationState>,
 ) -> impl Responder {
-    let config = data.config.lock().unwrap();
+    let config = data.config.lock().await;
     if !config.boards.contains_key(&info.board) {
         return web::Redirect::to("/").see_other();
     }
 
-    let client = data.db_client.lock().unwrap();
+    let client = data.db_client.lock().await;
     let mut new_filepath: PathBuf = PathBuf::new();
 
     if let Some(f) = &form.image {
@@ -172,11 +174,11 @@ async fn message_page(
     info: web::Path<PathInfo>,
     //form: web::Form<MsgForm>,
 ) -> impl Responder {
-    let config = data.config.lock().unwrap();
+    let config = data.config.lock().await;
     if !config.boards.contains_key(&info.board) {
         return HttpResponse::Ok().body("Does not exist");
     }
-    let client = data.db_client.lock().unwrap();
+    let client = data.db_client.lock().await;
     let head_msg: String;
     let head_msg_data = client.get_single_message(info.message_num).await;
     if let Ok(d) = head_msg_data {
@@ -214,6 +216,7 @@ async fn message_page(
 
     HttpResponse::Ok().body(format!(
         include_str!("../html/topic.html"),
+        site_name = config.site_name,
         topic_number = &info.message_num.to_string(),
         head_message = head_msg,
         submessages = inserted_submsg,
@@ -227,11 +230,11 @@ async fn process_submessage_form(
     form: MultipartForm<MsgForm>,
     info: web::Path<PathInfo>,
 ) -> impl Responder {
-    let config = data.config.lock().unwrap();
+    let config = data.config.lock().await;
     if !config.boards.contains_key(&info.board) {
         return web::Redirect::to(format!("{}/topic/{}", info.board, info.message_num)).see_other();
     }
-    let client = data.db_client.lock().unwrap();
+    let client = data.db_client.lock().await;
     let mut new_filepath: PathBuf = PathBuf::new();
 
     if let Some(f) = &form.image {
@@ -360,7 +363,6 @@ async fn main() -> std::io::Result<()> {
             .service(process_submessage_form)
             .service(main_page)
     })
-    .bind(format!("localhost:{}", config.server_port).as_str())? // we always bind to localhost
     .bind((bound_ipv4, config.server_port))?
     .bind(format!("[{}]:{}", bound_ipv6, config.server_port).as_str())?
     .run()

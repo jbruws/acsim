@@ -26,6 +26,8 @@ Basic message board engine written in Rust and Actix Web.
 
 `"hard_limit"`: If the number of messages on a board exceeds this number, board's least active topic will be deleted when a new one is submitted.
 
+`"site_name"`: Name of your site in general, displayed in `<title>` tags on pages.
+
 `"boards"`: Dictionary (`HashMap`) containing letters (board designations) and their main topics.
 
 `"taglines"`: List of phrases randomly displayed in board header. Usually humourous. Feel free to put whatever you want here.

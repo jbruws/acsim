@@ -16,6 +16,7 @@ echo '
 	"bumplimit": 200,
 	"soft_limit": 100,
 	"hard_limit": 125,
+	"site_name": "ASCIM",
 	"boards": {
 		"b": "Random", 
 		"s": "Software",
