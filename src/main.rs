@@ -29,6 +29,7 @@ struct BoardConfig {
     soft_limit: u16,
     hard_limit: u16,
     site_name: String,
+    page_limit: u16,
     boards: HashMap<String, String>,
     taglines: Vec<String>,
 }
@@ -45,6 +46,11 @@ struct MsgForm {
 struct BoardInfo {
     board: String,
 } // TODO: integrate with PathInfo
+
+#[derive(Deserialize)]
+struct PageInfo {
+    page: Option<i64>,
+}
 
 #[derive(Deserialize)]
 struct PathInfo {
@@ -66,6 +72,7 @@ async fn root() -> impl Responder {
 async fn main_page(
     data: web::Data<ApplicationState>,
     info: web::Path<BoardInfo>,
+    page_data: web::Query<PageInfo>,
 ) -> impl Responder {
     let config = data.config.lock().await;
     if !config.boards.contains_key(&info.board) {
@@ -74,8 +81,13 @@ async fn main_page(
     let client = data.db_client.lock().await;
     let mut inserted_msg = String::from("");
 
+    let current_page = match page_data.page {
+        Some(p) if p > 0 => p,
+        _ => 1,
+    };
+
     // Restoring messages from DB
-    for row in client.get_messages(&info.board).await.unwrap().into_iter() {
+    for row in client.get_messages(&info.board, (current_page-1) * config.page_limit as i64, config.page_limit as i64).await.unwrap().into_iter() {
         inserted_msg.push_str(
             html_proc::format_into_html(
                 html_proc::BoardMessageType::Message,
@@ -103,7 +115,9 @@ async fn main_page(
         board_desc = *config.boards.get(&info.board).unwrap_or(&String::from("")),
         random_tagline = *config.taglines.choose(&mut rand::thread_rng()).unwrap(),
         board_links = board_links,
-        messages = inserted_msg
+        messages = inserted_msg,
+        prev_p = current_page - 1,
+        next_p = current_page + 1,
     ))
 }
 

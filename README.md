@@ -28,6 +28,8 @@ Basic message board engine written in Rust and Actix Web.
 
 `"site_name"`: Name of your site in general, displayed in `<title>` tags on pages.
 
+`"page_limit"`: How many messages are displayed per page.
+
 `"boards"`: Dictionary (`HashMap`) containing letters (board designations) and their main topics.
 
 `"taglines"`: List of phrases randomly displayed in board header. Usually humourous. Feel free to put whatever you want here.
