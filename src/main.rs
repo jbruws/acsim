@@ -1,6 +1,7 @@
 // std
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::Arc;
 // actix and serde
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{get, middleware::Logger, post, web, App, HttpResponse, HttpServer, Responder};
@@ -59,8 +60,8 @@ struct PathInfo {
 }
 
 struct ApplicationState {
-    db_client: Mutex<db_control::DatabaseWrapper>,
-    config: Mutex<BoardConfig>,
+    db_client: Arc<Mutex<db_control::DatabaseWrapper>>,
+    config: Arc<BoardConfig>,
 }
 
 #[get("/")]
@@ -74,8 +75,7 @@ async fn main_page(
     info: web::Path<BoardInfo>,
     page_data: web::Query<PageInfo>,
 ) -> impl Responder {
-    let config = data.config.lock().await;
-    if !config.boards.contains_key(&info.board) {
+    if !data.config.boards.contains_key(&info.board) {
         return HttpResponse::Ok().body("Does not exist");
     }
     let client = data.db_client.lock().await;
@@ -87,7 +87,7 @@ async fn main_page(
     };
 
     // Restoring messages from DB
-    for row in client.get_messages(&info.board, (current_page-1) * config.page_limit as i64, config.page_limit as i64).await.unwrap().into_iter() {
+    for row in client.get_messages(&info.board, (current_page-1) * data.config.page_limit as i64, data.config.page_limit as i64).await.unwrap().into_iter() {
         inserted_msg.push_str(
             html_proc::format_into_html(
                 html_proc::BoardMessageType::Message,
@@ -104,16 +104,16 @@ async fn main_page(
     }
 
     let mut board_links = String::new();
-    for c in config.boards.keys() {
+    for c in data.config.boards.keys() {
         board_links.push_str(&format!("<a href=\"/{}\">/{}/</a>\n ", c, c));
     }
 
     HttpResponse::Ok().body(format!(
         include_str!("../html/index.html"),
-        site_name = config.site_name,
+        site_name = data.config.site_name,
         board_designation = &info.board.to_string(),
-        board_desc = *config.boards.get(&info.board).unwrap_or(&String::from("")),
-        random_tagline = *config.taglines.choose(&mut rand::thread_rng()).unwrap(),
+        board_desc = *data.config.boards.get(&info.board).unwrap_or(&String::from("")),
+        random_tagline = *data.config.taglines.choose(&mut rand::thread_rng()).unwrap(),
         board_links = board_links,
         messages = inserted_msg,
         prev_p = current_page - 1,
@@ -127,8 +127,7 @@ async fn process_form(
     info: web::Path<BoardInfo>,
     data: web::Data<ApplicationState>,
 ) -> impl Responder {
-    let config = data.config.lock().await;
-    if !config.boards.contains_key(&info.board) {
+    if !data.config.boards.contains_key(&info.board) {
         return web::Redirect::to("/").see_other();
     }
 
@@ -174,7 +173,7 @@ async fn process_form(
         let msg_count = client.count_messages(&info.board).await.unwrap();
 
         // delete a message if total message number is over the hard limit
-        if msg_count > config.hard_limit.into() {
+        if msg_count > data.config.hard_limit.into() {
             client.delete_least_active(&info.board).await;
         }
     }
@@ -188,8 +187,7 @@ async fn message_page(
     info: web::Path<PathInfo>,
     //form: web::Form<MsgForm>,
 ) -> impl Responder {
-    let config = data.config.lock().await;
-    if !config.boards.contains_key(&info.board) {
+    if !data.config.boards.contains_key(&info.board) {
         return HttpResponse::Ok().body("Does not exist");
     }
     let client = data.db_client.lock().await;
@@ -230,7 +228,7 @@ async fn message_page(
 
     HttpResponse::Ok().body(format!(
         include_str!("../html/topic.html"),
-        site_name = config.site_name,
+        site_name = data.config.site_name,
         topic_number = &info.message_num.to_string(),
         head_message = head_msg,
         submessages = inserted_submsg,
@@ -244,8 +242,7 @@ async fn process_submessage_form(
     form: MultipartForm<MsgForm>,
     info: web::Path<PathInfo>,
 ) -> impl Responder {
-    let config = data.config.lock().await;
-    if !config.boards.contains_key(&info.board) {
+    if !data.config.boards.contains_key(&info.board) {
         return web::Redirect::to(format!("{}/topic/{}", info.board, info.message_num)).see_other();
     }
     let client = data.db_client.lock().await;
@@ -288,7 +285,7 @@ async fn process_submessage_form(
         let submsg_count = client.count_submessages(info.message_num).await.unwrap();
 
         // if number of submessages is below the bumplimit, update activity of parent msg
-        if submsg_count <= config.bumplimit.into() {
+        if submsg_count <= data.config.bumplimit.into() {
             client
                 .update_message_activity(since_epoch, info.message_num)
                 .await;
@@ -299,7 +296,7 @@ async fn process_submessage_form(
 
 // this function does not yet work, since i somehow need to pass Client
 // to the function (to make queries work) without cloning it
-async fn deletion_loop(client: db_control::DatabaseWrapper, config: &BoardConfig) {
+async fn deletion_loop(client: Arc<Mutex<db_control::DatabaseWrapper>>, config: Arc<BoardConfig>) {
     loop {
         // interval between deletion attempts
         tokio::time::sleep(tokio::time::Duration::from_secs(
@@ -308,25 +305,31 @@ async fn deletion_loop(client: db_control::DatabaseWrapper, config: &BoardConfig
         .await;
 
         // looking across all boards
+        let cl = client.lock().await;
         for i in config.boards.keys() {
-            let msg_count = client.count_messages(i).await.unwrap();
+            let msg_count = cl.count_messages(i).await.unwrap();
             if msg_count > config.soft_limit.into() {
-                client.delete_least_active(i).await;
+                cl.delete_least_active(i).await;
             }
         }
+        drop(cl);
     }
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // reading board config
-    let config: BoardConfig =
+    let raw_config: BoardConfig =
         serde_json::from_str(include_str!("../config.json")).expect("Can't parse config.json");
 
+    let config = Arc::new(raw_config);
+
     // creating db connection through DatabaseWrapper
-    let client =
+    let raw_client =
         db_control::DatabaseWrapper::new(&config.db_host, &config.db_user, &config.db_password)
             .await;
+
+    let client = Arc::new(Mutex::new(raw_client));
 
     // selecting where to bind the server
     let mut bound_ipv4 = "0.0.0.0";
@@ -338,8 +341,8 @@ async fn main() -> std::io::Result<()> {
 
     // creating application state
     let application_data = web::Data::new(ApplicationState {
-        db_client: Mutex::new(client),
-        config: Mutex::new(config.clone()), // alas, we must clone here
+        db_client: Arc::clone(&client),
+        config: Arc::clone(&config), // alas, we must clone here
     });
 
     // starting the logger
@@ -362,7 +365,7 @@ async fn main() -> std::io::Result<()> {
     };
 
     // start soft limit message deletion loop
-    //deletion_loop(client, &config);
+    //deletion_loop(Arc::clone(&client), Arc::clone(&config)).await;
 
     // starting the server
     HttpServer::new(move || {
