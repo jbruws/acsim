@@ -73,7 +73,12 @@ impl DatabaseWrapper {
             .await
     }
 
-    pub async fn get_messages(&self, board: &str, page: i64, limit: i64) -> Result<Vec<Row>, Error> {
+    pub async fn get_messages(
+        &self,
+        board: &str,
+        page: i64,
+        limit: i64,
+    ) -> Result<Vec<Row>, Error> {
         self.client
             .query(
                 "SELECT * FROM messages WHERE board=($1) ORDER BY latest_submsg DESC OFFSET ($2) LIMIT ($3)",

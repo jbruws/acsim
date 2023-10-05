@@ -2,6 +2,7 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::thread;
 // actix and serde
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{get, middleware::Logger, post, web, App, HttpResponse, HttpServer, Responder};
@@ -87,7 +88,16 @@ async fn main_page(
     };
 
     // Restoring messages from DB
-    for row in client.get_messages(&info.board, (current_page-1) * data.config.page_limit as i64, data.config.page_limit as i64).await.unwrap().into_iter() {
+    for row in client
+        .get_messages(
+            &info.board,
+            (current_page - 1) * data.config.page_limit as i64,
+            data.config.page_limit as i64,
+        )
+        .await
+        .unwrap()
+        .into_iter()
+    {
         inserted_msg.push_str(
             html_proc::format_into_html(
                 html_proc::BoardMessageType::Message,
@@ -112,8 +122,16 @@ async fn main_page(
         include_str!("../html/index.html"),
         site_name = data.config.site_name,
         board_designation = &info.board.to_string(),
-        board_desc = *data.config.boards.get(&info.board).unwrap_or(&String::from("")),
-        random_tagline = *data.config.taglines.choose(&mut rand::thread_rng()).unwrap(),
+        board_desc = *data
+            .config
+            .boards
+            .get(&info.board)
+            .unwrap_or(&String::from("")),
+        random_tagline = *data
+            .config
+            .taglines
+            .choose(&mut rand::thread_rng())
+            .unwrap(),
         board_links = board_links,
         messages = inserted_msg,
         prev_p = current_page - 1,
@@ -365,7 +383,10 @@ async fn main() -> std::io::Result<()> {
     };
 
     // start soft limit message deletion loop
-    //deletion_loop(Arc::clone(&client), Arc::clone(&config)).await;
+    //thread::spawn(|| {
+    //    tokio::task::spawn(async { deletion_loop(Arc::clone(&client), Arc::clone(&config)).await })
+    //})
+    //.join();
 
     // starting the server
     HttpServer::new(move || {
