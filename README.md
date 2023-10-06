@@ -1,6 +1,8 @@
 # `acsim` - Asynchronous Simple Imageboard
 
-Basic message board engine written in Rust and Actix Web.
+Basic message board engine written in `rust` and `actix-web`.
+
+The engine is still WIP. Expect some bugs and missing features.
 
 ## `config.json` file breakdown
 
