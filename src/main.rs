@@ -45,19 +45,14 @@ struct MsgForm {
 }
 
 #[derive(Deserialize)]
-struct BoardInfo {
+struct PathInfo {
     board: String,
-} // TODO: integrate with PathInfo
-
-#[derive(Deserialize)]
-struct PageInfo {
-    page: Option<i64>,
+    message_num: Option<i64>,
 }
 
 #[derive(Deserialize)]
-struct PathInfo {
-    board: String,
-    message_num: i64,
+struct QueryOptions {
+    page: Option<i64>,
 }
 
 struct ApplicationState {
@@ -73,8 +68,8 @@ async fn root() -> impl Responder {
 #[get("/{board}")]
 async fn main_page(
     data: web::Data<ApplicationState>,
-    info: web::Path<BoardInfo>,
-    page_data: web::Query<PageInfo>,
+    info: web::Path<PathInfo>,
+    page_data: web::Query<QueryOptions>,
 ) -> impl Responder {
     if !data.config.boards.contains_key(&info.board) {
         return HttpResponse::Ok().body("Does not exist");
@@ -142,7 +137,7 @@ async fn main_page(
 #[post("/{board}")]
 async fn process_form(
     form: MultipartForm<MsgForm>,
-    info: web::Path<BoardInfo>,
+    info: web::Path<PathInfo>,
     data: web::Data<ApplicationState>,
 ) -> impl Responder {
     if !data.config.boards.contains_key(&info.board) {
@@ -203,14 +198,14 @@ async fn process_form(
 async fn message_page(
     data: web::Data<ApplicationState>,
     info: web::Path<PathInfo>,
-    //form: web::Form<MsgForm>,
 ) -> impl Responder {
+    let message_num = info.message_num.unwrap_or(1);
     if !data.config.boards.contains_key(&info.board) {
         return HttpResponse::Ok().body("Does not exist");
     }
     let client = data.db_client.lock().await;
     let head_msg: String;
-    let head_msg_data = client.get_single_message(info.message_num).await;
+    let head_msg_data = client.get_single_message(message_num).await;
     if let Ok(d) = head_msg_data {
         head_msg = html_proc::format_into_html(
             html_proc::BoardMessageType::ParentMessage,
@@ -227,7 +222,7 @@ async fn message_page(
     }
     let mut inserted_submsg = String::from("");
     let mut submessage_counter = 0;
-    for row in client.get_submessages(info.message_num).await.unwrap() {
+    for row in client.get_submessages(message_num).await.unwrap() {
         submessage_counter += 1;
         inserted_submsg.push_str(
             html_proc::format_into_html(
@@ -247,7 +242,7 @@ async fn message_page(
     HttpResponse::Ok().body(format!(
         include_str!("../html/topic.html"),
         site_name = data.config.site_name,
-        topic_number = &info.message_num.to_string(),
+        topic_number = &message_num.to_string(),
         head_message = head_msg,
         submessages = inserted_submsg,
         board_designation = &info.board.to_string(),
@@ -260,8 +255,9 @@ async fn process_submessage_form(
     form: MultipartForm<MsgForm>,
     info: web::Path<PathInfo>,
 ) -> impl Responder {
+    let message_num = info.message_num.unwrap_or(1);
     if !data.config.boards.contains_key(&info.board) {
-        return web::Redirect::to(format!("{}/topic/{}", info.board, info.message_num)).see_other();
+        return web::Redirect::to(format!("{}/topic/{}", info.board, message_num)).see_other();
     }
     let client = data.db_client.lock().await;
     let mut new_filepath: PathBuf = PathBuf::new();
@@ -291,7 +287,7 @@ async fn process_submessage_form(
         let filtered_msg = html_proc::filter_string(&form.message).await;
         client
             .insert_to_submessages(
-                info.message_num,
+                message_num,
                 since_epoch,
                 &filtered_author,
                 &filtered_msg,
@@ -300,16 +296,16 @@ async fn process_submessage_form(
             .await;
 
         // counting submessages for given message
-        let submsg_count = client.count_submessages(info.message_num).await.unwrap();
+        let submsg_count = client.count_submessages(message_num).await.unwrap();
 
         // if number of submessages is below the bumplimit, update activity of parent msg
         if submsg_count <= data.config.bumplimit.into() {
             client
-                .update_message_activity(since_epoch, info.message_num)
+                .update_message_activity(since_epoch, message_num)
                 .await;
         }
     }
-    web::Redirect::to(format!("/{}/topic/{}", info.board, info.message_num)).see_other()
+    web::Redirect::to(format!("/{}/topic/{}", info.board, message_num)).see_other()
 }
 
 // this function does not yet work, since i somehow need to pass Client

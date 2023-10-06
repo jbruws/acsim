@@ -95,8 +95,12 @@ pub async fn filter_string(inp_string: &str) -> String {
 // turns message raw text from the database into workable html,
 // which is later piped into format_into_html()
 pub async fn prepare_msg(inp_string: &str) -> String {
-    // in the format "{letters}>{digits}.{digits}"
+    // regex strings
     let msg_link_match = Regex::new(r##"\w{1,16}>\d+(\.\d+)?"##).unwrap();
+    let italic_match = Regex::new(r##"\*(?<text>[^*]*)\*"##).unwrap();
+    let bold_match = Regex::new(r##"\*\*(?<text>[^*]*)\*\*"##).unwrap();
+    let code_match = Regex::new(r##"`(?<text>[^`]*)`"##).unwrap();
+    let newline_match = Regex::new(r##"(?<newline>\r\n+|\n+)"##).unwrap();
 
     let mut result = String::new();
     let mut start_of_next: usize; // start of next match
@@ -129,7 +133,13 @@ pub async fn prepare_msg(inp_string: &str) -> String {
         result.push_str(&finished_link[..finished_link.len() - 1]);
         end_of_last = m_raw.end();
     }
-
     result.push_str(&inp_string[end_of_last..]);
+
+    // formatting
+    result = newline_match.replace_all(&result, "<br>").to_string();
+    result = bold_match.replace_all(&result, "<span class=\"bold\">${text}</span>").to_string();
+    result = italic_match.replace_all(&result, "<span class=\"italic\">${text}</span>").to_string();
+    result = code_match.replace_all(&result, "<span class=\"codeblock\">${text}</span>").to_string();
+
     result
 }
