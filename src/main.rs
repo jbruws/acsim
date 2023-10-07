@@ -1,3 +1,7 @@
+//! # ACSIM - AsynChronous Simple Imageboard
+//! ACSIM is a basic imageboard engine designed to have a small codebase,
+//! as well as simple configuration and deployment process.
+
 // std
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -10,12 +14,10 @@ use serde::{Deserialize, Serialize};
 use rand::seq::SliceRandom;
 use tokio::sync::Mutex;
 
-// functions for turning plaintext db data into html
 mod html_proc;
-
-// database functionality
 mod db_control;
 
+/// Deserialized version of config.json file
 #[derive(Serialize, Deserialize, Clone)]
 pub struct BoardConfig {
     db_host: String,
@@ -36,6 +38,7 @@ pub struct BoardConfig {
     taglines: Vec<String>,
 }
 
+/// Form used to send messages and images
 #[derive(MultipartForm)]
 struct MsgForm {
     message: Text<String>,
@@ -44,28 +47,33 @@ struct MsgForm {
     image: Option<TempFile>,
 }
 
+/// Information about URL path
 #[derive(Deserialize)]
 struct PathInfo {
     board: String,
     message_num: Option<i64>,
 }
 
+/// Options that can be specified in query strings in URL
 #[derive(Deserialize)]
 struct QueryOptions {
     page: Option<i64>,
 }
 
+/// Struct containing various components of the application
 struct ApplicationState<'a> {
     db_client: Arc<Mutex<db_control::DatabaseWrapper>>,
     formatter: Arc<html_proc::HtmlFormatter<'a>>,
     config: Arc<BoardConfig>,
 }
 
+/// Responder for site root (redirects to /b/ by default)
 #[get("/")]
 async fn root() -> impl Responder {
     web::Redirect::to("/b").see_other()
 }
 
+/// Responder for boards
 #[get("/{board}")]
 async fn main_page(
     data: web::Data<ApplicationState<'_>>,
@@ -141,6 +149,7 @@ async fn main_page(
     )
 }
 
+/// Message handling logic for boards
 #[post("/{board}")]
 async fn process_form(
     form: MultipartForm<MsgForm>,
@@ -203,6 +212,7 @@ async fn process_form(
     web::Redirect::to(format!("/{}", info.board)).see_other()
 }
 
+/// Responder for individual topics/threads
 #[get("{board}/topic/{message_num}")]
 async fn message_page(
     data: web::Data<ApplicationState<'_>>,
@@ -273,6 +283,7 @@ async fn message_page(
     )
 }
 
+/// Message handling logic for topics/threads
 #[post("{board}/topic/{message_num}")]
 async fn process_submessage_form(
     data: web::Data<ApplicationState<'_>>,
@@ -336,6 +347,7 @@ async fn process_submessage_form(
 
 // this function does not yet work, since i somehow need to pass Client
 // to the function (to make queries work) without cloning it
+/// Soft limit message deletion timer (currently unused)
 async fn deletion_loop(client: Arc<Mutex<db_control::DatabaseWrapper>>, config: Arc<BoardConfig>) {
     loop {
         // interval between deletion attempts

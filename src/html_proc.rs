@@ -1,3 +1,6 @@
+//! Functions for formatting database data into
+//! HTML, which is then taken by the server to display to users.
+
 use chrono::{DateTime, FixedOffset, Local, NaiveDateTime};
 use handlebars::Handlebars;
 use regex::Regex;
@@ -21,6 +24,7 @@ pub fn since_epoch() -> i64 {
     }
 }
 
+/// Enum representing three message types: board messages, topic head messages and topic submessages
 #[derive(PartialEq)]
 pub enum BoardMessageType {
     Message,       // messages on main page
@@ -28,6 +32,7 @@ pub enum BoardMessageType {
     Submessage,    // submessages on topic pages
 }
 
+/// Struct used to choose ACSIM frontend directory
 pub struct HtmlFormatter<'a> {
     pub work_dir: String,
     handle: Handlebars<'a>,
@@ -41,13 +46,13 @@ impl HtmlFormatter<'_> {
         }
     }
 
-    /// Returns contents of specified file in work_dir
+    /// Returns contents of specified file in `work_dir`
     fn get_file(&self, rel_path: &str) -> String {
         read_to_string(format!("{}/{}", &self.work_dir, rel_path))
             .unwrap_or_else(|_| panic!("Can't read {}/{}", &self.work_dir, rel_path))
     }
 
-    /// Fits form data into one of several HTML templates.
+    /// Fits form data into one of several HTML message templates.
     pub async fn format_into_template(
         &self,
         message_type: BoardMessageType,
