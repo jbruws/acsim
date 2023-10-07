@@ -1,7 +1,7 @@
 //! Functions for formatting database data into
 //! HTML, which is then taken by the server to display to users.
 
-use chrono::{DateTime, FixedOffset, Local, NaiveDateTime};
+use chrono::{DateTime, offset::Local, NaiveDateTime};
 use handlebars::Handlebars;
 use regex::Regex;
 use serde_json::json;
@@ -10,7 +10,7 @@ use std::str;
 
 /// Returns current date and time in 'YYYY-MM-DD hh:mm:ss' 24-hour format.
 pub fn get_time(since_epoch: i64) -> String {
-    let offset = FixedOffset::east_opt(3 * 3600).unwrap(); // +3 (hours) offset
+    let offset = *Local::now().offset(); // local offset
     let naive = NaiveDateTime::from_timestamp_opt(since_epoch, 0).unwrap(); // UNIX epoch to datetime
     let dt = DateTime::<Local>::from_naive_utc_and_offset(naive, offset).to_string();
     dt[..dt.len() - 7].to_string() // 7 was chosen experimentally
