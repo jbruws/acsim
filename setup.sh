@@ -17,6 +17,7 @@ echo '
 	"soft_limit": 100,
 	"hard_limit": 125,
 	"site_name": "ASCIM",
+	"site_frontend": "acsim-base",
 	"page_limit": 15,
 	"boards": {
 		"b": "Random", 

@@ -1,23 +1,23 @@
 <!DOCTYPE html>
 
 <head>
-	<title>{site_name} /{board_designation}/</title>
-	<link rel="stylesheet" type="text/css" href="./html/style.css">
-	<link rel="icon" href="./html/favicon.png">
+	<title>{{site_name}} /{{board_designation}}/</title>
+	<link rel="stylesheet" type="text/css" href="/web-data/style.css">
+	<link rel="icon" href="/web-data/favicon.png">
 	<meta charset="UTF-8">
 </head>
 
 <body>
 	<div id="grid_root">
 		<header id="header">
-			<h1>/{board_designation}/ - {board_desc}</h1>
-			<p>{random_tagline}</p>
+			<h1>/{{board_designation}}/ - {{board_desc}}</h1>
+			<p>{{random_tagline}}</p>
 		</header>
 		<div id="sidebar">
 			<div id="linkbar">
-				{board_links}
+				{{{board_links}}}
 			</div>
-			<form enctype="multipart/form-data" id="message_form" action="/{board_designation}" method="post" autocomplete="off">
+			<form enctype="multipart/form-data" id="message_form" action="/{{board_designation}}" method="post" autocomplete="off">
 				<textarea placeholder="Author" type="text" name="author" maxlength="250" required></textarea>
 				<textarea placeholder="Message" type="text" name="message" maxlength="4090" required></textarea>
 				<input type="file" accept="image/*" name="image">
@@ -25,10 +25,10 @@
 			</form>
 		</div>
 		<div id="message_container">
-			{messages}
+			{{{messages}}}
 		</div>
 		<footer>
-			<div id="page_links"><a href="?page={prev_p}">Prev page</a> | <a href="?page={next_p}">Next page</a></div>
+			<div id="page_links"><a href="?page={{prev_p}}">Prev page</a> | <a href="?page={{next_p}}">Next page</a></div>
 			2023 (c) jbruws<br>ACSIM is licensed under GNU GPL v3.
 		</footer>
 	</div>

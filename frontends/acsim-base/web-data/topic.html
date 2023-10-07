@@ -1,21 +1,21 @@
 <!DOCTYPE html>
 
 <head>
-	<title>{site_name} /{board_designation}/ - {topic_number}</title>
-	<link rel="stylesheet" type="text/css" href="../../html/topic-style.css">
-	<link rel="icon" href="../../html/favicon.png">
+	<title>{{site_name}} /{{board_designation}}/ - {{topic_number}}</title>
+	<link rel="stylesheet" type="text/css" href="/web-data/topic-style.css">
+	<link rel="icon" href="/web-data/favicon.png">
 	<meta charset="UTF-8">
 </head>
 
 <body>
 	<div id="grid_root">
 		<!-- head message here -->
-		{head_message}
+		{{{head_message}}}
 		<div id="submessage_container">
-		{submessages}
+		{{{submessages}}}
 		</div>
 		<div id="sidebar"> <!-- technically not a sidebar, but still -->
-			<form id="message_form" enctype="multipart/form-data" action="/{board_designation}/topic/{topic_number}" method="post" autocomplete="off">
+			<form id="message_form" enctype="multipart/form-data" action="/{{board_designation}}/topic/{{topic_number}}" method="post" autocomplete="off">
 				<textarea placeholder="Author" type="text" name="author" maxlength="250" required></textarea>
 				<textarea placeholder="Message" type="text" name="message" maxlength="4090" required></textarea>
 				<input type="file" accept="image/*" name="image">

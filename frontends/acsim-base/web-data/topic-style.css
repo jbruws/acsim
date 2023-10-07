@@ -2,6 +2,8 @@
 	--bg: rgb(23,82,87);
 	--bg-msg: rgb(216,215,224);
 	--text: rgb(5,17,18);
+	--codeblock-bg: rgb(166, 166, 188);
+	--codeblock-text: rgb(8, 17, 20);
 }
 
 /* MAIN GRID ELEMENTS */
@@ -59,6 +61,24 @@ div#head_message {
 	padding: 1rem;
 }
 
+/* FORMATTING */
+span.italic {
+	font-style: italic;
+}
+
+span.bold {
+	font-weight: bold;
+}
+
+span.codeblock {
+	border-radius: 0.5rem;
+	background-color: var(--codeblock-bg);
+	color: var(--codeblock-text);
+	padding: 0.25rem;
+	font-family: monospace;
+	font-size: 75%;
+}
+
 /* SUBMIT FORM */
 table#message_form {
 	display: inline-grid;
@@ -99,8 +119,6 @@ input[type="file"] {
 /* GENERICS FOR MESSAGES */
 div.userimage {
 	padding: 1rem;
-	float: left;
-	margin-bottom: 0;
 }
 
 .userimage > a > img {
