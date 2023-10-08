@@ -1,22 +1,22 @@
 :root {
-	--bg: rgb(23,82,87);
+	--bg: rgb(84,118,125);
 	--bg-msg: rgb(216,215,224);
 	--text: rgb(5,17,18);
 	--codeblock-bg: rgb(166, 166, 188);
-	--codeblock-text: rgb(8, 17, 20);
 }
 
 /* MAIN GRID ELEMENTS */
 body {
-	line-height: 1.4;
-	font-size: 20px;
-	background-color: var(--bg);
+	line-height: 1.3;
+	font-size: 19px;
 	color: var(--text); 
+	background-color: var(--bg);
 	background-image: url("acsim.png");
-	background-size: 80px;
+	background-size: 60px;
 	background-repeat: repeat;
 	overflow: scroll;
 	overflow-wrap: break-word;
+	font-family: sans-serif;
 }
 
 div#grid_root {
@@ -33,6 +33,10 @@ div#grid_root {
 	max-width: 60%;
 }
 
+a {
+	text-decoration: none;
+}
+
 div#submessage_container {
 	grid-area: ms;
 	display: block;
@@ -43,8 +47,7 @@ div#sidebar {
 	grid-area: sb;
 	display: block;
 	background-color: var(--bg-msg);
-	box-shadow: 0.2rem 0.2rem 0.4rem black;
-	border-radius: 0.25rem;
+	box-shadow: 0.2rem 0.2rem 0.8rem black;
 	width: 100%;
 	margin-left: auto;
 	margin-right: auto;
@@ -54,9 +57,8 @@ div#sidebar {
 div#head_message {
 	grid-area: hd;
 	background-color: var(--bg-msg);
-	box-shadow: 0.2rem 0.2rem 0.4rem black;
+	box-shadow: 0.2rem 0.2rem 0.8rem black;
 	width: 100%;
-	border-radius: 0.25rem;
 	margin-right: auto;
 	padding: 1rem;
 }
@@ -73,10 +75,13 @@ span.bold {
 span.codeblock {
 	border-radius: 0.5rem;
 	background-color: var(--codeblock-bg);
-	color: var(--codeblock-text);
 	padding: 0.25rem;
 	font-family: monospace;
 	font-size: 75%;
+}
+
+span.quote {
+	color: green;
 }
 
 /* SUBMIT FORM */
@@ -141,8 +146,7 @@ p.head_message_header {
 /* SUBMESSAGE STRUCTURE */
 div.submessage {
 	background-color: var(--bg-msg);
-	box-shadow: 0.2rem 0.2rem 0.4rem black;
-	border-radius: 0.25rem;
+	box-shadow: 0.2rem 0.2rem 0.8rem black;
 	margin-right: auto;
 	margin-bottom: 1rem;
 	width: 75%;

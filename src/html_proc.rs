@@ -1,10 +1,11 @@
 //! Functions for formatting database data into
 //! HTML, which is then taken by the server to display to users.
 
-use chrono::{DateTime, offset::Local, NaiveDateTime};
+use chrono::{offset::Local, DateTime, NaiveDateTime};
 use handlebars::Handlebars;
 use regex::Regex;
 use serde_json::json;
+use std::collections::HashMap;
 use std::fs::read_to_string;
 use std::str;
 
@@ -36,14 +37,32 @@ pub enum BoardMessageType {
 pub struct HtmlFormatter<'a> {
     pub work_dir: String,
     handle: Handlebars<'a>,
+    template_map: HashMap<&'a str, String>,
 }
 
 impl HtmlFormatter<'_> {
     pub fn new(frontend_name: String) -> HtmlFormatter<'static> {
-        HtmlFormatter {
+        let mut obj = HtmlFormatter {
             work_dir: format!("./frontends/{}", frontend_name),
             handle: Handlebars::new(),
-        }
+            template_map: HashMap::new(),
+        };
+
+        // loading regex templates
+        obj.template_map
+            .insert("quote", obj.get_file("regex-templates/quote.html"));
+        obj.template_map
+            .insert("newline", String::from("<br>"));
+        obj.template_map
+            .insert("msglink", obj.get_file("regex-templates/msglink.html"));
+        obj.template_map
+            .insert("codeblock", obj.get_file("regex-templates/codeblock.html"));
+        obj.template_map
+            .insert("bold", obj.get_file("regex-templates/bold.html"));
+        obj.template_map
+            .insert("italic", obj.get_file("regex-templates/italic.html"));
+
+        obj
     }
 
     /// Returns contents of specified file in `work_dir`
@@ -189,61 +208,24 @@ impl HtmlFormatter<'_> {
     /// Turns raw message text pulled from the database into workable HTML,
     /// which is later piped into other functions
     pub async fn create_formatting(&self, inp_string: &str) -> String {
+        let mut result = String::from(inp_string);
+
         // regex strings
-        let msg_link_match = Regex::new(r##"\w{1,16}>\d+(\.\d+)?"##).unwrap();
+        let msg_link_match =
+            Regex::new(r##"(?<board>\w{1,16})>(?<msg>\d+)(?<dotted>\.(?<submsg>\d+))?"##).unwrap();
         let italic_match = Regex::new(r##"\*(?<text>[^*]*)\*"##).unwrap();
         let bold_match = Regex::new(r##"\*\*(?<text>[^*]*)\*\*"##).unwrap();
         let code_match = Regex::new(r##"`(?<text>[^`]*)`"##).unwrap();
-        let newline_match = Regex::new(r##"(?<newline>\r\n+|\n+)"##).unwrap();
-
-        let mut result = String::new();
-        let mut start_of_next: usize; // start of next match
-        let mut end_of_last: usize = 0; // end of previous match
-
-        // inserting links to other messages
-        let msg_matches_iter = msg_link_match.find_iter(inp_string);
-        for m_raw in msg_matches_iter {
-            let m = m_raw.as_str().to_string();
-
-            start_of_next = m_raw.start();
-            result.push_str(&inp_string[end_of_last..start_of_next]); // text between matches
-            let separated = m.split('>').collect::<Vec<&str>>();
-
-            // if it's a link to a submessage
-            let finished_link: String = if m.contains('.') {
-                let link_parts = separated[1].split('.').collect::<Vec<&str>>();
-                self.handle.render_template(
-                    self.get_file(
-                        "templates/message_contents/msglink.html",
-                    ).as_str(),
-                    &json!({"board": separated[0], "topic_num": link_parts[0], "submsg_num": link_parts[1], "link": &m})
-                ).unwrap()
-            } else {
-                self.handle.render_template(
-                    self.get_file(
-                        "templates/message_contents/msglink.html",
-                    ).as_str(),
-                    &json!({"board": separated[0], "topic_num": separated[1], "submsg_num": "", "link": &m})
-                ).unwrap()
-            };
-
-            // trimming a newline (that is there for some reason)
-            result.push_str(&finished_link[..finished_link.len() - 1]);
-            end_of_last = m_raw.end();
-        }
-        result.push_str(&inp_string[end_of_last..]);
+        let quote_match = Regex::new(r##"\n(?<text>>[^\n]+)"##).unwrap();
+        let newline_match = Regex::new(r##"(?<newline>(\r\n)+|(\n+))"##).unwrap();
 
         // formatting
-        result = newline_match.replace_all(&result, "<br>").to_string();
-        result = bold_match
-            .replace_all(&result, "<span class=\"bold\">${text}</span>")
-            .to_string();
-        result = italic_match
-            .replace_all(&result, "<span class=\"italic\">${text}</span>")
-            .to_string();
-        result = code_match
-            .replace_all(&result, "<span class=\"codeblock\">${text}</span>")
-            .to_string();
+        result = quote_match.replace_all(&result, self.template_map.get("quote").unwrap()).to_string(); 
+        result = newline_match.replace_all(&result, self.template_map.get("newline").unwrap()).to_string(); 
+        result = msg_link_match.replace_all(&result, self.template_map.get("msglink").unwrap()).to_string(); 
+        result = code_match.replace_all(&result, self.template_map.get("codeblock").unwrap()).to_string(); 
+        result = bold_match.replace_all(&result, self.template_map.get("bold").unwrap()).to_string(); 
+        result = italic_match.replace_all(&result, self.template_map.get("italic").unwrap()).to_string(); 
 
         result
     }

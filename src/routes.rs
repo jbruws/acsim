@@ -1,0 +1,322 @@
+//! Module containing functions responsible for actual
+//! handling of HTTP requests
+
+// std
+use std::path::PathBuf;
+use std::sync::Arc;
+// actix and serde
+use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
+use actix_web::{get, post, web, HttpResponse, Responder};
+use serde::Deserialize;
+// misc
+use rand::prelude::SliceRandom;
+use tokio::sync::Mutex;
+// crate
+use crate::db_control;
+use crate::html_proc;
+use crate::BoardConfig;
+
+/// Form used to send messages and images
+#[derive(MultipartForm)]
+struct MsgForm {
+    message: Text<String>,
+    author: Text<String>,
+    #[multipart(limit = "5 MiB")]
+    image: Option<TempFile>,
+}
+
+/// Information about URL path
+#[derive(Deserialize)]
+struct PathInfo {
+    board: String,
+    message_num: Option<i64>,
+}
+
+/// Options that can be specified in query strings in URL
+#[derive(Deserialize)]
+struct QueryOptions {
+    page: Option<i64>,
+}
+
+/// Struct containing various components of the application
+pub struct ApplicationState<'a> {
+    pub db_client: Arc<Mutex<db_control::DatabaseWrapper>>,
+    pub formatter: Arc<html_proc::HtmlFormatter<'a>>,
+    pub config: Arc<BoardConfig>,
+}
+
+/// Responder for site root (redirects to /b/ by default)
+#[get("/")]
+async fn root() -> impl Responder {
+    web::Redirect::to("/b").see_other()
+}
+
+/// Responder for boards
+#[get("/{board}")]
+async fn main_page(
+    data: web::Data<ApplicationState<'_>>,
+    info: web::Path<PathInfo>,
+    page_data: web::Query<QueryOptions>,
+) -> impl Responder {
+    if !data.config.boards.contains_key(&info.board) {
+        return HttpResponse::Ok().body("Does not exist");
+    }
+    let client = data.db_client.lock().await;
+    let mut inserted_msg = String::from("");
+
+    let current_page = match page_data.page {
+        Some(p) if p > 0 => p,
+        _ => 1,
+    };
+
+    // Restoring messages from DB
+    for row in client
+        .get_messages(
+            &info.board,
+            (current_page - 1) * data.config.page_limit as i64,
+            data.config.page_limit as i64,
+        )
+        .await
+        .unwrap()
+        .into_iter()
+    {
+        inserted_msg.push_str(
+            data.formatter
+                .format_into_template(
+                    html_proc::BoardMessageType::Message,
+                    &info.board,
+                    &row.get::<usize, i64>(0),        // message id
+                    &html_proc::get_time(row.get(1)), // time of creation
+                    &row.get::<usize, String>(2),     // author
+                    &data
+                        .formatter
+                        .create_formatting(&row.get::<usize, String>(3))
+                        .await, // message contents
+                    &row.get::<usize, String>(4),     // associated image
+                )
+                .await
+                .as_str(),
+        );
+    }
+
+    let mut board_links = String::new();
+    for c in data.config.boards.keys() {
+        board_links.push_str(&format!("<a href=\"/{}\">/{}/</a>\n ", c, c));
+    }
+
+    HttpResponse::Ok().body(
+        data.formatter
+            .format_into_index(
+                &data.config.site_name,
+                &info.board.to_string(),
+                data.config
+                    .boards
+                    .get(&info.board)
+                    .unwrap_or(&String::from("")),
+                data.config
+                    .taglines
+                    .choose(&mut rand::thread_rng())
+                    .unwrap(),
+                &board_links,
+                &inserted_msg,
+                current_page,
+            )
+            .await,
+    )
+}
+
+/// Message handling logic for boards
+#[post("/{board}")]
+async fn process_form(
+    form: MultipartForm<MsgForm>,
+    info: web::Path<PathInfo>,
+    data: web::Data<ApplicationState<'_>>,
+) -> impl Responder {
+    if !data.config.boards.contains_key(&info.board) {
+        return web::Redirect::to("/").see_other();
+    }
+
+    let client = data.db_client.lock().await;
+    let mut new_filepath: PathBuf = PathBuf::new();
+
+    if let Some(f) = &form.image {
+        let temp_file_path = f.file.path();
+        if f.file_name != Some(String::from("")) {
+            let orig_name = f
+                .file_name
+                .as_ref()
+                .expect("no file name")
+                .split('.')
+                .collect::<Vec<&str>>();
+            let new_name = rand::random::<u64>().to_string();
+            new_filepath = PathBuf::from(format!("user_images/{}.{}", new_name, orig_name[1]));
+            let copy_status = std::fs::copy(temp_file_path, new_filepath.clone());
+            let remove_status = std::fs::remove_file(temp_file_path);
+            log::info!("{:?}", copy_status);
+            log::info!("{:?}", remove_status);
+        }
+    }
+
+    // getting time
+    let since_epoch = html_proc::since_epoch();
+
+    // if fits, push new message into DB and vector
+    if form.author.len() < 254 && form.message.len() < 4094 {
+        let filtered_author = data.formatter.filter_tags(&form.author).await;
+        let filtered_msg = data.formatter.filter_tags(&form.message).await;
+
+        client
+            .insert_to_messages(
+                since_epoch,
+                &filtered_author,
+                &filtered_msg,
+                new_filepath.to_str().unwrap(),
+                since_epoch,
+                &info.board,
+            )
+            .await;
+
+        // after sending, get number of messages on the board
+        let msg_count = client.count_messages(&info.board).await.unwrap();
+
+        // delete a message if total message number is over the hard limit
+        if msg_count > data.config.hard_limit.into() {
+            client.delete_least_active(&info.board).await;
+        }
+    }
+
+    web::Redirect::to(format!("/{}", info.board)).see_other()
+}
+
+/// Responder for individual topics/threads
+#[get("{board}/topic/{message_num}")]
+async fn message_page(
+    data: web::Data<ApplicationState<'_>>,
+    info: web::Path<PathInfo>,
+) -> impl Responder {
+    let message_num = info.message_num.unwrap_or(1);
+    if !data.config.boards.contains_key(&info.board) {
+        return HttpResponse::Ok().body("Does not exist");
+    }
+    let client = data.db_client.lock().await;
+    let head_msg: String;
+    let head_msg_data = client.get_single_message(message_num).await;
+    if let Ok(d) = head_msg_data {
+        head_msg = data
+            .formatter
+            .format_into_template(
+                html_proc::BoardMessageType::ParentMessage,
+                &info.board,
+                &d.get::<usize, i64>(0),        // message id
+                &html_proc::get_time(d.get(1)), // time of creation
+                &d.get::<usize, String>(2),     // author
+                &data
+                    .formatter
+                    .create_formatting(&d.get::<usize, String>(3))
+                    .await, // message contents
+                &d.get::<usize, String>(4),     // associated image
+            )
+            .await;
+    } else {
+        return HttpResponse::Ok().body("404 No Such Message Found");
+    }
+    let mut inserted_submsg = String::from("");
+    let mut submessage_counter = 0;
+    for row in client.get_submessages(message_num).await.unwrap() {
+        submessage_counter += 1;
+        inserted_submsg.push_str(
+            data.formatter
+                .format_into_template(
+                    html_proc::BoardMessageType::Submessage,
+                    &info.board,
+                    &submessage_counter,              // ordinal number
+                    &html_proc::get_time(row.get(1)), // time of creation
+                    &data
+                        .formatter
+                        .filter_tags(&row.get::<usize, String>(2))
+                        .await, // author
+                    &data
+                        .formatter
+                        .create_formatting(&row.get::<usize, String>(3))
+                        .await, // message contents
+                    &row.get::<usize, String>(4),     // associated image
+                )
+                .await
+                .as_str(),
+        );
+    }
+
+    HttpResponse::Ok().body(
+        data.formatter
+            .format_into_topic(
+                &data.config.site_name,
+                &message_num.to_string(),
+                &head_msg,
+                &inserted_submsg,
+                &info.board.to_string(),
+            )
+            .await,
+    )
+}
+
+/// Message handling logic for topics/threads
+#[post("{board}/topic/{message_num}")]
+async fn process_submessage_form(
+    data: web::Data<ApplicationState<'_>>,
+    form: MultipartForm<MsgForm>,
+    info: web::Path<PathInfo>,
+) -> impl Responder {
+    let message_num = info.message_num.unwrap_or(1);
+    if !data.config.boards.contains_key(&info.board) {
+        return web::Redirect::to(format!("{}/topic/{}", info.board, message_num)).see_other();
+    }
+    let client = data.db_client.lock().await;
+    let mut new_filepath: PathBuf = PathBuf::new();
+
+    if let Some(f) = &form.image {
+        let temp_file_path = f.file.path();
+        if f.file_name != Some(String::from("")) {
+            let orig_name = f
+                .file_name
+                .as_ref()
+                .expect("no file name")
+                .split('.')
+                .collect::<Vec<&str>>();
+            let new_name = rand::random::<u64>().to_string();
+            new_filepath = PathBuf::from(format!("user_images/{}.{}", new_name, orig_name[1]));
+            let copy_status = std::fs::copy(temp_file_path, new_filepath.clone());
+            let remove_status = std::fs::remove_file(temp_file_path);
+            log::info!("{:?}", copy_status);
+            log::info!("{:?}", remove_status);
+        }
+    }
+
+    // getting time
+    let since_epoch = html_proc::since_epoch();
+
+    // if fits, push new message into DB
+    if form.author.len() < 254 && form.message.len() < 4094 {
+        let filtered_author = data.formatter.filter_tags(&form.author).await;
+        let filtered_msg = data.formatter.filter_tags(&form.message).await;
+        client
+            .insert_to_submessages(
+                message_num,
+                since_epoch,
+                &filtered_author,
+                &filtered_msg,
+                new_filepath.to_str().unwrap(),
+            )
+            .await;
+
+        // counting submessages for given message
+        let submsg_count = client.count_submessages(message_num).await.unwrap();
+
+        // if number of submessages is below the bumplimit, update activity of parent msg
+        if submsg_count <= data.config.bumplimit.into() {
+            client
+                .update_message_activity(since_epoch, message_num)
+                .await;
+        }
+    }
+    web::Redirect::to(format!("/{}/topic/{}", info.board, message_num)).see_other()
+}

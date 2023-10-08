@@ -1,22 +1,22 @@
 :root {
-	--bg: rgb(23,82,87);
+	--bg: rgb(84,118,125);
 	--bg-msg: rgb(216,215,224);
 	--text: rgb(5,17,18);
 	--codeblock-bg: rgb(166, 166, 188);
-	--codeblock-text: rgb(8, 17, 20);
 }
 
 /* MAIN GRID ELEMENTS */
 body {
 	line-height: 1.3;
 	font-size: 19px;
+	color: var(--text);
 	background-color: var(--bg);
 	background-image: url("acsim.png");
-	background-size: 80px;
+	background-size: 60px;
 	background-repeat: repeat;
-	color: var(--text);
 	overflow: scroll;
 	overflow-wrap: break-word;
+	font-family: sans-serif;
 }
 
 a {
@@ -38,9 +38,8 @@ div#grid_root {
 header, footer {
 	display: block;
 	background-color: var(--bg-msg);
-	box-shadow: 0.4rem 0.4rem 0.8rem black;
+	box-shadow: 0.2rem 0.2rem 0.8rem black;
 	text-align: center;
-	border-radius: 0.5rem;
 }
 
 header {
@@ -75,8 +74,7 @@ div#sidebar {
 	grid-area: sb;
 	display: block;
 	background-color: var(--bg-msg);
-	box-shadow: 0.4rem 0.4rem 0.8rem black;
-	border-radius: 0.5rem;
+	box-shadow: 0.2rem 0.2rem 0.8rem black;
 	padding: 0.5rem;
 	position: sticky;
 	top: 1rem;
@@ -94,10 +92,13 @@ span.bold {
 span.codeblock {
 	border-radius: 0.5rem;
 	background-color: var(--codeblock-bg);
-	color: var(--codeblock-text);
 	padding: 0.25rem;
 	font-family: monospace;
 	font-size: 75%;
+}
+
+span.quote {
+	color: green;
 }
 
 /* SUBMIT FORM */
@@ -139,11 +140,10 @@ input[type="file"] {
 /* MESSAGE STRUCTURE */
 div.message {
 	background-color: var(--bg-msg);
-	box-shadow: 0.4rem 0.4rem 0.8rem black;
-	border-radius: 0.5rem;
+	box-shadow: 0.2rem 0.2rem 0.8rem black;
 	margin-left: auto;
 	margin-right: auto;
-	margin-bottom: 1rem;
+	margin-bottom: 2rem;
 	max-width: 75%;
 	padding: 0.5rem;
 }

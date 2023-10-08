@@ -1,5 +1,5 @@
 //! Struct used for handling connection and queries
-//! to PostgreSQL database used by ACSIM. 
+//! to PostgreSQL database used by ACSIM.
 
 use tokio_postgres::error::Error;
 use tokio_postgres::row::Row;
