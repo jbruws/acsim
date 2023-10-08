@@ -216,7 +216,7 @@ impl HtmlFormatter<'_> {
         let italic_match = Regex::new(r##"\*(?<text>[^*]*)\*"##).unwrap();
         let bold_match = Regex::new(r##"\*\*(?<text>[^*]*)\*\*"##).unwrap();
         let code_match = Regex::new(r##"`(?<text>[^`]*)`"##).unwrap();
-        let quote_match = Regex::new(r##"\n(?<text>>[^\n]+)"##).unwrap();
+        let quote_match = Regex::new(r##"(^|\n)(?<text>>[^\n]+)"##).unwrap();
         let newline_match = Regex::new(r##"(?<newline>(\r\n)+|(\n+))"##).unwrap();
 
         // formatting
