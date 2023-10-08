@@ -104,7 +104,7 @@ async fn main() -> std::io::Result<()> {
         })
         .level(log::LevelFilter::Info) // change `Info` to `Debug` for db query logs
         .chain(std::io::stdout())
-        .chain(fern::log_file("../acsim.log").unwrap())
+        .chain(fern::log_file("./acsim.log").unwrap())
         .apply();
     match logger {
         Ok(_) => log::info!("ACSIM starting"),
