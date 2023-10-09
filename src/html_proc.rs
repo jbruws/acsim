@@ -76,17 +76,17 @@ impl HtmlFormatter<'_> {
 
         // loading regex templates
         obj.templates
-            .push(obj.get_file("regex-templates/quote.html"));
+            .push(obj.get_file("regex_templates/quote.html"));
         obj.templates.push(String::from("<br><br>"));
         obj.templates.push(String::from("<br>"));
         obj.templates
-            .push(obj.get_file("regex-templates/msglink.html"));
+            .push(obj.get_file("regex_templates/msglink.html"));
         obj.templates
-            .push(obj.get_file("regex-templates/codeblock.html"));
+            .push(obj.get_file("regex_templates/codeblock.html"));
         obj.templates
-            .push(obj.get_file("regex-templates/bold.html"));
+            .push(obj.get_file("regex_templates/bold.html"));
         obj.templates
-            .push(obj.get_file("regex-templates/italic.html"));
+            .push(obj.get_file("regex_templates/italic.html"));
 
         obj
     }
@@ -188,7 +188,7 @@ impl HtmlFormatter<'_> {
     ) -> String {
         self.handle
             .render_template(
-                &self.get_file("web-data/index.html"),
+                &self.get_file("web_data/index.html"),
                 &json!({"site_name": site_name,
             "board_designation": board_designation,
             "board_desc": board_desc,
@@ -213,7 +213,7 @@ impl HtmlFormatter<'_> {
     ) -> String {
         self.handle
             .render_template(
-                &self.get_file("web-data/topic.html"),
+                &self.get_file("web_data/topic.html"),
                 &json!({"site_name": site_name,
             "board_designation": board_designation,
             "topic_number": topic_number,

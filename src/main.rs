@@ -25,38 +25,13 @@ pub struct BoardConfig {
     server_ipv6: String,
     server_port: u16,
     bind_to_one_ip: bool,
-    deletion_timer: u16,
     bumplimit: u16,
-    soft_limit: u16,
     hard_limit: u16,
     site_name: String,
     site_frontend: String,
     page_limit: u16,
     boards: HashMap<String, String>,
     taglines: Vec<String>,
-}
-
-// this function does not yet work, since i somehow need to pass Client
-// to the function (to make queries work) without cloning it
-/// Soft limit message deletion timer (currently unused)
-async fn deletion_loop(client: Arc<Mutex<db_control::DatabaseWrapper>>, config: Arc<BoardConfig>) {
-    loop {
-        // interval between deletion attempts
-        tokio::time::sleep(tokio::time::Duration::from_secs(
-            config.deletion_timer.into(),
-        ))
-        .await;
-
-        // looking across all boards
-        let cl = client.lock().await;
-        for i in config.boards.keys() {
-            let msg_count = cl.count_messages(i).await.unwrap();
-            if msg_count > config.soft_limit.into() {
-                cl.delete_least_active(i).await;
-            }
-        }
-        drop(cl);
-    }
 }
 
 #[actix_web::main]
@@ -111,20 +86,14 @@ async fn main() -> std::io::Result<()> {
         Err(e) => println!("WARNING: Failed to start logger: {}", e),
     };
 
-    // start soft limit message deletion loop
-    //thread::spawn(|| {
-    //    tokio::task::spawn(async { deletion_loop(Arc::clone(&client), Arc::clone(&config)).await })
-    //})
-    //.join();
-
     // starting the server
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
             .app_data(application_data.clone())
             .service(actix_files::Files::new(
-                "/web-data",
-                format!("./frontends/{}/web-data", &frontend_name.clone()),
+                "/web_data",
+                format!("./frontends/{}/web_data", &frontend_name.clone()),
             ))
             .service(actix_files::Files::new("/user_images", "./user_images"))
             .service(routes::root)

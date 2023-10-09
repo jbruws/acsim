@@ -20,11 +20,7 @@ The engine is still WIP. Expect some bugs and missing features.
 
 `"bind_to_one_ip"`: Only bind to IPs specified in `server_ipv4` and `server_ipv6` instead of binding to all available addresses
 
-`"deletion_timer"`: After this many seconds, the server will delete the least active topic (if number of topics on a given board is above `soft_limit`)
-
 `"bumplimit"`: After this many submessages, a topic stops updating its `latest_submsg` field (becoming inactive in the server's eyes)
-
-`"soft_limit"`: Number of messages on a board required to attempt inactive topic deletion every `deletion_timer` seconds.
 
 `"hard_limit"`: If the number of messages on a board exceeds this number, board's least active topic will be deleted when a new one is submitted.
 

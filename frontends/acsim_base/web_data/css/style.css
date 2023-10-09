@@ -11,7 +11,7 @@ body {
 	font-size: 19px;
 	color: var(--text);
 	background-color: var(--bg);
-	background-image: url("acsim.png");
+	background-image: url("../acsim.png");
 	background-size: 60px;
 	background-repeat: repeat;
 	overflow: scroll;
