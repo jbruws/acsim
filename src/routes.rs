@@ -82,7 +82,7 @@ async fn main_page(
     {
         inserted_msg.push_str(
             data.formatter
-                .format_into_template(
+                .format_into_message(
                     html_proc::BoardMessageType::Message,
                     &info.board,
                     &row.get::<usize, i64>(0),        // message id
@@ -204,7 +204,7 @@ async fn message_page(
     if let Ok(d) = head_msg_data {
         head_msg = data
             .formatter
-            .format_into_template(
+            .format_into_message(
                 html_proc::BoardMessageType::ParentMessage,
                 &info.board,
                 &d.get::<usize, i64>(0),        // message id
@@ -226,7 +226,7 @@ async fn message_page(
         submessage_counter += 1;
         inserted_submsg.push_str(
             data.formatter
-                .format_into_template(
+                .format_into_message(
                     html_proc::BoardMessageType::Submessage,
                     &info.board,
                     &submessage_counter,              // ordinal number

@@ -5,7 +5,6 @@ use chrono::{offset::Local, DateTime, NaiveDateTime};
 use handlebars::Handlebars;
 use regex::Regex;
 use serde_json::json;
-use std::collections::HashMap;
 use std::fs::read_to_string;
 use std::str;
 
@@ -25,7 +24,7 @@ pub fn since_epoch() -> i64 {
     }
 }
 
-/// Enum representing three message types: board messages, topic head messages and topic submessages
+/// Message types that can be formatted by `format_into_message`
 #[derive(PartialEq)]
 pub enum BoardMessageType {
     Message,       // messages on main page
@@ -33,7 +32,8 @@ pub enum BoardMessageType {
     Submessage,    // submessages on topic pages
 }
 
-/// Struct used to choose ACSIM frontend directory
+/// Struct containing data necessary for data formatting, such as chosen frontend directory,
+/// templating engine and list of regular expressions
 pub struct HtmlFormatter<'a> {
     pub work_dir: String,
     handle: Handlebars<'a>,
@@ -51,23 +51,33 @@ impl HtmlFormatter<'_> {
         };
 
         // loading regexes
+        // quotes (greentext)
         obj.expressions
             .push(Regex::new(r##"(^|(?<nl>\n))(?<text>>[^\n]+)"##).unwrap());
+        // >2 newlines
+        obj.expressions
+            .push(Regex::new(r##"(?<newline>(\n(\s|\n){2,}|\r(\s|\r){2,}))"##).unwrap());
+        // singular newlines
         obj.expressions
             .push(Regex::new(r##"(?<newline>(\n(\s|\n)+|\r(\s|\r)+))"##).unwrap());
+        // message links
         obj.expressions.push(
             Regex::new(r##"(?<board>\w{1,16})>(?<msg>\d+)(?<dotted>\.(?<submsg>\d+))?"##).unwrap(),
         );
+        // code blocks
         obj.expressions
             .push(Regex::new(r##"`(?<text>[^`]*)`"##).unwrap());
+        // bold text
         obj.expressions
             .push(Regex::new(r##"\*\*(?<text>[^*]*)\*\*"##).unwrap());
+        // italic text
         obj.expressions
             .push(Regex::new(r##"\*(?<text>[^*]*)\*"##).unwrap());
 
         // loading regex templates
         obj.templates
             .push(obj.get_file("regex-templates/quote.html"));
+        obj.templates.push(String::from("<br><br>"));
         obj.templates.push(String::from("<br>"));
         obj.templates
             .push(obj.get_file("regex-templates/msglink.html"));
@@ -81,14 +91,14 @@ impl HtmlFormatter<'_> {
         obj
     }
 
-    /// Returns contents of specified file in `work_dir`
+    /// Returns contents of specified file from `work_dir` or its subdirectories
     fn get_file(&self, rel_path: &str) -> String {
         read_to_string(format!("{}/{}", &self.work_dir, rel_path))
             .unwrap_or_else(|_| panic!("Can't read {}/{}", &self.work_dir, rel_path))
     }
 
     /// Fits form data into one of several HTML message templates.
-    pub async fn format_into_template(
+    pub async fn format_into_message(
         &self,
         message_type: BoardMessageType,
         board: &str,
@@ -101,14 +111,13 @@ impl HtmlFormatter<'_> {
         let msg_contents: String;
         // if message has an image...
         if !image.is_empty() {
-            let mut formatted_img: String;
+            let formatted_img: String;
             // for messages in topics, we need do descend to parent dir
             if message_type == BoardMessageType::ParentMessage
                 || message_type == BoardMessageType::Submessage
             {
                 // descend two dirs (another dot is included in DB image path)
-                formatted_img = String::from("../../");
-                formatted_img.push_str(image);
+                formatted_img = format!("../../{}", image);
             } else {
                 formatted_img = format!("../{}", image);
             }
@@ -166,7 +175,7 @@ impl HtmlFormatter<'_> {
         }
     }
 
-    /// Formats data into index.html (board pages)
+    /// Formats data into `index.html` (board pages)
     pub async fn format_into_index(
         &self,
         site_name: &String,
@@ -193,7 +202,7 @@ impl HtmlFormatter<'_> {
             .unwrap()
     }
 
-    /// Formats data into topic.html (topic pages)
+    /// Formats data into `topic.html` (topic pages)
     pub async fn format_into_topic(
         &self,
         site_name: &String,
@@ -215,14 +224,14 @@ impl HtmlFormatter<'_> {
             .unwrap()
     }
 
-    /// Removes HTML tags from strings.
+    /// Removes HTML tags from strings. Called when writing data to database
     pub async fn filter_tags(&self, inp_string: &str) -> String {
         let filter = Regex::new(r##"<.*?>"##).unwrap();
         String::from(filter.replace_all(inp_string, ""))
     }
 
     /// Turns raw message text pulled from the database into workable HTML,
-    /// which is later piped into other functions
+    /// which is later piped into other functions. Called when loading data from database
     pub async fn create_formatting(&self, inp_string: &str) -> String {
         let mut result = String::from(inp_string);
 
