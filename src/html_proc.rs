@@ -37,7 +37,8 @@ pub enum BoardMessageType {
 pub struct HtmlFormatter<'a> {
     pub work_dir: String,
     handle: Handlebars<'a>,
-    template_map: HashMap<&'a str, String>,
+    expressions: Vec<Regex>,
+    templates: Vec<String>,
 }
 
 impl HtmlFormatter<'_> {
@@ -45,22 +46,37 @@ impl HtmlFormatter<'_> {
         let mut obj = HtmlFormatter {
             work_dir: format!("./frontends/{}", frontend_name),
             handle: Handlebars::new(),
-            template_map: HashMap::new(),
+            expressions: Vec::new(),
+            templates: Vec::new(),
         };
 
+        // loading regexes
+        obj.expressions
+            .push(Regex::new(r##"(^|(?<nl>\n))(?<text>>[^\n]+)"##).unwrap());
+        obj.expressions
+            .push(Regex::new(r##"(?<newline>(\n(\s|\n)+|\r(\s|\r)+))"##).unwrap());
+        obj.expressions.push(
+            Regex::new(r##"(?<board>\w{1,16})>(?<msg>\d+)(?<dotted>\.(?<submsg>\d+))?"##).unwrap(),
+        );
+        obj.expressions
+            .push(Regex::new(r##"`(?<text>[^`]*)`"##).unwrap());
+        obj.expressions
+            .push(Regex::new(r##"\*\*(?<text>[^*]*)\*\*"##).unwrap());
+        obj.expressions
+            .push(Regex::new(r##"\*(?<text>[^*]*)\*"##).unwrap());
+
         // loading regex templates
-        obj.template_map
-            .insert("quote", obj.get_file("regex-templates/quote.html"));
-        obj.template_map
-            .insert("newline", String::from("<br>"));
-        obj.template_map
-            .insert("msglink", obj.get_file("regex-templates/msglink.html"));
-        obj.template_map
-            .insert("codeblock", obj.get_file("regex-templates/codeblock.html"));
-        obj.template_map
-            .insert("bold", obj.get_file("regex-templates/bold.html"));
-        obj.template_map
-            .insert("italic", obj.get_file("regex-templates/italic.html"));
+        obj.templates
+            .push(obj.get_file("regex-templates/quote.html"));
+        obj.templates.push(String::from("<br>"));
+        obj.templates
+            .push(obj.get_file("regex-templates/msglink.html"));
+        obj.templates
+            .push(obj.get_file("regex-templates/codeblock.html"));
+        obj.templates
+            .push(obj.get_file("regex-templates/bold.html"));
+        obj.templates
+            .push(obj.get_file("regex-templates/italic.html"));
 
         obj
     }
@@ -210,22 +226,11 @@ impl HtmlFormatter<'_> {
     pub async fn create_formatting(&self, inp_string: &str) -> String {
         let mut result = String::from(inp_string);
 
-        // regex strings
-        let msg_link_match =
-            Regex::new(r##"(?<board>\w{1,16})>(?<msg>\d+)(?<dotted>\.(?<submsg>\d+))?"##).unwrap();
-        let italic_match = Regex::new(r##"\*(?<text>[^*]*)\*"##).unwrap();
-        let bold_match = Regex::new(r##"\*\*(?<text>[^*]*)\*\*"##).unwrap();
-        let code_match = Regex::new(r##"`(?<text>[^`]*)`"##).unwrap();
-        let quote_match = Regex::new(r##"(^|(?<nl>\n))(?<text>>[^\n]+)"##).unwrap();
-        let newline_match = Regex::new(r##"(?<newline>(\r\n)+|(\n+))"##).unwrap();
-
-        // formatting
-        result = quote_match.replace_all(&result, self.template_map.get("quote").unwrap()).to_string(); 
-        result = newline_match.replace_all(&result, self.template_map.get("newline").unwrap()).to_string(); 
-        result = msg_link_match.replace_all(&result, self.template_map.get("msglink").unwrap()).to_string(); 
-        result = code_match.replace_all(&result, self.template_map.get("codeblock").unwrap()).to_string(); 
-        result = bold_match.replace_all(&result, self.template_map.get("bold").unwrap()).to_string(); 
-        result = italic_match.replace_all(&result, self.template_map.get("italic").unwrap()).to_string(); 
+        for i in 0..self.templates.len() {
+            result = self.expressions[i]
+                .replace_all(&result, &self.templates[i])
+                .to_string();
+        }
 
         result
     }
