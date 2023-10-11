@@ -1,7 +1,10 @@
 :root {
 	--bg: rgb(84,118,125);
 	--bg-msg: rgb(216,215,224);
-	--text: rgb(5,17,18);
+	--light-bg-msg: rgb(180, 191, 209);
+	--text-color: rgb(5,17,18);
+	--quote-color: green;
+	--msglink-color: var(--bg);
 	--codeblock-bg: rgb(166, 166, 188);
 }
 
@@ -9,7 +12,7 @@
 body {
 	line-height: 1.3;
 	font-size: 19px;
-	color: var(--text);
+	color: var(--text-color);
 	background-color: var(--bg);
 	background-image: url("../acsim.png");
 	background-size: 60px;
@@ -19,7 +22,7 @@ body {
 	font-family: sans-serif;
 }
 
-a {
+a:not(.msglink) {
 	text-decoration: none;
 }
 
@@ -98,7 +101,11 @@ span.codeblock {
 }
 
 span.quote {
-	color: green;
+	color: var(--quote-color);
+}
+
+a.msglink {
+	color: var(--msglink-color);
 }
 
 /* SUBMIT FORM */
