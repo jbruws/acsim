@@ -104,40 +104,36 @@ impl HtmlFormatter<'_> {
         board: &str,
         id: &i64,
         time: &str,
+        page: &str,
         author: &str,
         msg: &str,
         image: &str,
     ) -> String {
-        let msg_contents: String;
-        // if message has an image...
-        if !image.is_empty() {
-            let formatted_img: String;
-            // for messages in topics, we need do descend to parent dir
-            if message_type == BoardMessageType::ParentMessage
+        // if message has an image attached, apply different template
+        let msg_contents: String = if !image.is_empty() {
+            let formatted_img: String = if message_type == BoardMessageType::ParentMessage
                 || message_type == BoardMessageType::Submessage
             {
-                // descend two dirs (another dot is included in DB image path)
-                formatted_img = format!("../../{}", image);
+                // descend two dirs if message is in topic (/board/topic/*)
+                format!("../../{}", image)
             } else {
-                formatted_img = format!("../{}", image);
-            }
+                format!("../{}", image)
+            };
 
-            msg_contents = self
-                .handle
+            self.handle
                 .render_template(
                     &self.get_file("templates/message_contents/contents_img.html"),
                     &json!({"img_link": formatted_img, "msg": msg}),
                 )
-                .unwrap();
+                .unwrap()
         } else {
-            msg_contents = self
-                .handle
+            self.handle
                 .render_template(
                     &self.get_file("templates/message_contents/contents_noimg.html"),
                     &json!({ "msg": msg }),
                 )
-                .unwrap();
-        }
+                .unwrap()
+        };
 
         match message_type {
             BoardMessageType::Message => self
@@ -147,6 +143,7 @@ impl HtmlFormatter<'_> {
                     &json!({"board": board,
                 "id": id,
                 "time": time,
+                "page": page,
                 "author": author,
                 "msg": msg_contents}),
                 )
@@ -157,6 +154,7 @@ impl HtmlFormatter<'_> {
                     &self.get_file("templates/message_blocks/parent_message.html"),
                     &json!({
                 "time": time,
+                "page": page,
                 "author": author,
                 "id": id,
                 "msg": msg_contents}),

@@ -64,10 +64,7 @@ async fn main_page(
     let client = data.db_client.lock().await;
     let mut inserted_msg = String::from("");
 
-    let current_page = match page_data.page {
-        Some(p) if p > 0 => p,
-        _ => 1,
-    };
+    let current_page = page_data.page.unwrap_or(1);
 
     // Restoring messages from DB
     for row in client
@@ -87,12 +84,13 @@ async fn main_page(
                     &info.board,
                     &row.get::<usize, i64>(0),        // message id
                     &html_proc::get_time(row.get(1)), // time of creation
-                    &row.get::<usize, String>(2),     // author
+                    &current_page.to_string(),
+                    &row.get::<usize, String>(2), // author
                     &data
                         .formatter
                         .create_formatting(&row.get::<usize, String>(3))
                         .await, // message contents
-                    &row.get::<usize, String>(4),     // associated image
+                    &row.get::<usize, String>(4), // associated image
                 )
                 .await
                 .as_str(),
@@ -193,11 +191,15 @@ async fn process_form(
 async fn message_page(
     data: web::Data<ApplicationState<'_>>,
     info: web::Path<PathInfo>,
+    page_data: web::Query<QueryOptions>,
 ) -> impl Responder {
     let message_num = info.message_num.unwrap_or(1);
     if !data.config.boards.contains_key(&info.board) {
         return HttpResponse::Ok().body("Does not exist");
     }
+
+    let current_page = page_data.page.unwrap_or(1);
+
     let client = data.db_client.lock().await;
     let head_msg: String;
     let head_msg_data = client.get_single_message(message_num).await;
@@ -209,12 +211,13 @@ async fn message_page(
                 &info.board,
                 &d.get::<usize, i64>(0),        // message id
                 &html_proc::get_time(d.get(1)), // time of creation
-                &d.get::<usize, String>(2),     // author
+                &current_page.to_string(),
+                &d.get::<usize, String>(2), // author
                 &data
                     .formatter
                     .create_formatting(&d.get::<usize, String>(3))
                     .await, // message contents
-                &d.get::<usize, String>(4),     // associated image
+                &d.get::<usize, String>(4), // associated image
             )
             .await;
     } else {
@@ -231,6 +234,7 @@ async fn message_page(
                     &info.board,
                     &submessage_counter,              // ordinal number
                     &html_proc::get_time(row.get(1)), // time of creation
+                    &current_page.to_string(),
                     &data
                         .formatter
                         .filter_tags(&row.get::<usize, String>(2))
@@ -239,7 +243,7 @@ async fn message_page(
                         .formatter
                         .create_formatting(&row.get::<usize, String>(3))
                         .await, // message contents
-                    &row.get::<usize, String>(4),     // associated image
+                    &row.get::<usize, String>(4), // associated image
                 )
                 .await
                 .as_str(),
@@ -264,12 +268,15 @@ async fn message_page(
 async fn process_submessage_form(
     data: web::Data<ApplicationState<'_>>,
     form: MultipartForm<MsgForm>,
+    page_data: web::Query<QueryOptions>,
     info: web::Path<PathInfo>,
 ) -> impl Responder {
     let message_num = info.message_num.unwrap_or(1);
     if !data.config.boards.contains_key(&info.board) {
         return web::Redirect::to(format!("{}/topic/{}", info.board, message_num)).see_other();
     }
+    let current_page = page_data.page.unwrap_or(1);
+
     let client = data.db_client.lock().await;
     let mut new_filepath: PathBuf = PathBuf::new();
 
@@ -318,5 +325,9 @@ async fn process_submessage_form(
                 .await;
         }
     }
-    web::Redirect::to(format!("/{}/topic/{}", info.board, message_num)).see_other()
+    web::Redirect::to(format!(
+        "/{}/topic/{}?page={}",
+        info.board, message_num, current_page
+    ))
+    .see_other()
 }
