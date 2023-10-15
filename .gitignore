@@ -1,4 +1,4 @@
 /target
 /user_images/*
-config.json
+config.yaml
 acsim.log

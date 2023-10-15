@@ -4,10 +4,11 @@
 
 // std
 use std::collections::HashMap;
+use std::fs::read_to_string;
 use std::sync::Arc;
 // actix and serde
 use actix_web::{middleware::Logger, web, App, HttpServer};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 // async mutex
 use tokio::sync::Mutex;
 
@@ -16,7 +17,7 @@ mod html_proc;
 mod routes;
 
 /// Deserialized version of config.json file
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Deserialize, Clone)]
 pub struct BoardConfig {
     db_host: String,
     db_user: String,
@@ -37,8 +38,11 @@ pub struct BoardConfig {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // reading board config
-    let raw_config: BoardConfig =
-        serde_json::from_str(include_str!("../config.json")).expect("Can't parse config.json");
+    let raw_config: BoardConfig = serde_yaml::from_str(
+        &read_to_string("./config.yaml")
+            .unwrap_or_else(|_| panic!("Critical: can't read config.yaml")),
+    )
+    .expect("Critical: can't parse config.yaml");
 
     let config = Arc::new(raw_config);
     let frontend_name: String = config.site_frontend.clone();
@@ -64,7 +68,7 @@ async fn main() -> std::io::Result<()> {
     let application_data = web::Data::new(routes::ApplicationState {
         db_client: Arc::clone(&client),
         formatter: Arc::clone(&formatter),
-        config: Arc::clone(&config), // alas, we must clone here
+        config: Arc::clone(&config),
     });
 
     // starting the logger

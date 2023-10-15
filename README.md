@@ -4,7 +4,7 @@ Basic message board engine written in `rust` and `actix-web`.
 
 The engine is still WIP. Expect some bugs and missing features.
 
-## `config.json` file breakdown
+## `config.yaml` file breakdown
 
 `"db_host"`: IP of the server where `acsim_db` database is hosted.
 
@@ -25,6 +25,8 @@ The engine is still WIP. Expect some bugs and missing features.
 `"hard_limit"`: If the number of messages on a board exceeds this number, board's least active topic will be deleted when a new one is submitted.
 
 `"site_name"`: Name of your site in general, displayed in `<title>` tags on pages.
+
+`"site_frontend"`: Name of the frontend (page/template structure) used by ACSIM. Refer to `frontends/acsim_base` for reference.
 
 `"page_limit"`: How many messages are displayed per page.
 

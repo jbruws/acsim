@@ -6,33 +6,28 @@ fi
 
 if [ ! -f "config.json" ]; then
 	echo 'Creating default config file for server'
-	# does not work (bruh)
-	# switch to yaml asap
-	echo '
-	{
-		"db_host": "127.0.0.1",
-		"db_user": "$1",
-		"db_password": "change_this",
-		"server_ipv4": "127.0.0.1",
-		"server_ipv6": "::1",
-		"server_port": 8080,
-		"bind_to_one_ip": false,
-		"bumplimit": 200,
-		"hard_limit": 125,
-		"site_name": "ACSIM",
-		"site_frontend": "acsim_base",
-		"page_limit": 25,
-		"boards": {
-			"b": "Random", 
-			"s": "Software",
-			"ca": "Cryptoanarchy"
-		},
-		"taglines": [
-			"you should back your data up NOW!!!",
-			"In Rust We Trust"
-		]
-	}
-	' > config.json
+	echo "
+---
+db_host: 127.0.0.1
+db_user: $1
+db_password: change_this
+server_ipv4: 127.0.0.1
+server_ipv6: ::1
+server_port: 8080
+bind_to_one_ip: false
+bumplimit: 200
+hard_limit: 125
+site_name: ACSIM
+site_frontend: acsim_base
+page_limit: 25
+boards:
+    b: Random
+    s: Software
+    ca: Cryptoanarchy
+taglines:
+    - you should back your data up NOW!!!
+    - In Rust We Trust
+	" > config.yaml
 fi
 
 # Creating database tables
