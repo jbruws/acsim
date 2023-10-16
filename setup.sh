@@ -18,7 +18,7 @@ bind_to_one_ip: false
 bumplimit: 200
 hard_limit: 125
 site_name: ACSIM
-site_frontend: acsim_base
+site_frontend: acsim_ungapped
 page_limit: 25
 boards:
     b: Random
