@@ -111,5 +111,9 @@ p.submessage_header {
 		padding: 0.5rem;
 		max-width: 90%;
 	}
+
+	div#sidebar {
+		background-color: var(--bg);
+	}
 }
 

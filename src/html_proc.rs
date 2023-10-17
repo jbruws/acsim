@@ -6,6 +6,7 @@ use handlebars::Handlebars;
 use regex::Regex;
 use serde_json::json;
 use std::fs::read_to_string;
+use std::path::Path;
 use std::str;
 
 /// Returns current date and time in 'YYYY-MM-DD hh:mm:ss' 24-hour format.
@@ -14,6 +15,33 @@ pub fn get_time(since_epoch: i64) -> String {
     let naive = NaiveDateTime::from_timestamp_opt(since_epoch, 0).unwrap(); // UNIX epoch to datetime
     let dt = DateTime::<Local>::from_naive_utc_and_offset(naive, offset).to_string();
     dt[..dt.len() - 7].to_string() // 7 was chosen experimentally
+}
+
+/// Validates images sent by users using libmagic
+pub fn valid_image(image: &str) -> bool {
+    if image.is_empty() {
+        return false;
+    }
+
+    let mut image_fs_path: String = format!("./{}", image);
+    if image.starts_with("/") {
+        image_fs_path = format!("{}", image);
+    }
+    let image_fs_path = &image_fs_path[..image_fs_path.len()]; // path ends with "\" for some reason
+
+    // libmagic image validation
+    let cookie = magic::Cookie::open(magic::cookie::Flags::ERROR).unwrap();
+    let database = Default::default();
+    let cookie = cookie.load(&database).unwrap();
+    let file_type = cookie.file(image_fs_path);
+
+    if Path::new(image_fs_path).exists()
+        && file_type.is_ok()
+        && file_type.unwrap().contains("image data")
+    {
+        return true;
+    }
+    return false;
 }
 
 /// Gets seconds elapsed since Unix epoch.
@@ -109,9 +137,16 @@ impl HtmlFormatter<'_> {
         msg: &str,
         image: &str,
     ) -> String {
-        // if message has an image attached, apply different template
-        let msg_contents: String = if !image.is_empty() {
-            let formatted_img: String = if message_type == BoardMessageType::ParentMessage
+        let mut msg_contents = self
+            .handle
+            .render_template(
+                &self.get_file("templates/message_contents/contents_noimg.html"),
+                &json!({ "msg": msg }),
+            )
+            .unwrap();
+
+        if valid_image(image) {
+            let image_web_path: String = if message_type == BoardMessageType::ParentMessage
                 || message_type == BoardMessageType::Submessage
             {
                 // descend two dirs if message is in topic (/board/topic/*)
@@ -120,20 +155,14 @@ impl HtmlFormatter<'_> {
                 format!("../{}", image)
             };
 
-            self.handle
+            msg_contents = self
+                .handle
                 .render_template(
                     &self.get_file("templates/message_contents/contents_img.html"),
-                    &json!({"img_link": formatted_img, "msg": msg}),
+                    &json!({"img_link": image_web_path, "msg": msg}),
                 )
-                .unwrap()
-        } else {
-            self.handle
-                .render_template(
-                    &self.get_file("templates/message_contents/contents_noimg.html"),
-                    &json!({ "msg": msg }),
-                )
-                .unwrap()
-        };
+                .unwrap();
+        }
 
         match message_type {
             BoardMessageType::Message => self

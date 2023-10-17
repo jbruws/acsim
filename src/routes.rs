@@ -139,6 +139,10 @@ async fn process_form(
 
     if let Some(f) = &form.image {
         let temp_file_path = f.file.path();
+        // test to see if it is an actual image
+        if !html_proc::valid_image(temp_file_path.to_str().unwrap()) { 
+            return web::Redirect::to(format!("/{}", info.board)).see_other();
+        }
         if f.file_name != Some(String::from("")) {
             let orig_name = f
                 .file_name
@@ -281,6 +285,9 @@ async fn process_submessage_form(
     let mut new_filepath: PathBuf = PathBuf::new();
 
     if let Some(f) = &form.image {
+        if f.content_type.as_ref().unwrap().type_() != "image" {
+            return web::Redirect::to(format!("/{}", info.board)).see_other();
+        }
         let temp_file_path = f.file.path();
         if f.file_name != Some(String::from("")) {
             let orig_name = f

@@ -1,6 +1,6 @@
 [package]
 name = "acsim"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -21,3 +21,4 @@ futures = "0.3"
 fern = "0.6"
 log = "0.4"
 handlebars = "4"
+magic = "0.16"
