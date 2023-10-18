@@ -21,8 +21,8 @@ use crate::BoardConfig;
 struct MsgForm {
     message: Text<String>,
     author: Text<String>,
-    #[multipart(limit = "5 MiB")]
-    image: Option<TempFile>,
+    #[multipart(limit = "100 MiB", rename = "files[]")]
+    files: Vec<TempFile>,
 }
 
 /// Information about URL path
@@ -136,24 +136,33 @@ async fn process_form(
 
     let client = data.db_client.lock().await;
     let mut new_filepath: PathBuf = PathBuf::new();
+    let mut filepath_collection = String::new();
 
-    if let Some(f) = &form.image {
+    println!("{:?}", form.files);
+    for i in 0..form.files.len() {
+        if i == 4 {
+            break;
+        }
+        let f = &form.files[i];
         let temp_file_path = f.file.path();
         // test to see if it is an actual image
-        if html_proc::valid_image(temp_file_path.to_str().unwrap()) { 
-            let orig_name = f
-                .file_name
-                .as_ref()
-                .expect("no file name")
-                .split('.')
-                .collect::<Vec<&str>>();
-            let new_name = rand::random::<u64>().to_string();
-            new_filepath = PathBuf::from(format!("user_images/{}.{}", new_name, orig_name[1]));
-            let copy_status = std::fs::copy(temp_file_path, new_filepath.clone());
-            let remove_status = std::fs::remove_file(temp_file_path);
-            log::info!("{:?}", copy_status);
-            log::info!("{:?}", remove_status);
+        if !html_proc::valid_image(temp_file_path.to_str().unwrap()) {
+            continue;
         }
+        let orig_name = f
+            .file_name
+            .as_ref()
+            .expect("no file name")
+            .split('.')
+            .collect::<Vec<&str>>();
+        let new_name = rand::random::<u64>().to_string();
+        new_filepath = PathBuf::from(format!("user_images/{}.{}", new_name, orig_name[1]));
+        let copy_status = std::fs::copy(temp_file_path, new_filepath.clone());
+        let remove_status = std::fs::remove_file(temp_file_path);
+        log::info!("{:?}", copy_status);
+        log::info!("{:?}", remove_status);
+        filepath_collection.push_str(new_filepath.to_str().unwrap());
+        filepath_collection.push_str(";");
     }
 
     // getting time
@@ -169,7 +178,7 @@ async fn process_form(
                 since_epoch,
                 &filtered_author,
                 &filtered_msg,
-                new_filepath.to_str().unwrap(),
+                &filepath_collection,
                 since_epoch,
                 &info.board,
             )
@@ -280,27 +289,36 @@ async fn process_submessage_form(
 
     let client = data.db_client.lock().await;
     let mut new_filepath: PathBuf = PathBuf::new();
+    let mut filepath_collection = String::new();
 
-    if let Some(f) = &form.image {
+    for i in 0..form.files.len() {
+        if i == 4 {
+            break;
+        }
+        let f = &form.files[i];
+
         if f.content_type.as_ref().unwrap().type_() != "image" {
             return web::Redirect::to(format!("/{}", info.board)).see_other();
         }
         let temp_file_path = f.file.path();
         // test to see if it is an actual image
-        if html_proc::valid_image(temp_file_path.to_str().unwrap()) { 
-            let orig_name = f
-                .file_name
-                .as_ref()
-                .expect("no file name")
-                .split('.')
-                .collect::<Vec<&str>>();
-            let new_name = rand::random::<u64>().to_string();
-            new_filepath = PathBuf::from(format!("user_images/{}.{}", new_name, orig_name[1]));
-            let copy_status = std::fs::copy(temp_file_path, new_filepath.clone());
-            let remove_status = std::fs::remove_file(temp_file_path);
-            log::info!("{:?}", copy_status);
-            log::info!("{:?}", remove_status);
+        if !html_proc::valid_image(temp_file_path.to_str().unwrap()) {
+            continue;
         }
+        let orig_name = f
+            .file_name
+            .as_ref()
+            .expect("no file name")
+            .split('.')
+            .collect::<Vec<&str>>();
+        let new_name = rand::random::<u64>().to_string();
+        new_filepath = PathBuf::from(format!("user_images/{}.{}", new_name, orig_name[1]));
+        let copy_status = std::fs::copy(temp_file_path, new_filepath.clone());
+        let remove_status = std::fs::remove_file(temp_file_path);
+        log::info!("{:?}", copy_status);
+        log::info!("{:?}", remove_status);
+        filepath_collection.push_str(new_filepath.to_str().unwrap());
+        filepath_collection.push_str(";");
     }
 
     // getting time
@@ -316,7 +334,7 @@ async fn process_submessage_form(
                 since_epoch,
                 &filtered_author,
                 &filtered_msg,
-                new_filepath.to_str().unwrap(),
+                &filepath_collection,
             )
             .await;
 

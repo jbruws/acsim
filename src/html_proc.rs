@@ -135,34 +135,39 @@ impl HtmlFormatter<'_> {
         page: &str,
         author: &str,
         msg: &str,
-        image: &str,
+        images: &str,
     ) -> String {
-        let mut msg_contents = self
+        let mut image_container = String::new();
+
+        for image in images.split(";") {
+            if valid_image(image) {
+                let image_web_path: String = if message_type == BoardMessageType::ParentMessage
+                    || message_type == BoardMessageType::Submessage
+                {
+                    // descend two dirs if message is in topic (/board/topic/*)
+                    format!("../../{}", image)
+                } else {
+                    format!("../{}", image)
+                };
+
+                image_container.push_str(
+                    &self.handle
+                        .render_template(
+                            &self.get_file("templates/message_contents/image_block.html"),
+                            &json!({ "img_link": image_web_path }),
+                        )
+                        .unwrap(),
+                );
+            }
+        }
+
+        let msg_contents = self
             .handle
             .render_template(
-                &self.get_file("templates/message_contents/contents_noimg.html"),
-                &json!({ "msg": msg }),
+                &self.get_file("templates/message_contents/contents.html"),
+                &json!({"img_block": image_container, "msg": msg}),
             )
             .unwrap();
-
-        if valid_image(image) {
-            let image_web_path: String = if message_type == BoardMessageType::ParentMessage
-                || message_type == BoardMessageType::Submessage
-            {
-                // descend two dirs if message is in topic (/board/topic/*)
-                format!("../../{}", image)
-            } else {
-                format!("../{}", image)
-            };
-
-            msg_contents = self
-                .handle
-                .render_template(
-                    &self.get_file("templates/message_contents/contents_img.html"),
-                    &json!({"img_link": image_web_path, "msg": msg}),
-                )
-                .unwrap();
-        }
 
         match message_type {
             BoardMessageType::Message => self
