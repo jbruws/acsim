@@ -6,33 +6,33 @@ The engine is still WIP. Expect some bugs and missing features.
 
 ## `config.yaml` file breakdown
 
-`"db_host"`: IP of the server where `acsim_db` database is hosted.
+`db_host`: IP of the server where `acsim_db` database is hosted.
 
-`"db_user"`: User which is used to log into the database. Usually it's the default, `postgres`.
+`db_user`: User which is used to log into the database. Usually it's the default, `postgres`.
 
-`"db_password"`: Password for the DB.
+`db_password`: Password for the DB.
 
-`"server_ipv4"`: IPv4 address of the web server.
+`server_ipv4`: IPv4 address of the web server.
 
-`"server_ipv6"`: IPv6 address of the web server.
+`server_ipv6`: IPv6 address of the web server.
 
-`"server_port"`: Port which is used for serving pages.
+`server_port`: Port which is used for serving pages.
 
-`"bind_to_one_ip"`: Only bind to IPs specified in `server_ipv4` and `server_ipv6` instead of binding to all available addresses
+`bind_to_one_ip`: Only bind to IPs specified in `server_ipv4` and `server_ipv6` instead of binding to all available addresses
 
-`"bumplimit"`: After this many submessages, a topic stops updating its `latest_submsg` field (becoming inactive in the server's eyes)
+`bumplimit`: After this many submessages, a topic stops updating its `latest_submsg` field (becoming inactive in the server's eyes)
 
-`"hard_limit"`: If the number of messages on a board exceeds this number, board's least active topic will be deleted when a new one is submitted.
+`hard_limit`: If the number of messages on a board exceeds this number, board's least active topic will be deleted when a new one is submitted.
 
-`"site_name"`: Name of your site in general, displayed in `<title>` tags on pages.
+`site_name`: Name of your site in general, displayed in `<title>` tags on pages.
 
-`"site_frontend"`: Name of the frontend (page/template structure) used by ACSIM. Refer to `frontends/acsim_base` for reference.
+`site_frontend`: Name of the frontend (page/template structure) used by ACSIM. Refer to `frontends/acsim_ungapped` for reference.
 
-`"page_limit"`: How many messages are displayed per page.
+`page_limit`: How many messages are displayed per page.
 
-`"boards"`: Dictionary (`HashMap`) containing letters (board designations) and their main topics.
+`boards`: Dictionary (`BTreeMap`) containing letters (board designations) and their main topics, sorted alphabetically by board name.
 
-`"taglines"`: List of phrases randomly displayed in board header. Usually humourous. Feel free to put whatever you want here.
+`taglines`: List of phrases randomly displayed in board header. Usually humourous. Feel free to put whatever you want here.
 
 ## Installation
 ### Manual

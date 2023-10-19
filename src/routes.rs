@@ -82,7 +82,7 @@ async fn root() -> impl Responder {
 
 /// Responder for boards
 #[get("/{board}")]
-async fn main_page(
+async fn board(
     data: web::Data<ApplicationState<'_>>,
     info: web::Path<PathInfo>,
     page_data: web::Query<QueryOptions>,
@@ -133,7 +133,7 @@ async fn main_page(
 
     HttpResponse::Ok().body(
         data.formatter
-            .format_into_index(
+            .format_into_board(
                 &data.config.site_name,
                 &info.board.to_string(),
                 data.config
@@ -154,7 +154,7 @@ async fn main_page(
 
 /// Message handling logic for boards
 #[post("/{board}")]
-async fn process_form(
+async fn board_process_form(
     form: MultipartForm<MsgForm>,
     info: web::Path<PathInfo>,
     data: web::Data<ApplicationState<'_>>,
@@ -199,7 +199,7 @@ async fn process_form(
 
 /// Responder for individual topics/threads
 #[get("{board}/topic/{message_num}")]
-async fn message_page(
+async fn topic(
     data: web::Data<ApplicationState<'_>>,
     info: web::Path<PathInfo>,
     page_data: web::Query<QueryOptions>,
@@ -276,7 +276,7 @@ async fn message_page(
 
 /// Message handling logic for topics/threads
 #[post("{board}/topic/{message_num}")]
-async fn process_submessage_form(
+async fn topic_process_form(
     data: web::Data<ApplicationState<'_>>,
     form: MultipartForm<MsgForm>,
     page_data: web::Query<QueryOptions>,

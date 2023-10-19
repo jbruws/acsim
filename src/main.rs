@@ -101,10 +101,10 @@ async fn main() -> std::io::Result<()> {
             ))
             .service(actix_files::Files::new("/user_images", "./user_images"))
             .service(routes::root)
-            .service(routes::message_page)
-            .service(routes::process_form)
-            .service(routes::process_submessage_form)
-            .service(routes::main_page)
+            .service(routes::board)
+            .service(routes::board_process_form)
+            .service(routes::topic)
+            .service(routes::topic_process_form)
     })
     .bind((bound_ipv4, config.server_port))?
     .bind(format!("[{}]:{}", bound_ipv6, config.server_port).as_str())?

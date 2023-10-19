@@ -207,8 +207,8 @@ impl HtmlFormatter<'_> {
         }
     }
 
-    /// Formats data into `index.html` (board pages)
-    pub async fn format_into_index(
+    /// Formats data into `board.html` (board pages)
+    pub async fn format_into_board(
         &self,
         site_name: &String,
         board_designation: &String,
@@ -220,14 +220,13 @@ impl HtmlFormatter<'_> {
     ) -> String {
         self.handle
             .render_template(
-                &self.get_file("web_data/index.html"),
+                &self.get_file("web_data/board.html"),
                 &json!({"site_name": site_name,
             "board_designation": board_designation,
             "board_desc": board_desc,
             "random_tagline": random_tagline,
             "board_links": board_links,
             "messages": inserted_msg,
-            //"front_path": self.work_dir[1..],
             "prev_p": current_page - 1,
             "next_p": current_page + 1}),
             )
@@ -250,7 +249,6 @@ impl HtmlFormatter<'_> {
             "board_designation": board_designation,
             "topic_number": topic_number,
             "head_message": head_message,
-            //"front_path": self.work_dir[1..],
             "submessages": submessages}),
             )
             .unwrap()
