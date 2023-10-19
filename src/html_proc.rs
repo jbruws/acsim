@@ -154,7 +154,7 @@ impl HtmlFormatter<'_> {
                     &self.handle
                         .render_template(
                             &self.get_file("templates/message_contents/image_block.html"),
-                            &json!({ "img_link": image_web_path }),
+                            &json!({ "img_link": image_web_path, "img_name": image[12..]}),
                         )
                         .unwrap(),
                 );

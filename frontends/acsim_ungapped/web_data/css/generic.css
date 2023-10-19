@@ -58,11 +58,26 @@ div.userimage {
 	display: inline-block;
 }
 
-.userimage > a > img {
+.userimage > * {
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.userimage > img { 
 	max-width: 7.5rem;
 	height: auto;
 }
 
+.userimage > img:hover {
+	display: absolute;
+	max-width: 15rem;
+	width: 15rem;
+}
+
+.userimage > a {
+	font-size: 0.75rem;
+}
 
 /* SUBMIT FORM */
 form#message_form {
