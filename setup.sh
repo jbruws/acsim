@@ -4,7 +4,7 @@ if [ ! -d ./user_images ]; then
 	mkdir ./user_images
 fi
 
-if [ ! -f "config.json" ]; then
+if [ ! -f "config.yaml" ]; then
 	echo 'Creating default config file for server'
 	echo "
 ---
