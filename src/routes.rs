@@ -45,6 +45,35 @@ pub struct ApplicationState<'a> {
     pub config: Arc<BoardConfig>,
 }
 
+/// Function for handling files in multipart forms
+async fn process_files(files: &Vec<TempFile>) -> String {
+    let mut filepath_collection = String::new();
+    for i in 0..files.len() {
+        if i == 4 {
+            break;
+        }
+        let f = &files[i];
+        let temp_file_path = f.file.path();
+        // test to see if it is an actual image
+        if !html_proc::valid_image(temp_file_path.to_str().unwrap()) {
+            continue;
+        }
+        let orig_name = f
+            .file_name
+            .as_ref()
+            .expect("no file name")
+            .split('.')
+            .collect::<Vec<&str>>();
+        let new_name = rand::random::<u64>().to_string();
+        let new_filepath = PathBuf::from(format!("user_images/{}.{}", new_name, orig_name[1]));
+        let _copy_status = std::fs::copy(temp_file_path, new_filepath.clone());
+        let _remove_status = std::fs::remove_file(temp_file_path);
+        filepath_collection.push_str(new_filepath.to_str().unwrap());
+        filepath_collection.push_str(";");
+    }
+    filepath_collection
+}
+
 /// Responder for site root (redirects to /b/ by default)
 #[get("/")]
 async fn root() -> impl Responder {
@@ -135,35 +164,7 @@ async fn process_form(
     }
 
     let client = data.db_client.lock().await;
-    let mut new_filepath: PathBuf = PathBuf::new();
-    let mut filepath_collection = String::new();
-
-    println!("{:?}", form.files);
-    for i in 0..form.files.len() {
-        if i == 4 {
-            break;
-        }
-        let f = &form.files[i];
-        let temp_file_path = f.file.path();
-        // test to see if it is an actual image
-        if !html_proc::valid_image(temp_file_path.to_str().unwrap()) {
-            continue;
-        }
-        let orig_name = f
-            .file_name
-            .as_ref()
-            .expect("no file name")
-            .split('.')
-            .collect::<Vec<&str>>();
-        let new_name = rand::random::<u64>().to_string();
-        new_filepath = PathBuf::from(format!("user_images/{}.{}", new_name, orig_name[1]));
-        let copy_status = std::fs::copy(temp_file_path, new_filepath.clone());
-        let remove_status = std::fs::remove_file(temp_file_path);
-        log::info!("{:?}", copy_status);
-        log::info!("{:?}", remove_status);
-        filepath_collection.push_str(new_filepath.to_str().unwrap());
-        filepath_collection.push_str(";");
-    }
+    let filepath_collection = process_files(&form.files).await;
 
     // getting time
     let since_epoch = html_proc::since_epoch();
@@ -288,38 +289,7 @@ async fn process_submessage_form(
     let current_page = page_data.page.unwrap_or(1);
 
     let client = data.db_client.lock().await;
-    let mut new_filepath: PathBuf = PathBuf::new();
-    let mut filepath_collection = String::new();
-
-    for i in 0..form.files.len() {
-        if i == 4 {
-            break;
-        }
-        let f = &form.files[i];
-
-        if f.content_type.as_ref().unwrap().type_() != "image" {
-            return web::Redirect::to(format!("/{}", info.board)).see_other();
-        }
-        let temp_file_path = f.file.path();
-        // test to see if it is an actual image
-        if !html_proc::valid_image(temp_file_path.to_str().unwrap()) {
-            continue;
-        }
-        let orig_name = f
-            .file_name
-            .as_ref()
-            .expect("no file name")
-            .split('.')
-            .collect::<Vec<&str>>();
-        let new_name = rand::random::<u64>().to_string();
-        new_filepath = PathBuf::from(format!("user_images/{}.{}", new_name, orig_name[1]));
-        let copy_status = std::fs::copy(temp_file_path, new_filepath.clone());
-        let remove_status = std::fs::remove_file(temp_file_path);
-        log::info!("{:?}", copy_status);
-        log::info!("{:?}", remove_status);
-        filepath_collection.push_str(new_filepath.to_str().unwrap());
-        filepath_collection.push_str(";");
-    }
+    let filepath_collection = process_files(&form.files).await;
 
     // getting time
     let since_epoch = html_proc::since_epoch();

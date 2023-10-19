@@ -41,7 +41,7 @@ pub fn valid_image(image: &str) -> bool {
     {
         return true;
     }
-    return false;
+    false
 }
 
 /// Gets seconds elapsed since Unix epoch.

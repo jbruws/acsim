@@ -3,7 +3,7 @@
 //! as well as simple configuration and deployment process.
 
 // std
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::fs::read_to_string;
 use std::sync::Arc;
 // actix and serde
@@ -31,7 +31,7 @@ pub struct BoardConfig {
     site_name: String,
     site_frontend: String,
     page_limit: u16,
-    boards: HashMap<String, String>,
+    boards: BTreeMap<String, String>,
     taglines: Vec<String>,
 }
 

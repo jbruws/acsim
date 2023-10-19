@@ -1,6 +1,7 @@
 :root {
 	--bg: rgb(34,32,38);
 	--bg-msg: rgb(22,19,28);
+	--userimage-bg: rgb(18,16,23);
 	--light-bg-msg: rgb(180, 191, 209);
 	--textbox-color: rgb(71,65,82);
 	--text-color: rgb(213,218,232);
@@ -38,13 +39,27 @@ a:not(.msglink) {
 	text-decoration: none;
 }
 
+/* MESSAGE CONTENTS */
+
+div.message_contents {
+	padding: 0.5rem;
+}
+
 /* USER IMAGES */
+div.userimage_container {
+	background-color: var(--userimage-bg);
+	width: max-content;
+	margin-top: 1rem;
+	margin-bottom: 1rem;
+}
+
 div.userimage {
 	padding: 1rem;
+	display: inline-block;
 }
 
 .userimage > a > img {
-	max-width: 10rem;
+	max-width: 7.5rem;
 	height: auto;
 }
 

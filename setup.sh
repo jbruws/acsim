@@ -40,7 +40,7 @@ echo 'CREATE TABLE IF NOT EXISTS messages (
 		time BIGINT NOT NULL,
 		author VARCHAR (63) NOT NULL,
 		msg VARCHAR (4095) NOT NULL,
-		image VARCHAR (127),
+		image VARCHAR (255),
 		latest_submsg BIGINT,
 		board VARCHAR (15) NOT NULL
 	);
@@ -49,7 +49,7 @@ echo 'CREATE TABLE IF NOT EXISTS messages (
 		time BIGINT NOT NULL,
 		author VARCHAR (63) NOT NULL,
 		submsg VARCHAR (4095) NOT NULL,
-		image VARCHAR (127),
+		image VARCHAR (255),
 		CONSTRAINT bind_msg
 			FOREIGN KEY(parent_msg)
 				REFERENCES messages(msgid)
