@@ -46,13 +46,13 @@ pub struct ApplicationState<'a> {
 }
 
 /// Function for handling files in multipart forms
-async fn process_files(files: &Vec<TempFile>) -> String {
+async fn process_files(files: &[TempFile]) -> String {
     let mut filepath_collection = String::new();
-    for i in 0..files.len() {
+    for (i, item) in files.iter().enumerate() {
         if i == 4 {
             break;
         }
-        let f = &files[i];
+        let f = &item;
         let temp_file_path = f.file.path();
         // test to see if it is an actual image
         if !html_proc::valid_image(temp_file_path.to_str().unwrap()) {
@@ -171,7 +171,10 @@ async fn board_process_form(
 
     // if fits, push new message into DB and vector
     if form.author.len() < 254 && form.message.len() < 4094 {
-        let filtered_author = data.formatter.filter_tags(&form.author).await;
+        let filtered_author = match form.author.len() {
+            0 => "Anonymous".to_string(),
+            _ => data.formatter.filter_tags(&form.author).await,
+        };
         let filtered_msg = data.formatter.filter_tags(&form.message).await;
 
         client
@@ -296,7 +299,10 @@ async fn topic_process_form(
 
     // if fits, push new message into DB
     if form.author.len() < 254 && form.message.len() < 4094 {
-        let filtered_author = data.formatter.filter_tags(&form.author).await;
+        let filtered_author = match form.author.len() {
+            0 => "Anonymous".to_string(),
+            _ => data.formatter.filter_tags(&form.author).await,
+        };
         let filtered_msg = data.formatter.filter_tags(&form.message).await;
         client
             .insert_to_submessages(

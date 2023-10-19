@@ -24,8 +24,8 @@ pub fn valid_image(image: &str) -> bool {
     }
 
     let mut image_fs_path: String = format!("./{}", image);
-    if image.starts_with("/") {
-        image_fs_path = format!("{}", image);
+    if image.starts_with('/') {
+        image_fs_path = image.to_string();
     }
     let image_fs_path = &image_fs_path[..image_fs_path.len()]; // path ends with "\" for some reason
 
@@ -139,7 +139,7 @@ impl HtmlFormatter<'_> {
     ) -> String {
         let mut image_container = String::new();
 
-        for image in images.split(";") {
+        for image in images.split(';') {
             if valid_image(image) {
                 let image_web_path: String = if message_type == BoardMessageType::ParentMessage
                     || message_type == BoardMessageType::Submessage
