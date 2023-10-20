@@ -90,3 +90,8 @@ Once the compilation finishes, application logs will start appearing in the cons
 
 - `taglines`: List of phrases randomly displayed in board header. Usually humourous. Feel free to put whatever you want here.
 
+## Special Thanks
+
+[@ZueffC](https://github.com/ZueffC) - testing, coding advice
+
+[@CppCoder1](https://github.com/CppCoder1), [@Befrimon](https://github.com/Befrimon) - testing
