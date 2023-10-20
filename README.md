@@ -5,7 +5,7 @@ Basic imageboard engine written in `rust` and `actix-web`. Lightweight and compl
 The engine is still in active development. Expect some bugs, missing features and drastic changes in design.
 
 ## Installation
-### Manual
+### Manual installation
 #### 1. PostgreSQL Installation
 
 1. Debian/Ubuntu-based systems:
@@ -88,7 +88,7 @@ Once the compilation finishes, application logs will start appearing in the cons
 
 - `boards`: Dictionary (`BTreeMap`) containing letters (board designations) and their main topics, sorted alphabetically by board name.
 
-- `taglines`: List of phrases randomly displayed in board header. Usually humourous. Feel free to put whatever you want here.
+- `taglines`: List of phrases randomly displayed in board header. Usually humourous. Feel free to put whatever you want here (use quotes if necessary).
 
 ## Special Thanks
 
