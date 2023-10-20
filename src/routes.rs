@@ -169,13 +169,16 @@ async fn board_process_form(
     // getting time
     let since_epoch = html_proc::since_epoch();
 
+    let trimmed_author = form.author.trim();
+    let trimmed_message = form.message.trim();
+
     // if fits, push new message into DB and vector
-    if form.author.len() < 254 && form.message.len() < 4094 {
-        let filtered_author = match form.author.len() {
+    if trimmed_author.len() < 254 && 0 != trimmed_message.len() && trimmed_message.len() < 4094 {
+        let filtered_author = match trimmed_author.len() {
             0 => "Anonymous".to_string(),
-            _ => data.formatter.filter_tags(&form.author).await,
+            _ => data.formatter.filter_tags(&trimmed_author).await,
         };
-        let filtered_msg = data.formatter.filter_tags(&form.message).await;
+        let filtered_msg = data.formatter.filter_tags(&trimmed_message).await;
 
         client
             .insert_to_messages(
@@ -297,13 +300,16 @@ async fn topic_process_form(
     // getting time
     let since_epoch = html_proc::since_epoch();
 
+    let trimmed_author = form.author.trim();
+    let trimmed_message = form.message.trim();
+
     // if fits, push new message into DB
-    if form.author.len() < 254 && form.message.len() < 4094 {
-        let filtered_author = match form.author.len() {
+    if trimmed_author.len() < 254 && 0 != trimmed_message.len() && trimmed_message.len() < 4094 {
+        let filtered_author = match trimmed_author.len() {
             0 => "Anonymous".to_string(),
-            _ => data.formatter.filter_tags(&form.author).await,
+            _ => data.formatter.filter_tags(&trimmed_author).await,
         };
-        let filtered_msg = data.formatter.filter_tags(&form.message).await;
+        let filtered_msg = data.formatter.filter_tags(&trimmed_message).await;
         client
             .insert_to_submessages(
                 message_num,

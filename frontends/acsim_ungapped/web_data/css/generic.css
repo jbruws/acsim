@@ -69,11 +69,11 @@ div.userimage {
 	height: auto;
 }
 
-.userimage > img:hover {
+/*.userimage > img:hover {
 	display: absolute;
 	max-width: 15rem;
 	width: 15rem;
-}
+}*/
 
 .userimage > a {
 	font-size: 0.75rem;
