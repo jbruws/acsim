@@ -40,7 +40,6 @@ a:not(.msglink) {
 }
 
 /* MESSAGE CONTENTS */
-
 div.message_contents {
 	padding: 0.5rem;
 }
@@ -64,10 +63,15 @@ div.userimage {
 	margin-right: auto;
 }
 
-.userimage > img { 
-	max-width: 7.5rem;
+.userimage > img, .userimage > video { 
+	max-width: 10rem;
 	height: auto;
 }
+
+/*.userimage > video {
+	max-width: 10rem;
+	height: auto;
+}*/
 
 /*.userimage > img:hover {
 	display: absolute;
@@ -76,7 +80,7 @@ div.userimage {
 }*/
 
 .userimage > a {
-	font-size: 0.75rem;
+	font-size: 0.7rem;
 }
 
 /* SUBMIT FORM */

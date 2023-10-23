@@ -6,8 +6,28 @@ use handlebars::Handlebars;
 use regex::Regex;
 use serde_json::json;
 use std::fs::read_to_string;
+use std::ops::Not;
 use std::path::Path;
 use std::str;
+
+/// File categories that can be sent by users
+#[derive(PartialEq)]
+pub enum FileType {
+    Image,
+    Video,
+    Invalid,
+}
+
+impl Not for FileType {
+    type Output = bool;
+
+    fn not(self) -> Self::Output {
+        match self {
+            FileType::Invalid => true,
+            _ => false,
+        }
+    }
+}
 
 /// Returns current date and time in 'YYYY-MM-DD hh:mm:ss' 24-hour format.
 pub fn get_time(since_epoch: i64) -> String {
@@ -18,9 +38,9 @@ pub fn get_time(since_epoch: i64) -> String {
 }
 
 /// Validates images sent by users using libmagic
-pub fn valid_image(image: &str) -> bool {
+pub fn valid_file(image: &str) -> FileType {
     if image.is_empty() {
-        return false;
+        return FileType::Invalid;
     }
 
     let mut image_fs_path: String = format!("./{}", image);
@@ -35,13 +55,16 @@ pub fn valid_image(image: &str) -> bool {
     let cookie = cookie.load(&database).unwrap();
     let file_type = cookie.file(image_fs_path);
 
-    if Path::new(image_fs_path).exists()
-        && file_type.is_ok()
-        && file_type.unwrap().contains("image data")
-    {
-        return true;
+    if Path::new(image_fs_path).exists() && file_type.is_ok() {
+        let raw_type = file_type.unwrap();
+        if raw_type.contains("image data") {
+            return FileType::Image;
+        } else if raw_type.contains("MP4 Base Media") || raw_type.contains("WebM") {
+            return FileType::Video;
+        }
     }
-    false
+
+    return FileType::Invalid;
 }
 
 /// Gets seconds elapsed since Unix epoch.
@@ -140,7 +163,8 @@ impl HtmlFormatter<'_> {
         let mut image_container = String::new();
 
         for image in images.split(';') {
-            if valid_image(image) {
+            let file_type = valid_file(image);
+            if file_type != FileType::Invalid {
                 let image_web_path: String = if message_type == BoardMessageType::ParentMessage
                     || message_type == BoardMessageType::Submessage
                 {
@@ -150,10 +174,17 @@ impl HtmlFormatter<'_> {
                     format!("../{}", image)
                 };
 
+                let template_path = match file_type {
+                    FileType::Image => "templates/message_contents/image_block.html",
+                    FileType::Video => "templates/message_contents/video_block.html",
+                    _ => "templates/message_contents/image_block.html",
+                };
+
                 image_container.push_str(
-                    &self.handle
+                    &self
+                        .handle
                         .render_template(
-                            &self.get_file("templates/message_contents/image_block.html"),
+                            &self.get_file(template_path),
                             &json!({ "img_link": image_web_path, "img_name": image[12..]}),
                         )
                         .unwrap(),

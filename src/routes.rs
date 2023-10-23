@@ -21,7 +21,7 @@ use crate::BoardConfig;
 struct MsgForm {
     message: Text<String>,
     author: Text<String>,
-    #[multipart(limit = "100 MiB", rename = "files[]")]
+    #[multipart(limit = "128 MiB", rename = "files[]")]
     files: Vec<TempFile>,
 }
 
@@ -46,7 +46,7 @@ pub struct ApplicationState<'a> {
 }
 
 /// Function for handling files in multipart forms
-async fn process_files(files: &[TempFile]) -> String {
+async fn process_files(files: &Vec<TempFile>) -> String {
     let mut filepath_collection = String::new();
     for (i, item) in files.iter().enumerate() {
         if i == 4 {
@@ -55,7 +55,7 @@ async fn process_files(files: &[TempFile]) -> String {
         let f = &item;
         let temp_file_path = f.file.path();
         // test to see if it is an actual image
-        if !html_proc::valid_image(temp_file_path.to_str().unwrap()) {
+        if !html_proc::valid_file(temp_file_path.to_str().unwrap()) {
             continue;
         }
         let orig_name = f

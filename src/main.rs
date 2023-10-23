@@ -95,6 +95,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(Logger::default())
             .app_data(application_data.clone())
+            .app_data(web::PayloadConfig::new(1024*1024*100))
             .service(actix_files::Files::new(
                 "/web_data",
                 format!("./frontends/{}/web_data", &frontend_name.clone()),
