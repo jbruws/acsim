@@ -115,6 +115,10 @@ impl HtmlFormatter<'_> {
         obj.expressions.push(
             Regex::new(r##"(?<board>\w{1,16})>(?<msg>\d+)(?<dotted>\.(?<submsg>\d+))?"##).unwrap(),
         );
+        // regular links
+        obj.expressions.push(
+            Regex::new(r##"(?<text>https?:\/\/[\w-]*?\.[a-z]{2,}(\/\S*)?)"##).unwrap(),
+        );
         // code blocks
         obj.expressions
             .push(Regex::new(r##"`(?<text>[^`]*)`"##).unwrap());
@@ -124,6 +128,9 @@ impl HtmlFormatter<'_> {
         // italic text
         obj.expressions
             .push(Regex::new(r##"\*(?<text>[^*]*)\*"##).unwrap());
+        // strikethrough
+        obj.expressions
+            .push(Regex::new(r##"~~(?<text>[^~]*)~~"##).unwrap());
 
         // loading regex templates
         obj.templates
@@ -133,11 +140,15 @@ impl HtmlFormatter<'_> {
         obj.templates
             .push(obj.get_file("regex_templates/msglink.html"));
         obj.templates
+            .push(obj.get_file("regex_templates/weblink.html"));
+        obj.templates
             .push(obj.get_file("regex_templates/codeblock.html"));
         obj.templates
             .push(obj.get_file("regex_templates/bold.html"));
         obj.templates
             .push(obj.get_file("regex_templates/italic.html"));
+        obj.templates
+            .push(obj.get_file("regex_templates/strikethrough.html"));
 
         obj
     }

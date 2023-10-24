@@ -6,3 +6,4 @@ acsim.log
 *.jpg
 *.gif
 *.jpeg
+/keys/*

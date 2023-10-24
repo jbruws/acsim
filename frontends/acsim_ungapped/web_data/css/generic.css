@@ -31,6 +31,10 @@ span.quote {
 	color: var(--quote-color);
 }
 
+span.strikethrough {
+	text-decoration: line-through;
+}
+
 a {
 	color: var(--msglink-color);
 }

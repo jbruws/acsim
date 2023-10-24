@@ -76,6 +76,8 @@ Once the compilation finishes, application logs will start appearing in the cons
 
 - `bind_to_one_ip`: Only bind to IPs specified in `server_ipv4` and `server_ipv6` instead of binding to all available addresses
 
+- `use_https`: Determines whether plaintext or HTTPS will be used for requests. Put `key.pem` and `cert.pem` inside `keys` directory in project root.
+
 - `bumplimit`: After this many submessages, a topic stops updating its `latest_submsg` field (becoming inactive in the server's eyes)
 
 - `hard_limit`: If the number of messages on a board exceeds this number, board's least active topic will be deleted when a new one is submitted.

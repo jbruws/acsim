@@ -10,6 +10,7 @@ use std::sync::Arc;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use serde::Deserialize;
 // async mutex
+use openssl::ssl::{SslAcceptor, SslAcceptorBuilder, SslMethod};
 use tokio::sync::Mutex;
 
 mod db_control;
@@ -26,6 +27,7 @@ pub struct BoardConfig {
     server_ipv6: String,
     server_port: u16,
     bind_to_one_ip: bool,
+    use_https: bool,
     bumplimit: u16,
     hard_limit: u16,
     site_name: String,
@@ -33,6 +35,16 @@ pub struct BoardConfig {
     page_limit: u16,
     boards: BTreeMap<String, String>,
     taglines: Vec<String>,
+}
+
+fn create_ssl_acceptor() -> SslAcceptorBuilder {
+    // loading ssl keys
+    let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
+    builder
+        .set_private_key_file("keys/key.pem", openssl::ssl::SslFiletype::PEM)
+        .unwrap();
+    builder.set_certificate_chain_file("keys/cert.pem").unwrap();
+    builder
 }
 
 #[actix_web::main]
@@ -55,14 +67,6 @@ async fn main() -> std::io::Result<()> {
 
     // creating html formatter
     let formatter = Arc::new(html_proc::HtmlFormatter::new(frontend_name.clone()));
-
-    // selecting where to bind the server
-    let mut bound_ipv4 = "0.0.0.0";
-    let mut bound_ipv6 = "::1";
-    if config.bind_to_one_ip {
-        bound_ipv4 = config.server_ipv4.as_str();
-        bound_ipv6 = config.server_ipv6.as_str();
-    }
 
     // creating application state
     let application_data = web::Data::new(routes::ApplicationState {
@@ -90,12 +94,12 @@ async fn main() -> std::io::Result<()> {
         Err(e) => println!("WARNING: Failed to start logger: {}", e),
     };
 
-    // starting the server
-    HttpServer::new(move || {
+    // configuring and starting the server
+    let server = HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
             .app_data(application_data.clone())
-            .app_data(web::PayloadConfig::new(1024*1024*100))
+            .app_data(web::PayloadConfig::new(1024 * 1024 * 100))
             .service(actix_files::Files::new(
                 "/web_data",
                 format!("./frontends/{}/web_data", &frontend_name.clone()),
@@ -106,9 +110,29 @@ async fn main() -> std::io::Result<()> {
             .service(routes::board_process_form)
             .service(routes::topic)
             .service(routes::topic_process_form)
-    })
-    .bind((bound_ipv4, config.server_port))?
-    .bind(format!("[{}]:{}", bound_ipv6, config.server_port).as_str())?
-    .run()
-    .await
+    });
+
+    let mut bind_ipv4: &str = "0.0.0.0";
+    let mut bind_ipv6: &str = "::1";
+
+    if config.bind_to_one_ip {
+        bind_ipv4 = &config.server_ipv4;
+        bind_ipv6 = &config.server_ipv6;
+    }
+
+    if config.use_https {
+        return server
+            .bind_openssl(
+                format!("{}:{}", bind_ipv4, config.server_port).as_str(),
+                create_ssl_acceptor(),
+            )?
+            .bind_openssl(
+                format!("[{}]:{}", bind_ipv6, config.server_port).as_str(),
+                create_ssl_acceptor(),
+            )?.run().await;
+    } else {
+        return server
+            .bind((bind_ipv4, config.server_port))?
+            .bind(format!("[{}]:{}", bind_ipv6, config.server_port).as_str())?.run().await;
+    }
 }
