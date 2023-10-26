@@ -129,10 +129,14 @@ async fn main() -> std::io::Result<()> {
             .bind_openssl(
                 format!("[{}]:{}", bind_ipv6, config.server_port).as_str(),
                 create_ssl_acceptor(),
-            )?.run().await;
+            )?
+            .run()
+            .await;
     } else {
         return server
             .bind((bind_ipv4, config.server_port))?
-            .bind(format!("[{}]:{}", bind_ipv6, config.server_port).as_str())?.run().await;
+            .bind(format!("[{}]:{}", bind_ipv6, config.server_port).as_str())?
+            .run()
+            .await;
     }
 }

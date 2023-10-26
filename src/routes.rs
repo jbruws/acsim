@@ -76,8 +76,17 @@ async fn process_files(files: &Vec<TempFile>) -> String {
 
 /// Responder for site root (redirects to /b/ by default)
 #[get("/")]
-async fn root() -> impl Responder {
-    web::Redirect::to("/b").see_other()
+async fn root(data: web::Data<ApplicationState<'_>>) -> impl Responder {
+    let mut board_links = Vec::new();
+    for (board_name, desc) in &data.config.boards {
+        board_links.push((board_name, desc));
+    }
+
+    HttpResponse::Ok().body(
+        data.formatter
+            .format_into_root(&data.config.site_name, board_links)
+            .await,
+    )
 }
 
 /// Responder for boards
@@ -93,7 +102,10 @@ async fn board(
     let client = data.db_client.lock().await;
     let mut inserted_msg = String::from("");
 
-    let current_page = page_data.page.unwrap_or(1);
+    let mut current_page = page_data.page.unwrap_or(1);
+    if current_page == 0 {
+        current_page = 1;
+    }
 
     // Restoring messages from DB
     for row in client

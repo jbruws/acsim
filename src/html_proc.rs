@@ -116,9 +116,8 @@ impl HtmlFormatter<'_> {
             Regex::new(r##"(?<board>\w{1,16})>(?<msg>\d+)(?<dotted>\.(?<submsg>\d+))?"##).unwrap(),
         );
         // regular links
-        obj.expressions.push(
-            Regex::new(r##"(?<text>https?:\/\/[\w-]*?\.[a-z]{2,}(\/\S*)?)"##).unwrap(),
-        );
+        obj.expressions
+            .push(Regex::new(r##"(?<text>https?:\/\/[\w-]*?\.[a-z]{2,}(\/\S*)?)"##).unwrap());
         // code blocks
         obj.expressions
             .push(Regex::new(r##"`(?<text>[^`]*)`"##).unwrap());
@@ -271,6 +270,29 @@ impl HtmlFormatter<'_> {
             "messages": inserted_msg,
             "prev_p": current_page - 1,
             "next_p": current_page + 1}),
+            )
+            .unwrap()
+    }
+
+    /// Formats data into `index.html` (main page)
+    pub async fn format_into_root(
+        &self,
+        site_name: &String,
+        links: Vec<(&String, &String)>,
+    ) -> String {
+        let mut links_block = String::new();
+        for i in links {
+            links_block.push_str(&format!(
+                "<div class=\"main_page_link\"><a href=\"/{i}\">/{i}/ - {desc}</a></div>",
+                i = i.0,
+                desc = i.1
+            ));
+        }
+
+        self.handle
+            .render_template(
+                &self.get_file("web_data/index.html"),
+                &json!({"board_name": site_name, "links_block": links_block}),
             )
             .unwrap()
     }
