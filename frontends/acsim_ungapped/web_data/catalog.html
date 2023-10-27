@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+
+<head>
+	<title>Catalog - /{{board_designation}}/</title>
+	<link rel="stylesheet" type="text/css" href="/web_data/css/catalog.css">
+	<link rel="stylesheet" type="text/css" href="/web_data/css/generic.css">
+	<meta charset="UTF-8">
+</head>
+
+<body>
+	<div id="grid_root">
+		<div id="search_form">
+			<form id="catalog_search" action="/{{board_designation}}/catalog">
+				<input type="text" id="search_string" name="search_string">
+			</form>
+		</div>
+		<div id="message_container">
+			{{{message_blocks}}}
+		</div>
+	</div>
+</body>

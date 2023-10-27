@@ -283,7 +283,7 @@ impl HtmlFormatter<'_> {
         let mut links_block = String::new();
         for i in links {
             links_block.push_str(&format!(
-                "<div class=\"main_page_link\"><a href=\"/{i}\">/{i}/ - {desc}</a></div>",
+                "<div class=\"main_page_link\"><a href=\"/{i}\">/{i}/ - {desc}</a></div><hr>",
                 i = i.0,
                 desc = i.1
             ));

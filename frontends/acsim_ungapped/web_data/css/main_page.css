@@ -1,22 +1,43 @@
-body {
-	background: linear-gradient(to bottom, var(--bg), black);
-	background-attachment: fixed;
-	height: 100%;
+* {
+	padding: 0;
+	margin: 0;
+	background-color: var(--bg-msg);
+}
+
+div#grid_root {
+	display: grid;
+	margin-top: 0;
+	grid-template-columns: minmax(0, 1fr); 
+	grid-template-areas: 
+		"name"
+		"links";
 }
 
 div#name {
+	grid-area: name;
 	font-size: 350%;
 	text-align: center;
-	margin-bottom: 2rem;
+	border-bottom: 5px solid var(--text-color);
+	padding: 2rem;
+}
+
+div#bottom_half {
+	background-color: var(--bg);
+	height: 100vh;
 }
 
 div#links {
+	grid-area: links;
 	background-color: var(--bg-msg);
-	outline: 2px solid var(--text-color);
+	//outline: 2px solid var(--text-color);
 	width: 50%;
 	padding: 1rem;
-	margin-left: auto;
-	margin-right: auto;
+	margin: auto;
+	margin-top: 5%;
+}
+
+div#links > hr:last-of-type {
+	display: none;
 }
 
 a:hover {

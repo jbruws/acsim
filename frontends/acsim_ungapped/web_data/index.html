@@ -4,11 +4,16 @@
 	<title>{{board_name}}</title>
 	<link rel="stylesheet" type="text/css" href="/web_data/css/generic.css">
 	<link rel="stylesheet" type="text/css" href="/web_data/css/main_page.css">
-	<link rel="icon" href="/web-data/favicon.png">
 	<meta charset="UTF-8">
 </head>
 
 <body>
-	<div id="name">{{board_name}}</div>
-	<div id="links">{{{links_block}}}</div>
+	<div id="grid_root">
+		<div id="name">{{board_name}}</div>
+		<div id="bottom_half">
+			<div id="links">
+				{{{links_block}}}
+			</div>
+		</div>
+	</div>
 </body>
