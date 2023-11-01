@@ -22,11 +22,17 @@ impl Not for FileType {
     type Output = bool;
 
     fn not(self) -> Self::Output {
-        match self {
-            FileType::Invalid => true,
-            _ => false,
-        }
+        matches!(self, FileType::Invalid)
     }
+}
+
+/// Message types that can be formatted by `format_into_message`
+#[derive(PartialEq)]
+pub enum BoardMessageType {
+    Message,        // messages on main page
+    ParentMessage,  // parent message on topic pages
+    Submessage,     // submessages on topic pages
+    CatalogMessage, // message blocks in board catalog
 }
 
 /// Returns current date and time in 'YYYY-MM-DD hh:mm:ss' 24-hour format.
@@ -55,16 +61,17 @@ pub fn valid_file(image: &str) -> FileType {
     let cookie = cookie.load(&database).unwrap();
     let file_type = cookie.file(image_fs_path);
 
-    if Path::new(image_fs_path).exists() && file_type.is_ok() {
-        let raw_type = file_type.unwrap();
-        if raw_type.contains("image data") {
-            return FileType::Image;
-        } else if raw_type.contains("MP4 Base Media") || raw_type.contains("WebM") {
-            return FileType::Video;
+    if let Ok(raw_type) = file_type {
+        if Path::new(image_fs_path).exists() {
+            if raw_type.contains("image data") {
+                return FileType::Image;
+            } else if raw_type.contains("MP4 Base Media") || raw_type.contains("WebM") {
+                return FileType::Video;
+            }
         }
     }
 
-    return FileType::Invalid;
+    FileType::Invalid
 }
 
 /// Gets seconds elapsed since Unix epoch.
@@ -73,14 +80,6 @@ pub fn since_epoch() -> i64 {
         Ok(n) => n.as_secs().try_into().unwrap(),
         Err(_) => 1,
     }
-}
-
-/// Message types that can be formatted by `format_into_message`
-#[derive(PartialEq)]
-pub enum BoardMessageType {
-    Message,       // messages on main page
-    ParentMessage, // parent message on topic pages
-    Submessage,    // submessages on topic pages
 }
 
 /// Struct containing data necessary for data formatting, such as chosen frontend directory,
@@ -171,7 +170,6 @@ impl HtmlFormatter<'_> {
         images: &str,
     ) -> String {
         let mut image_container = String::new();
-
         for image in images.split(';') {
             let file_type = valid_file(image);
             if file_type != FileType::Invalid {
@@ -245,6 +243,17 @@ impl HtmlFormatter<'_> {
                 "msg": msg_contents}),
                 )
                 .unwrap(),
+            BoardMessageType::CatalogMessage => self
+                .handle
+                .render_template(
+                    &self.get_file("templates/message_blocks/catalog_message.html"),
+                    &json!({"id": id,
+                "time": time,
+                "board": board,
+                "page": page,
+                "msg": msg_contents}),
+                )
+                .unwrap(),
         }
     }
 
@@ -314,6 +323,25 @@ impl HtmlFormatter<'_> {
             "topic_number": topic_number,
             "head_message": head_message,
             "submessages": submessages}),
+            )
+            .unwrap()
+    }
+
+    /// Formats data into board catalog pages
+    pub async fn format_into_catalog(
+        &self,
+        board_designation: &String,
+        message_blocks: &String,
+        current_page: &i64,
+    ) -> String {
+        self.handle
+            .render_template(
+                &self.get_file("web_data/catalog.html"),
+                &json!({"board_designation": board_designation,
+                    "message_blocks": message_blocks,
+                    "prev_p": current_page - 1,
+                    "next_p": current_page + 1,
+                }),
             )
             .unwrap()
     }

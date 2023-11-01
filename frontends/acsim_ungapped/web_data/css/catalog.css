@@ -2,23 +2,65 @@ div#grid_root {
 	display: grid;
 	grid-template-areas:
 		"form"
-		"msg";
+		"msg"
+		"footer";
 }
 
 div#search_form {
 	grid-area: form;
-	width: 50%;
+	width: 75%;
+	text-align: center;
 	margin-left: auto;
 	margin-right: auto;
+	margin-bottom: 2rem;
 }
 
 div#message_container {
 	grid-area: msg;
 	display: grid;
-	grid-template-rows: repeat(4, min(0, 1fr))
-	grid-template-columns: repeat(4, min(0, 1fr))
+	grid-gap: 1rem;
+	grid-template-rows: repeat(4, 1fr);
+	grid-template-columns: repeat(4, 1fr);
+}
+
+footer {
+	grid-area: footer;
+	margin-top: 2rem;
+	text-align: center;
+	padding: 1rem;
+	background-color: var(--bg-msg);
 }
 
 div.message_item {
+	display: inline;
+	padding: 0.5rem;
+	background-color: var(--bg-msg);
+}
+
+p.message_header {
+	text-align: center;
+}
+
+/* USER IMAGES */
+div.userimage_container {
+	background-color: var(--userimage-bg);
+	max-width: 100%;
+}
+
+div.userimage {
+	display: inline-block;
+}
+
+.userimage > * {
 	display: block;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.userimage > img, .userimage > video { 
+	max-width: 5rem;
+	height: auto;
+}
+.userimage > a {
+	display: none;
 }

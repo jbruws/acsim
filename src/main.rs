@@ -110,6 +110,7 @@ async fn main() -> std::io::Result<()> {
             .service(routes::board_process_form)
             .service(routes::topic)
             .service(routes::topic_process_form)
+            .service(routes::board_catalog)
     });
 
     let mut bind_ipv4: &str = "0.0.0.0";
@@ -121,7 +122,7 @@ async fn main() -> std::io::Result<()> {
     }
 
     if config.use_https {
-        return server
+        server
             .bind_openssl(
                 format!("{}:{}", bind_ipv4, config.server_port).as_str(),
                 create_ssl_acceptor(),
@@ -131,12 +132,12 @@ async fn main() -> std::io::Result<()> {
                 create_ssl_acceptor(),
             )?
             .run()
-            .await;
+            .await
     } else {
-        return server
+        server
             .bind((bind_ipv4, config.server_port))?
             .bind(format!("[{}]:{}", bind_ipv6, config.server_port).as_str())?
             .run()
-            .await;
+            .await
     }
 }

@@ -69,7 +69,7 @@ async fn process_files(files: &Vec<TempFile>) -> String {
         let _copy_status = std::fs::copy(temp_file_path, new_filepath.clone());
         let _remove_status = std::fs::remove_file(temp_file_path);
         filepath_collection.push_str(new_filepath.to_str().unwrap());
-        filepath_collection.push_str(";");
+        filepath_collection.push(';');
     }
     filepath_collection
 }
@@ -185,12 +185,12 @@ async fn board_process_form(
     let trimmed_message = form.message.trim();
 
     // if fits, push new message into DB and vector
-    if trimmed_author.len() < 254 && 0 != trimmed_message.len() && trimmed_message.len() < 4094 {
+    if trimmed_author.len() < 254 && !trimmed_message.is_empty() && trimmed_message.len() < 4094 {
         let filtered_author = match trimmed_author.len() {
             0 => "Anonymous".to_string(),
-            _ => data.formatter.filter_tags(&trimmed_author).await,
+            _ => data.formatter.filter_tags(trimmed_author).await,
         };
-        let filtered_msg = data.formatter.filter_tags(&trimmed_message).await;
+        let filtered_msg = data.formatter.filter_tags(trimmed_message).await;
 
         client
             .insert_to_messages(
@@ -316,12 +316,12 @@ async fn topic_process_form(
     let trimmed_message = form.message.trim();
 
     // if fits, push new message into DB
-    if trimmed_author.len() < 254 && 0 != trimmed_message.len() && trimmed_message.len() < 4094 {
+    if trimmed_author.len() < 254 && !trimmed_message.is_empty() && trimmed_message.len() < 4094 {
         let filtered_author = match trimmed_author.len() {
             0 => "Anonymous".to_string(),
-            _ => data.formatter.filter_tags(&trimmed_author).await,
+            _ => data.formatter.filter_tags(trimmed_author).await,
         };
-        let filtered_msg = data.formatter.filter_tags(&trimmed_message).await;
+        let filtered_msg = data.formatter.filter_tags(trimmed_message).await;
         client
             .insert_to_submessages(
                 message_num,
@@ -347,4 +347,66 @@ async fn topic_process_form(
         info.board, message_num, current_page
     ))
     .see_other()
+}
+
+/// Responder for individual topics/threads
+#[get("{board}/catalog")]
+async fn board_catalog(
+    data: web::Data<ApplicationState<'_>>,
+    page_data: web::Query<QueryOptions>,
+    info: web::Path<PathInfo>,
+) -> impl Responder {
+    if !data.config.boards.contains_key(&info.board) {
+        return HttpResponse::Ok().body("Does not exist");
+    }
+    let client = data.db_client.lock().await;
+    let mut inserted_msg = String::from("");
+
+    let mut current_page = page_data.page.unwrap_or(1);
+    if current_page == 0 {
+        current_page = 1;
+    }
+
+    // Restoring messages from DB
+    for row in client
+        .get_messages(
+            &info.board,
+            (current_page - 1) * data.config.page_limit as i64,
+            data.config.page_limit as i64,
+        )
+        .await
+        .unwrap()
+        .into_iter()
+    {
+        let raw_msg = row.get::<usize, String>(3);
+        let msg = if raw_msg.len() < 100 {
+            raw_msg
+        } else {
+            raw_msg[0..100].to_string()
+        };
+
+        inserted_msg.push_str(
+            data.formatter
+                .format_into_message(
+                    html_proc::BoardMessageType::CatalogMessage,
+                    &info.board,
+                    &row.get::<usize, i64>(0),        // message id
+                    &html_proc::get_time(row.get(1)), // time of creation
+                    &current_page.to_string(),
+                    "",
+                    &data
+                        .formatter
+                        .create_formatting(&msg)
+                        .await, // message contents
+                    &row.get::<usize, String>(4), // associated image
+                )
+                .await
+                .as_str(),
+        );
+    }
+    HttpResponse::Ok().body(
+        data.formatter
+            .format_into_catalog(&info.board, &inserted_msg, &current_page)
+            .await,
+    )
 }

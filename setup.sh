@@ -20,7 +20,7 @@ bumplimit: 200
 hard_limit: 125
 site_name: ACSIM
 site_frontend: acsim_ungapped
-page_limit: 25
+page_limit: 16
 boards:
     b: Random
     s: Software
