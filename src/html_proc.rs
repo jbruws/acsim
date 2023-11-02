@@ -266,19 +266,21 @@ impl HtmlFormatter<'_> {
         random_tagline: &String,
         board_links: &String,
         inserted_msg: &String,
-        current_page: i64,
+        query_prev: &String,
+        query_next: &String,
     ) -> String {
         self.handle
             .render_template(
                 &self.get_file("web_data/board.html"),
                 &json!({"site_name": site_name,
-            "board_designation": board_designation,
-            "board_desc": board_desc,
-            "random_tagline": random_tagline,
-            "board_links": board_links,
-            "messages": inserted_msg,
-            "prev_p": current_page - 1,
-            "next_p": current_page + 1}),
+                "board_designation": board_designation,
+                "board_desc": board_desc,
+                "random_tagline": random_tagline,
+                "board_links": board_links,
+                "messages": inserted_msg,
+                "query_prev": query_prev,
+                "query_next": query_next,
+                    }),
             )
             .unwrap()
     }
@@ -332,15 +334,16 @@ impl HtmlFormatter<'_> {
         &self,
         board_designation: &String,
         message_blocks: &String,
-        current_page: &i64,
+        query_data_prev: &String,
+        query_data_next: &String,
     ) -> String {
         self.handle
             .render_template(
                 &self.get_file("web_data/catalog.html"),
                 &json!({"board_designation": board_designation,
                     "message_blocks": message_blocks,
-                    "prev_p": current_page - 1,
-                    "next_p": current_page + 1,
+                    "query_data_prev": query_data_prev,
+                    "query_data_next": query_data_next,
                 }),
             )
             .unwrap()

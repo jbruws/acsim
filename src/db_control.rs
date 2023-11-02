@@ -91,6 +91,21 @@ impl DatabaseWrapper {
             .await
     }
 
+    pub async fn search_messages(
+        &self,
+        board: &str,
+        page: i64,
+        limit: i64,
+        substring: &str,
+    ) -> Result<Vec<Row>, Error> {
+        self.client
+            .query(
+                "SELECT * FROM (SELECT * FROM messages WHERE board=($1) ORDER BY latest_submsg DESC OFFSET ($3) LIMIT ($4)) AS limited WHERE limited.msg LIKE '%' || ($2) || '%'",
+                &[&board, &substring, &page, &limit],
+            )
+            .await
+    }
+
     pub async fn get_single_message(&self, msgid: i64) -> Result<Row, Error> {
         self.client
             .query_one("SELECT * FROM messages WHERE msgid=($1)", &[&msgid])

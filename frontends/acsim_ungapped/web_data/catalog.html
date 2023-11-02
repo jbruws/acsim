@@ -12,15 +12,16 @@
 		<div id="search_form">
 			Search Posts
 			<br>
-			<form id="catalog_search" action="/{{board_designation}}/catalog">
+			<form id="catalog_search" method="get" autocomplete="off" action="/{{board_designation}}/catalog">
 				<input type="text" id="search_string" name="search_string">
+				<input type="submit" value="Submit">
 			</form>
 		</div>
 		<div id="message_container">
 			{{{message_blocks}}}
 		</div>
 		<footer>
-			<div id="page_links"><a href="?page={{prev_p}}">Prev page</a> | <a href="?page={{next_p}}">Next page</a></div>
+			<div id="page_links"><a href="{{query_data_prev}}">Prev page</a> | <a href="{{query_data_next}}">Next page</a></div>
 		</footer>
 	</div>
 </body>

@@ -19,7 +19,7 @@ div#message_container {
 	grid-area: msg;
 	display: grid;
 	grid-gap: 1rem;
-	grid-template-rows: repeat(4, 1fr);
+	grid-template-rows: repeat(auto-fill, 1fr);
 	grid-template-columns: repeat(4, 1fr);
 }
 
@@ -39,6 +39,16 @@ div.message_item {
 
 p.message_header {
 	text-align: center;
+}
+
+/* SEARCH FORM */
+
+form#catalog_search > input[type="text"] {
+	width: 40%;
+}
+
+form#catalog_search > input[type="submit"] {
+	width: 20%;
 }
 
 /* USER IMAGES */

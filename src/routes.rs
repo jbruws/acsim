@@ -2,6 +2,7 @@
 //! handling of HTTP requests
 
 // std
+use std::fmt;
 use std::path::PathBuf;
 use std::sync::Arc;
 // actix and serde
@@ -36,6 +37,40 @@ struct PathInfo {
 #[derive(Deserialize)]
 struct QueryOptions {
     page: Option<i64>,
+    search_string: Option<String>,
+}
+
+impl fmt::Display for QueryOptions {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut reassembled_query = String::new();
+        if let Some(page_num) = self.page {
+            reassembled_query.push_str(&format!("page={}&", page_num))
+        }
+        if let Some(search_string) = &self.search_string {
+            reassembled_query.push_str(&format!("search_string={}&", search_string))
+        }
+        write!(f, "?{}", reassembled_query)
+    }
+}
+
+impl QueryOptions {
+    fn get_neighbour_pages(&self) -> (QueryOptions, QueryOptions) {
+        let current_page = match self.page {
+            Some(s) if s > 0 => s,
+            Some(_) => 1,
+            None => 1,
+        };
+        (
+            QueryOptions {
+                page: Some(current_page - 1),
+                search_string: self.search_string.clone(),
+            },
+            QueryOptions {
+                page: Some(current_page + 1),
+                search_string: self.search_string.clone(),
+            },
+        )
+    }
 }
 
 /// Struct containing various components of the application
@@ -143,6 +178,8 @@ async fn board(
         board_links.push_str(&format!("<a href=\"/{}\">/{}/</a>\n ", c, c));
     }
 
+    let link_queries = page_data.into_inner().get_neighbour_pages();
+
     HttpResponse::Ok().body(
         data.formatter
             .format_into_board(
@@ -158,7 +195,8 @@ async fn board(
                     .unwrap(),
                 &board_links,
                 &inserted_msg,
-                current_page,
+                &link_queries.0.to_string(),
+                &link_queries.1.to_string(),
             )
             .await,
     )
@@ -304,7 +342,6 @@ async fn topic_process_form(
     if !data.config.boards.contains_key(&info.board) {
         return web::Redirect::to(format!("{}/topic/{}", info.board, message_num)).see_other();
     }
-    let current_page = page_data.page.unwrap_or(1);
 
     let client = data.db_client.lock().await;
     let filepath_collection = process_files(&form.files).await;
@@ -343,13 +380,15 @@ async fn topic_process_form(
         }
     }
     web::Redirect::to(format!(
-        "/{}/topic/{}?page={}",
-        info.board, message_num, current_page
+        "/{}/topic/{}{}",
+        info.board,
+        message_num,
+        page_data.into_inner().to_string()
     ))
     .see_other()
 }
 
-/// Responder for individual topics/threads
+/// Responder for board catalogs
 #[get("{board}/catalog")]
 async fn board_catalog(
     data: web::Data<ApplicationState<'_>>,
@@ -367,17 +406,30 @@ async fn board_catalog(
         current_page = 1;
     }
 
+    let catalog_messages;
+    if let Some(search_string) = &page_data.search_string {
+        catalog_messages = client
+            .search_messages(
+                &info.board,
+                (current_page - 1) * data.config.page_limit as i64,
+                data.config.page_limit as i64,
+                &search_string,
+            )
+            .await
+            .unwrap();
+    } else {
+        catalog_messages = client
+            .get_messages(
+                &info.board,
+                (current_page - 1) * data.config.page_limit as i64,
+                data.config.page_limit as i64,
+            )
+            .await
+            .unwrap()
+    }
+
     // Restoring messages from DB
-    for row in client
-        .get_messages(
-            &info.board,
-            (current_page - 1) * data.config.page_limit as i64,
-            data.config.page_limit as i64,
-        )
-        .await
-        .unwrap()
-        .into_iter()
-    {
+    for row in catalog_messages.into_iter() {
         let raw_msg = row.get::<usize, String>(3);
         let msg = if raw_msg.len() < 100 {
             raw_msg
@@ -394,19 +446,24 @@ async fn board_catalog(
                     &html_proc::get_time(row.get(1)), // time of creation
                     &current_page.to_string(),
                     "",
-                    &data
-                        .formatter
-                        .create_formatting(&msg)
-                        .await, // message contents
-                    &row.get::<usize, String>(4), // associated image
+                    &data.formatter.create_formatting(&msg).await, // message contents
+                    &row.get::<usize, String>(4),                  // associated image
                 )
                 .await
                 .as_str(),
         );
     }
+
+    let link_queries = page_data.into_inner().get_neighbour_pages();
+
     HttpResponse::Ok().body(
         data.formatter
-            .format_into_catalog(&info.board, &inserted_msg, &current_page)
+            .format_into_catalog(
+                &info.board,
+                &inserted_msg,
+                &link_queries.0.to_string(),
+                &link_queries.1.to_string(),
+            )
             .await,
     )
 }
