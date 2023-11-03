@@ -17,7 +17,7 @@ mod db_control;
 mod html_proc;
 mod routes;
 
-/// Deserialized version of config.json file
+/// Deserialized version of config.yaml file
 #[derive(Deserialize, Clone)]
 pub struct BoardConfig {
     db_host: String,
@@ -105,12 +105,12 @@ async fn main() -> std::io::Result<()> {
                 format!("./frontends/{}/web_data", &frontend_name.clone()),
             ))
             .service(actix_files::Files::new("/user_images", "./user_images"))
-            .service(routes::root)
-            .service(routes::board)
-            .service(routes::board_process_form)
-            .service(routes::topic)
-            .service(routes::topic_process_form)
-            .service(routes::board_catalog)
+            .service(routes::index::root)
+            .service(routes::board::board)
+            .service(routes::board::board_process_form)
+            .service(routes::topic::topic)
+            .service(routes::topic::topic_process_form)
+            .service(routes::catalog::board_catalog)
     });
 
     let mut bind_ipv4: &str = "0.0.0.0";
