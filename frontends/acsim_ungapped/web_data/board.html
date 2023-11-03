@@ -2,7 +2,7 @@
 
 <head>
 	<title>{{site_name}} /{{board_designation}}/</title>
-	<link rel="stylesheet" type="text/css" href="/web_data/css/style.css">
+	<link rel="stylesheet" type="text/css" href="/web_data/css/board.css">
 	<link rel="stylesheet" type="text/css" href="/web_data/css/generic.css">
 	<meta charset="UTF-8">
 </head>
@@ -17,9 +17,6 @@
 				</div>
 			</header>
 			<hr>
-			<div id="linkbar">
-				{{{board_links}}}
-			</div>
 			<form enctype="multipart/form-data" id="message_form" action="/{{board_designation}}" method="post" autocomplete="off">
 				<textarea placeholder="Author" type="text" name="author" maxlength="62"></textarea>
 				<textarea placeholder="Message" type="text" name="message" maxlength="4093" required></textarea>
@@ -29,6 +26,13 @@
 			<hr>
 		</div>
 		<div id="message_container">
+			<div id="website_data_block">
+				<div id="linkbar">
+					{{{board_links}}}
+				</div>
+				<hr>
+				<a id="catalog_link" href="{{board_designation}}/catalog">Catalog</a>
+			</div>
 			{{{messages}}}
 		</div>
 		<footer>
