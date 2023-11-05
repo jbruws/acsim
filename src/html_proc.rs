@@ -5,6 +5,7 @@ use chrono::{offset::Local, DateTime, NaiveDateTime};
 use handlebars::Handlebars;
 use regex::Regex;
 use serde_json::json;
+use indexmap::map::IndexMap;
 use std::fs::read_to_string;
 use std::ops::Not;
 use std::path::Path;
@@ -87,8 +88,7 @@ pub fn since_epoch() -> i64 {
 pub struct HtmlFormatter<'a> {
     pub work_dir: String,
     handle: Handlebars<'a>,
-    expressions: Vec<Regex>,
-    templates: Vec<String>,
+    formatting_rules: IndexMap<String, String>,
 }
 
 impl HtmlFormatter<'_> {
@@ -96,58 +96,15 @@ impl HtmlFormatter<'_> {
         let mut obj = HtmlFormatter {
             work_dir: format!("./frontends/{}", frontend_name),
             handle: Handlebars::new(),
-            expressions: Vec::new(),
-            templates: Vec::new(),
+            formatting_rules: IndexMap::new(),
         };
 
-        // loading regexes
-        // quotes (greentext)
-        obj.expressions
-            .push(Regex::new(r##"(^|(?<nl>\n))(?<text>>[^\n]+)"##).unwrap());
-        // >2 newlines
-        obj.expressions
-            .push(Regex::new(r##"(?<newline>(\n(\s|\n){2,}|\r(\s|\r){2,}))"##).unwrap());
-        // singular newlines
-        obj.expressions
-            .push(Regex::new(r##"(?<newline>(\n(\s|\n)+|\r(\s|\r)+))"##).unwrap());
-        // message links
-        obj.expressions.push(
-            Regex::new(r##"(?<board>\w{1,16})>(?<msg>\d+)(?<dotted>\.(?<submsg>\d+))?"##).unwrap(),
-        );
-        // regular links
-        obj.expressions
-            .push(Regex::new(r##"(?<text>https?:\/\/[\w-]*?\.[a-z]{2,}(\/\S*)?)"##).unwrap());
-        // code blocks
-        obj.expressions
-            .push(Regex::new(r##"`(?<text>[^`]*)`"##).unwrap());
-        // bold text
-        obj.expressions
-            .push(Regex::new(r##"\*\*(?<text>[^*]*)\*\*"##).unwrap());
-        // italic text
-        obj.expressions
-            .push(Regex::new(r##"\*(?<text>[^*]*)\*"##).unwrap());
-        // strikethrough
-        obj.expressions
-            .push(Regex::new(r##"~~(?<text>[^~]*)~~"##).unwrap());
+        let rules = match obj.load_rules() {
+            Ok(r) => r,
+            Err(_) => IndexMap::new(),
+        };
 
-        // loading regex templates
-        obj.templates
-            .push(obj.get_file("regex_templates/quote.html"));
-        obj.templates.push(String::from("<br><br>"));
-        obj.templates.push(String::from("<br>"));
-        obj.templates
-            .push(obj.get_file("regex_templates/msglink.html"));
-        obj.templates
-            .push(obj.get_file("regex_templates/weblink.html"));
-        obj.templates
-            .push(obj.get_file("regex_templates/codeblock.html"));
-        obj.templates
-            .push(obj.get_file("regex_templates/bold.html"));
-        obj.templates
-            .push(obj.get_file("regex_templates/italic.html"));
-        obj.templates
-            .push(obj.get_file("regex_templates/strikethrough.html"));
-
+        obj.formatting_rules = rules;
         obj
     }
 
@@ -155,6 +112,15 @@ impl HtmlFormatter<'_> {
     fn get_file(&self, rel_path: &str) -> String {
         read_to_string(format!("{}/{}", &self.work_dir, rel_path))
             .unwrap_or_else(|_| panic!("Can't read {}/{}", &self.work_dir, rel_path))
+    }
+
+    /// Loads message formatting rules from YAML file
+    fn load_rules(&self) -> Result<IndexMap<String, String>, serde_yaml::Error> {
+        let raw_config = serde_yaml::from_str(
+            &self.get_file("formatting_rules.yaml")
+        )?;
+
+        Ok(raw_config)
     }
 
     /// Fits form data into one of several HTML message templates.
@@ -360,9 +326,9 @@ impl HtmlFormatter<'_> {
     pub async fn create_formatting(&self, inp_string: &str) -> String {
         let mut result = String::from(inp_string);
 
-        for i in 0..self.templates.len() {
-            result = self.expressions[i]
-                .replace_all(&result, &self.templates[i])
+        for (template, expr) in self.formatting_rules.iter() {
+            result = Regex::new(expr).unwrap()
+                .replace_all(&result, template)
                 .to_string();
         }
 

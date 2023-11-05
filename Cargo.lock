@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "acsim"
-version = "0.6.4"
+version = "0.7.1"
 dependencies = [
  "actix-files",
  "actix-multipart",
@@ -13,6 +13,7 @@ dependencies = [
  "fern",
  "futures",
  "handlebars",
+ "indexmap 2.1.0",
  "log",
  "magic",
  "openssl",
@@ -988,12 +989,13 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "2.0.2"
+version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8adf3ddd720272c6ea8bf59463c04e0f93d0bbf7c5439b691bca2987e0270897"
+checksum = "d530e1a18b1cb4c484e6e34556a0d948706958449fca0cab753d649f2bce3d1f"
 dependencies = [
  "equivalent",
  "hashbrown 0.14.1",
+ "serde",
 ]
 
 [[package]]
@@ -1612,7 +1614,7 @@ version = "0.9.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1a49e178e4452f45cb61d0cd8cebc1b0fafd3e41929e996cef79aa3aca91f574"
 dependencies = [
- "indexmap 2.0.2",
+ "indexmap 2.1.0",
  "itoa",
  "ryu",
  "serde",

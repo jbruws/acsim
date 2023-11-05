@@ -1,0 +1,23 @@
+# This file describes the style of user message formatting used by the current
+# ACSIM frontend. Message formatting is done with Markdown by default, but
+# you can change it to any formatting type.
+
+# The first string in the pair is an html template which defines the <span> or
+# any other block formatted text will be placed in. The second string is a 
+# regex that matches text by characters (such as ** or _) that enwrap it.
+
+# Keep in mind that order of pairs matters! If messages are formatted
+# incorrectly, try switching the order up. The recommended order is as
+# follows: greentext (quotes) -> double newlines -> single newlines ->
+# -> links -> everything else.
+
+---
+'${nl}<span class="quote">${text}</span>${nl}': '(^|(?<nl>\n))(?<text>>[^\n]+)'
+'<br><br>': '(?<newline>(\n(\s|\n){2,}|\r(\s|\r){2,}))'
+'<br>': '(?<newline>(\n(\s|\n)+|\r(\s|\r)+))' 
+'<a target="_blank" rel="noopener noreferrer" class="msglink" href=\"/${board}/topic/${msg}#${submsg}\">${board}>${msg}${dotted}</a>': '(?<board>\w{1,16})>(?<msg>\d+)(?<dotted>\.(?<submsg>\d+))?'  
+'<a target="_blank" rel="noopener noreferrer" href="${text}">${text}</a>': '(?<text>https?:\/\/[\w-]*?\.[a-z]{2,}(\/\S*)?)' 
+'<span class="codeblock">${text}</span>': '`(?<text>[^`]*)`'
+'<span class="bold">${text}</span>': '\*\*(?<text>[^*]*)\*\*'
+'<span class="italic">${text}</span>': '\*(?<text>[^*]*)\*'
+'<span class="strikethrough">${text}</span>': '~~(?<text>[^~]*)~~'

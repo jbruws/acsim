@@ -1,6 +1,6 @@
 [package]
 name = "acsim"
-version = "0.7.0"
+version = "0.7.1"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -23,3 +23,4 @@ log = "0.4"
 handlebars = "4"
 magic = "0.16"
 openssl = "0.10"
+indexmap = { version = "2.1.0", features = ["serde"] }
