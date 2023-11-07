@@ -46,6 +46,16 @@ span.strikethrough {
 	text-decoration: line-through;
 }
 
+span.spoiler {
+	color: transparent;
+	background-color: var(--light-bg-msg);
+}
+
+span.spoiler:hover {
+	color: inherit;
+	background-color: var(--bg-msg);
+}
+
 a {
 	color: var(--msglink-color);
 }

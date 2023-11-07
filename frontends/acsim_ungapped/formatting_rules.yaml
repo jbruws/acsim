@@ -1,5 +1,5 @@
 # This file describes the style of user message formatting used by the current
-# ACSIM frontend. Message formatting is done with Markdown by default, but
+# ACSIM frontend. ACSIM uses Markdown-esque formatting by default, but
 # you can change it to any formatting type.
 
 # The first string in the pair is an html template which defines the <span> or
@@ -21,3 +21,4 @@
 '<span class="bold">${text}</span>': '\*\*(?<text>[^*]*)\*\*'
 '<span class="italic">${text}</span>': '\*(?<text>[^*]*)\*'
 '<span class="strikethrough">${text}</span>': '~~(?<text>[^~]*)~~'
+'<span class="spoiler">${text}</span>': '\|\|(?<text>[^\|]*)\|\|'

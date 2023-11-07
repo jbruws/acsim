@@ -7,7 +7,7 @@ use std::collections::BTreeMap;
 use std::fs::read_to_string;
 use std::sync::Arc;
 // actix and serde
-use actix_web::{middleware::Logger, web, App, HttpServer};
+use actix_web::{middleware, web, App, HttpServer};
 use serde::Deserialize;
 // async mutex
 use openssl::ssl::{SslAcceptor, SslAcceptorBuilder, SslMethod};
@@ -97,7 +97,8 @@ async fn main() -> std::io::Result<()> {
     // configuring and starting the server
     let server = HttpServer::new(move || {
         App::new()
-            .wrap(Logger::default())
+            .wrap(middleware::Logger::default())
+            .wrap(middleware::Compress::default())
             .app_data(application_data.clone())
             .app_data(web::PayloadConfig::new(1024 * 1024 * 100))
             .service(actix_files::Files::new(
