@@ -25,7 +25,8 @@ pub mod topic;
 pub struct MsgForm {
     message: Text<String>,
     author: Text<String>,
-    #[multipart(limit = "128 MiB", rename = "files[]")]
+    sage: Option<Text<String>>, // what has my life come to
+    #[multipart(limit = "50 MiB", rename = "files[]")]
     files: Vec<TempFile>,
 }
 

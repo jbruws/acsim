@@ -126,11 +126,14 @@ pub async fn topic_process_form(
             )
             .await;
 
-        // counting submessages for given message
         let submsg_count = client.count_submessages(message_num).await.unwrap();
 
-        // if number of submessages is below the bumplimit, update activity of parent msg
-        if submsg_count <= data.config.bumplimit.into() {
+        let post_is_saged = match form.sage {
+            Some(_) => true,
+            None => false,
+        };
+
+        if submsg_count <= data.config.bumplimit.into() && !post_is_saged {
             client
                 .update_message_activity(since_epoch, message_num)
                 .await;

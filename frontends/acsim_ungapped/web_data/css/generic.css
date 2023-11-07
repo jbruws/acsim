@@ -111,12 +111,12 @@ div.userimage {
 /* SUBMIT FORM */
 form#message_form {
 	display: grid;
+	grid-template-columns: 3fr 2fr;
 	grid-template-areas:
-		"fa"
-		"fm"
-		"im"
-		"sm";
-	padding: 1rem;
+		"op op"
+		"mesg mesg"
+		"file subm"
+		"sage subm";
 	gap: 0.5rem;
 }
 
@@ -136,13 +136,13 @@ textarea:focus {
 }	
 
 textarea[name="author"] {
-	grid-area: fa;
+	grid-area: op;
 	height: 1rem;
 	margin-bottom: 1rem;
 }
 
 textarea[name="message"] {
-	grid-area: fm;
+	grid-area: mesg;
 	height: 5rem;
 	margin-bottom: 1rem;
 }
@@ -154,15 +154,24 @@ input {
 }
 
 input[type="submit"] {
-	grid-area: sm;
-	width: 70%;
+	grid-area: subm;
+	width: 100%;
 	margin-right: auto;
 	margin-left: auto;
 }
 
 input[type="file"] {
-	grid-area: im;
+	grid-area: file;
 	margin-right: auto;
 	margin-left: auto;
+}
+
+form#message_form > p {
+	grid-area: sage;
+	margin-top: 0px;
+	margin-bottom: 0px;
+	margin-left: auto;
+	margin-right: auto;
+	font-size: 70%;
 }
 
