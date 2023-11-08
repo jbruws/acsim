@@ -4,11 +4,11 @@ use actix_multipart::form::MultipartForm;
 use actix_web::{get, post, web, HttpResponse, Responder};
 
 use crate::html_proc;
+use crate::routes::process_files;
 use crate::routes::ApplicationState;
 use crate::routes::MsgForm;
 use crate::routes::PathInfo;
 use crate::routes::QueryOptions;
-use crate::routes::process_files;
 
 /// Responder for individual topics/threads
 #[get("{board}/topic/{message_num}")]
@@ -32,16 +32,10 @@ pub async fn topic(
             .formatter
             .format_into_message(
                 html_proc::BoardMessageType::ParentMessage,
+                d,
                 &info.board,
-                &d.get::<usize, i64>(0),        // message id
-                &html_proc::get_time(d.get(1)), // time of creation
                 &current_page.to_string(),
-                &d.get::<usize, String>(2), // author
-                &data
-                    .formatter
-                    .create_formatting(&d.get::<usize, String>(3))
-                    .await, // message contents
-                &d.get::<usize, String>(4), // associated image
+                None,
             )
             .await;
     } else {
@@ -55,19 +49,10 @@ pub async fn topic(
             data.formatter
                 .format_into_message(
                     html_proc::BoardMessageType::Submessage,
+                    row,
                     &info.board,
-                    &submessage_counter,              // ordinal number
-                    &html_proc::get_time(row.get(1)), // time of creation
                     &current_page.to_string(),
-                    &data
-                        .formatter
-                        .filter_tags(&row.get::<usize, String>(2))
-                        .await, // author
-                    &data
-                        .formatter
-                        .create_formatting(&row.get::<usize, String>(3))
-                        .await, // message contents
-                    &row.get::<usize, String>(4), // associated image
+                    Some(submessage_counter),
                 )
                 .await
                 .as_str(),
@@ -128,12 +113,7 @@ pub async fn topic_process_form(
 
         let submsg_count = client.count_submessages(message_num).await.unwrap();
 
-        let post_is_saged = match form.sage {
-            Some(_) => true,
-            None => false,
-        };
-
-        if submsg_count <= data.config.bumplimit.into() && !post_is_saged {
+        if submsg_count <= data.config.bumplimit.into() && form.sage.is_some() {
             client
                 .update_message_activity(since_epoch, message_num)
                 .await;

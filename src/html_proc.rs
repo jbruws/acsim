@@ -3,13 +3,16 @@
 
 use chrono::{offset::Local, DateTime, NaiveDateTime};
 use handlebars::Handlebars;
+use indexmap::map::IndexMap;
+use rand::prelude::SliceRandom;
 use regex::Regex;
 use serde_json::json;
-use indexmap::map::IndexMap;
 use std::fs::read_to_string;
 use std::ops::Not;
 use std::path::Path;
 use std::str;
+
+use crate::BoardConfig;
 
 /// File categories that can be sent by users
 #[derive(PartialEq)]
@@ -116,9 +119,7 @@ impl HtmlFormatter<'_> {
 
     /// Loads message formatting rules from YAML file
     fn load_rules(&self) -> Result<IndexMap<String, String>, serde_yaml::Error> {
-        let raw_config = serde_yaml::from_str(
-            &self.get_file("formatting_rules.yaml")
-        )?;
+        let raw_config = serde_yaml::from_str(&self.get_file("formatting_rules.yaml"))?;
 
         Ok(raw_config)
     }
@@ -127,15 +128,30 @@ impl HtmlFormatter<'_> {
     pub async fn format_into_message(
         &self,
         message_type: BoardMessageType,
+        db_row: tokio_postgres::row::Row,
         board: &str,
-        id: &i64,
-        time: &str,
         page: &str,
-        author: &str,
-        msg: &str,
-        images: &str,
+        msgid_override: Option<i64>,
     ) -> String {
         let mut image_container = String::new();
+
+        let id = match msgid_override {
+            Some(n) => n,
+            None => db_row.get::<usize, i64>(0),
+        };
+        let mut msg = self.create_formatting(&db_row.get::<usize, String>(3)).await;
+        if message_type == BoardMessageType::CatalogMessage {
+            msg = if msg.len() < 100 { // can generate unclosed tags. TODO fix this
+                msg
+            } else {
+                msg[0..100].to_string()
+            };
+        }
+
+        let time = get_time(db_row.get(1));
+        let author = db_row.get::<usize, String>(2);
+        let images = db_row.get::<usize, String>(4);
+
         for image in images.split(';') {
             let file_type = valid_file(image);
             if file_type != FileType::Invalid {
@@ -226,19 +242,30 @@ impl HtmlFormatter<'_> {
     /// Formats data into `board.html` (board pages)
     pub async fn format_into_board(
         &self,
-        site_name: &String,
+        acsim_config: &BoardConfig,
         board_designation: &String,
-        board_desc: &String,
-        random_tagline: &String,
-        board_links: &String,
         inserted_msg: &String,
         query_prev: &String,
         query_next: &String,
     ) -> String {
+        // getting data about visited board
+        let empty = String::from("");
+        let board_desc = acsim_config.boards.get(board_designation).unwrap();
+        let random_tagline = match acsim_config.taglines.choose(&mut rand::thread_rng()) {
+            Some(s) => s,
+            None => &empty,
+        };
+
+        // creating board link block
+        let mut board_links = String::new();
+        for c in acsim_config.boards.keys() {
+            board_links.push_str(&format!("<a href=\"/{}\">/{}/</a>\n ", c, c));
+        }
+
         self.handle
             .render_template(
                 &self.get_file("web_data/board.html"),
-                &json!({"site_name": site_name,
+                &json!({"site_name": acsim_config.site_name,
                 "board_designation": board_designation,
                 "board_desc": board_desc,
                 "random_tagline": random_tagline,
@@ -327,7 +354,8 @@ impl HtmlFormatter<'_> {
         let mut result = String::from(inp_string);
 
         for (template, expr) in self.formatting_rules.iter() {
-            result = Regex::new(expr).unwrap()
+            result = Regex::new(expr)
+                .unwrap()
                 .replace_all(&result, template)
                 .to_string();
         }

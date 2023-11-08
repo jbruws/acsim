@@ -2,14 +2,13 @@
 
 use actix_multipart::form::MultipartForm;
 use actix_web::{get, post, web, HttpResponse, Responder};
-use rand::prelude::SliceRandom;
 
 use crate::html_proc;
+use crate::routes::process_files;
 use crate::routes::ApplicationState;
 use crate::routes::MsgForm;
 use crate::routes::PathInfo;
 use crate::routes::QueryOptions;
-use crate::routes::process_files;
 
 /// Responder for boards
 #[get("/{board}")]
@@ -44,26 +43,14 @@ pub async fn board(
             data.formatter
                 .format_into_message(
                     html_proc::BoardMessageType::Message,
+                    row,
                     &info.board,
-                    &row.get::<usize, i64>(0),        // message id
-                    &html_proc::get_time(row.get(1)), // time of creation
                     &current_page.to_string(),
-                    &row.get::<usize, String>(2), // author
-                    &data
-                        .formatter
-                        .create_formatting(&row.get::<usize, String>(3))
-                        .await, // message contents
-                    &row.get::<usize, String>(4), // associated image
+                    None,
                 )
                 .await
                 .as_str(),
         );
-    }
-
-    // creating board link block
-    let mut board_links = String::new();
-    for c in data.config.boards.keys() {
-        board_links.push_str(&format!("<a href=\"/{}\">/{}/</a>\n ", c, c));
     }
 
     let link_queries = page_data.into_inner().get_neighbour_pages();
@@ -71,17 +58,8 @@ pub async fn board(
     HttpResponse::Ok().body(
         data.formatter
             .format_into_board(
-                &data.config.site_name,
+                &data.config,
                 &info.board.to_string(),
-                data.config
-                    .boards
-                    .get(&info.board)
-                    .unwrap_or(&String::from("")),
-                data.config
-                    .taglines
-                    .choose(&mut rand::thread_rng())
-                    .unwrap_or(&"".to_string()),
-                &board_links,
                 &inserted_msg,
                 &link_queries.0.to_string(),
                 &link_queries.1.to_string(),

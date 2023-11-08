@@ -49,24 +49,14 @@ pub async fn board_catalog(
 
     // Restoring messages from DB
     for row in catalog_messages.into_iter() {
-        let raw_msg = row.get::<usize, String>(3);
-        let msg = if raw_msg.len() < 100 {
-            raw_msg
-        } else {
-            raw_msg[0..100].to_string()
-        };
-
         inserted_msg.push_str(
             data.formatter
                 .format_into_message(
                     html_proc::BoardMessageType::CatalogMessage,
+                    row,
                     &info.board,
-                    &row.get::<usize, i64>(0),        // message id
-                    &html_proc::get_time(row.get(1)), // time of creation
                     &current_page.to_string(),
-                    "",
-                    &data.formatter.create_formatting(&msg).await, // message contents
-                    &row.get::<usize, String>(4),                  // associated image
+                    None,
                 )
                 .await
                 .as_str(),
