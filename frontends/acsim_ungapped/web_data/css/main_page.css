@@ -1,12 +1,11 @@
-* {
+body {
+	background-color: var(--bg);
 	padding: 0;
 	margin: 0;
-	background-color: var(--bg-msg);
 }
 
 div#grid_root {
 	display: grid;
-	margin-top: 0;
 	grid-template-columns: minmax(0, 1fr); 
 	grid-template-areas: 
 		"name"
@@ -15,22 +14,17 @@ div#grid_root {
 
 div#name {
 	grid-area: name;
-	font-size: 350%;
+	font-size: 300%;
 	text-align: center;
 	border-bottom: 5px solid var(--text-color);
+	background-color: var(--bg-msg);
 	padding: 2rem;
-}
-
-div#bottom_half {
-	background-color: var(--bg);
-	height: 100vh;
 }
 
 div#links {
 	grid-area: links;
 	background-color: var(--bg-msg);
-	//outline: 2px solid var(--text-color);
-	width: 50%;
+	width: 40%;
 	padding: 1rem;
 	margin: auto;
 	margin-top: 5%;
@@ -40,11 +34,11 @@ div#links > hr:last-of-type {
 	display: none;
 }
 
-a:hover {
-	color: var(--text-color);
+div.main_page_link {
+	font-size: 150%;
+	padding: 0.5rem;
 }
 
-div.main_page_link {
-	font-size: 175%;
-	padding: 1rem;
+a:hover {
+	color: var(--text-color);
 }

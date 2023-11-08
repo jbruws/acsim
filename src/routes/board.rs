@@ -60,6 +60,7 @@ pub async fn board(
         );
     }
 
+    // creating board link block
     let mut board_links = String::new();
     for c in data.config.boards.keys() {
         board_links.push_str(&format!("<a href=\"/{}\">/{}/</a>\n ", c, c));
@@ -79,7 +80,7 @@ pub async fn board(
                 data.config
                     .taglines
                     .choose(&mut rand::thread_rng())
-                    .unwrap(),
+                    .unwrap_or(&"".to_string()),
                 &board_links,
                 &inserted_msg,
                 &link_queries.0.to_string(),

@@ -46,14 +46,11 @@ page_limit: 20
 # Boards served to users. Consists of board designation and short description
 boards:
     b: Random
-    s: Software
-    ca: Cryptoanarchy
 
 # Taglines. Put whatever you want here. Use quotation marks if the server refuses to starts afterwards.
+# If you don't want to use taglines at all, just leave this empty
 taglines:
-    - you should back your data up NOW!!!
-    - In Rust We Trust
-	" > config.yaml
+" > config.yaml
 fi
 
 # Creating database tables
