@@ -72,7 +72,7 @@ div.message_contents {
 /* USER IMAGES */
 div.userimage_container {
 	background-color: var(--userimage-bg);
-	width: max-content;
+	/*width: max-content;*/
 	margin-top: 1rem;
 	margin-bottom: 1rem;
 }
@@ -93,16 +93,10 @@ div.userimage {
 	height: auto;
 }
 
-/*.userimage > video {
-	max-width: 10rem;
-	height: auto;
-}*/
-
-/*.userimage > img:hover {
-	display: absolute;
-	max-width: 15rem;
-	width: 15rem;
-}*/
+.userimage > img:active {
+	max-width: 20rem;
+	width: 20rem;
+}
 
 .userimage > a {
 	font-size: 0.7rem;

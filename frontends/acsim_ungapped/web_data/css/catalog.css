@@ -42,7 +42,6 @@ p.message_header {
 }
 
 /* SEARCH FORM */
-
 form#catalog_search > input[type="text"] {
 	width: 40%;
 }
@@ -71,6 +70,12 @@ div.userimage {
 	max-width: 5rem;
 	height: auto;
 }
+
 .userimage > a {
 	display: none;
+}
+
+.message_item > .userimage_container > .userimage > img:active {
+	max-width: 90%;
+	width: 125%;
 }

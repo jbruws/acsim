@@ -99,6 +99,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
+            .wrap(middleware::NormalizePath::trim())
             .app_data(application_data.clone())
             .app_data(web::PayloadConfig::new(1024 * 1024 * 100))
             .service(actix_files::Files::new(
