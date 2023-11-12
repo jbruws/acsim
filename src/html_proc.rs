@@ -120,7 +120,6 @@ impl HtmlFormatter<'_> {
     /// Loads message formatting rules from YAML file
     fn load_rules(&self) -> Result<IndexMap<String, String>, serde_yaml::Error> {
         let raw_config = serde_yaml::from_str(&self.get_file("formatting_rules.yaml"))?;
-
         Ok(raw_config)
     }
 
@@ -133,23 +132,26 @@ impl HtmlFormatter<'_> {
         page: &str,
         msgid_override: Option<i64>,
     ) -> String {
-        let mut image_container = String::new();
+        const CATALOG_MSG_LENGTH: usize = 200;
 
         let id = match msgid_override {
             Some(n) => n,
             None => db_row.get::<usize, i64>(0),
         };
-        let mut msg = self.create_formatting(&db_row.get::<usize, String>(3)).await;
+
+        // formatting message body (and cropping if needed)
+        let mut msg = db_row.get::<usize, String>(3);
         if message_type == BoardMessageType::CatalogMessage {
-            msg = if msg.len() < 100 { // can generate unclosed tags. TODO fix this
+            msg = if msg.len() < CATALOG_MSG_LENGTH {
                 msg
             } else {
-                msg[0..100].to_string()
+                msg[0..CATALOG_MSG_LENGTH].to_string()
             };
         }
+        msg = self.create_formatting(&msg).await;
 
-        let time = get_time(db_row.get(1));
-        let author = db_row.get::<usize, String>(2);
+        // processing images/videos
+        let mut image_container = String::new();
         let images = db_row.get::<usize, String>(4);
 
         for image in images.split(';') {
@@ -158,7 +160,7 @@ impl HtmlFormatter<'_> {
                 let image_web_path: String = if message_type == BoardMessageType::ParentMessage
                     || message_type == BoardMessageType::Submessage
                 {
-                    // descend two dirs if message is in topic (/board/topic/*)
+                    // descend two dirs if message is in topic (/{board}/topic/*)
                     format!("../../{}", image)
                 } else {
                     format!("../{}", image)
@@ -189,6 +191,9 @@ impl HtmlFormatter<'_> {
                 &json!({"img_block": image_container, "msg": msg}),
             )
             .unwrap();
+
+        let time = get_time(db_row.get(1));
+        let author = db_row.get::<usize, String>(2);
 
         match message_type {
             BoardMessageType::Message => self

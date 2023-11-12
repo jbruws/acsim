@@ -75,6 +75,9 @@ pub async fn board_process_form(
     info: web::Path<PathInfo>,
     data: web::Data<ApplicationState<'_>>,
 ) -> impl Responder {
+    const MAX_AUTHOR_LENGTH: usize = 250;
+    const MAX_MESSAGE_LENGTH: usize = 4000;
+
     if !data.config.boards.contains_key(&info.board) {
         return web::Redirect::to("/").see_other();
     }
@@ -89,7 +92,10 @@ pub async fn board_process_form(
     let trimmed_message = form.message.trim();
 
     // if fits, push new message into DB and vector
-    if trimmed_author.len() < 254 && !trimmed_message.is_empty() && trimmed_message.len() < 4094 {
+    if trimmed_author.len() < MAX_AUTHOR_LENGTH
+        && !trimmed_message.is_empty()
+        && trimmed_message.len() < MAX_MESSAGE_LENGTH
+    {
         let filtered_author = match trimmed_author.len() {
             0 => "Anonymous".to_string(),
             _ => data.formatter.filter_tags(trimmed_author).await,

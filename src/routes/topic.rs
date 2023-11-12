@@ -80,6 +80,9 @@ pub async fn topic_process_form(
     page_data: web::Query<QueryOptions>,
     info: web::Path<PathInfo>,
 ) -> impl Responder {
+    const MAX_AUTHOR_LENGTH: usize = 250;
+    const MAX_MESSAGE_LENGTH: usize = 4000;
+
     let message_num = info.message_num.unwrap_or(1);
     if !data.config.boards.contains_key(&info.board) {
         return web::Redirect::to(format!("{}/topic/{}", info.board, message_num)).see_other();
@@ -95,7 +98,10 @@ pub async fn topic_process_form(
     let trimmed_message = form.message.trim();
 
     // if fits, push new message into DB
-    if trimmed_author.len() < 254 && !trimmed_message.is_empty() && trimmed_message.len() < 4094 {
+    if trimmed_author.len() < MAX_AUTHOR_LENGTH
+        && !trimmed_message.is_empty()
+        && trimmed_message.len() < MAX_MESSAGE_LENGTH
+    {
         let filtered_author = match trimmed_author.len() {
             0 => "Anonymous".to_string(),
             _ => data.formatter.filter_tags(trimmed_author).await,
