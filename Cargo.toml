@@ -22,6 +22,6 @@ fern = "0.6"
 log = "0.4"
 handlebars = "4"
 magic = "0.16"
-openssl = "0.10"
+openssl = "0.10.60"
 indexmap = { version = "2.1.0", features = ["serde"] }
 dotenv = "0.15"
