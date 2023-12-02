@@ -85,8 +85,8 @@ impl DatabaseWrapper {
     ) -> Result<Vec<Row>, Error> {
         self.client
             .query(
-                "SELECT * FROM messages WHERE board=($1) ORDER BY latest_submsg DESC OFFSET ($2) LIMIT ($3)",
-                &[&board, &page, &limit],
+                "SELECT * FROM messages WHERE board=($1) AND (msgid BETWEEN ($2) AND ($3)) ORDER BY latest_submsg DESC",
+                &[&board, &(&limit * (&page - 1)), &(&limit * &page)],
             )
             .await
     }

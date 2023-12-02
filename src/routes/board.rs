@@ -32,7 +32,7 @@ pub async fn board(
     for row in client
         .get_messages(
             &info.board,
-            (current_page - 1) * data.config.page_limit as i64,
+            current_page as i64,
             data.config.page_limit as i64,
         )
         .await

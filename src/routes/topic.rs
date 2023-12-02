@@ -119,7 +119,7 @@ pub async fn topic_process_form(
 
         let submsg_count = client.count_submessages(message_num).await.unwrap();
 
-        if submsg_count <= data.config.bumplimit.into() && form.sage.is_some() {
+        if submsg_count <= data.config.bumplimit.into() && form.sage.is_none() {
             client
                 .update_message_activity(since_epoch, message_num)
                 .await;
