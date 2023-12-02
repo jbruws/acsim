@@ -4,19 +4,19 @@ if [ ! -d ./user_images ]; then
 	mkdir ./user_images
 fi
 
+if [ ! -f ".env" ]; then
+	echo 'Creating .env file'
+	echo "
+DB_HOST=\"127.0.0.1\"
+DB_USER=\"$1\"
+DB_PASSWORD=\"changethis\"
+" > .env
+fi
+
 if [ ! -f "config.yaml" ]; then
 	echo 'Creating default config file for server'
 	echo "
 ---
-# IP address of the server where the database is hosted
-db_host: 127.0.0.1
-
-# Postgres user used to access the database
-db_user: $1
-
-# Password for the database (only used if you enabled it. Refer to README)
-db_password: change_this
-
 # IP addresses and port used to serve the imageboard itself
 server_ipv4: 127.0.0.1
 server_ipv6: ::1

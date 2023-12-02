@@ -10,7 +10,11 @@ pub struct DatabaseWrapper {
 }
 
 impl DatabaseWrapper {
-    pub async fn new(db_host: &String, db_user: &String, db_password: &String) -> DatabaseWrapper {
+    pub async fn new() -> Result<DatabaseWrapper, std::env::VarError> {
+        let db_host = std::env::var("DB_HOST")?;
+        let db_user =  std::env::var("DB_USER")?;
+        let db_password = std::env::var("DB_PASSWORD")?;
+
         // connecting to the database
         let (raw_client, connection) = tokio_postgres::connect(
             format!(
@@ -29,7 +33,7 @@ impl DatabaseWrapper {
             }
         });
 
-        DatabaseWrapper { client: raw_client }
+        Ok(DatabaseWrapper { client: raw_client })
     }
 
     fn log_query_status(status: Result<u64, tokio_postgres::error::Error>, operation: &str) {

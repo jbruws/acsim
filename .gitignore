@@ -7,3 +7,4 @@ acsim.log
 *.gif
 *.jpeg
 /keys/*
+.env

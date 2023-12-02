@@ -20,9 +20,6 @@ mod routes;
 /// Deserialized version of config.yaml file
 #[derive(Deserialize, Clone)]
 pub struct BoardConfig {
-    db_host: String,
-    db_user: String,
-    db_password: String,
     server_ipv4: String,
     server_ipv6: String,
     server_port: u16,
@@ -49,6 +46,9 @@ fn create_ssl_acceptor() -> SslAcceptorBuilder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    // loading database data from .env
+    dotenv::dotenv().ok();
+
     // reading board config
     let raw_config: BoardConfig = serde_yaml::from_str(
         &read_to_string("./config.yaml")
@@ -60,9 +60,7 @@ async fn main() -> std::io::Result<()> {
     let frontend_name: String = config.site_frontend.clone();
 
     // creating db connection through DatabaseWrapper
-    let raw_client =
-        db_control::DatabaseWrapper::new(&config.db_host, &config.db_user, &config.db_password)
-            .await;
+    let raw_client = db_control::DatabaseWrapper::new().await.expect("Error reading database parameters (check your .env)");
     let client = Arc::new(Mutex::new(raw_client));
 
     // creating html formatter
