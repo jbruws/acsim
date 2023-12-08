@@ -10,6 +10,8 @@ use crate::routes::MsgForm;
 use crate::routes::PathInfo;
 use crate::routes::QueryOptions;
 
+use crate::db_control::{MessageRow, SubmessageRow};
+
 /// Responder for boards
 #[get("/{board}")]
 pub async fn board(

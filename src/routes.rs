@@ -86,7 +86,7 @@ pub struct ApplicationState<'a> {
 
 /// Function for handling files in multipart forms
 pub async fn process_files(files: &Vec<TempFile>) -> String {
-    let mut filepath_collection = String::new();
+    let mut filepath_collection = String::from("");
     for (i, item) in files.iter().enumerate() {
         if i == 4 {
             break;

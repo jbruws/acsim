@@ -12,6 +12,7 @@ use std::ops::Not;
 use std::path::Path;
 use std::str;
 
+use crate::db_control::{MessageRow, SubmessageRow};
 use crate::BoardConfig;
 
 /// File categories that can be sent by users
@@ -123,11 +124,30 @@ impl HtmlFormatter<'_> {
         Ok(raw_config)
     }
 
-    /// Fits form data into one of several HTML message templates.
+    /// Fits form data into submessage HTML template.
+    pub async fn format_into_submessage(
+        &self,
+        db_row: SubmessageRow,
+        board: &str,
+        page: &str,
+        msgid_override: i64,
+    ) -> String {
+        self.handle
+            .render_template(
+                &self.get_file("templates/message_blocks/submessage.html"),
+                &json!({"id": msgid_override,
+                "time": db_row.time,
+                "author": db_row.author,
+                "msg": db_row.submsg}),
+            )
+            .unwrap()
+    }
+
+    /// Fits form data into one of several HTML templates Only accepts `MessageRow` structs.
     pub async fn format_into_message(
         &self,
         message_type: BoardMessageType,
-        db_row: tokio_postgres::row::Row,
+        db_row: MessageRow,
         board: &str,
         page: &str,
         msgid_override: Option<i64>,
@@ -136,11 +156,11 @@ impl HtmlFormatter<'_> {
 
         let id = match msgid_override {
             Some(n) => n,
-            None => db_row.get::<usize, i64>(0),
+            None => db_row.msgid,
         };
 
         // formatting message body (and cropping if needed)
-        let mut msg = db_row.get::<usize, String>(3);
+        let mut msg = db_row.msg;
         if message_type == BoardMessageType::CatalogMessage {
             msg = if msg.len() < CATALOG_MSG_LENGTH {
                 msg
@@ -152,7 +172,7 @@ impl HtmlFormatter<'_> {
 
         // processing images/videos
         let mut image_container = String::new();
-        let images = db_row.get::<usize, String>(4);
+        let images = db_row.image;
 
         for image in images.split(';') {
             let file_type = valid_file(image);
@@ -192,8 +212,8 @@ impl HtmlFormatter<'_> {
             )
             .unwrap();
 
-        let time = get_time(db_row.get(1));
-        let author = db_row.get::<usize, String>(2);
+        let time = get_time(db_row.time);
+        let author = db_row.author;
 
         match message_type {
             BoardMessageType::Message => self
@@ -220,16 +240,6 @@ impl HtmlFormatter<'_> {
                 "msg": msg_contents}),
                 )
                 .unwrap(),
-            BoardMessageType::Submessage => self
-                .handle
-                .render_template(
-                    &self.get_file("templates/message_blocks/submessage.html"),
-                    &json!({"id": id,
-                "time": time,
-                "author": author,
-                "msg": msg_contents}),
-                )
-                .unwrap(),
             BoardMessageType::CatalogMessage => self
                 .handle
                 .render_template(
@@ -241,6 +251,7 @@ impl HtmlFormatter<'_> {
                 "msg": msg_contents}),
                 )
                 .unwrap(),
+            _ => String::new(),
         }
     }
 

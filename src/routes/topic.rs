@@ -47,12 +47,11 @@ pub async fn topic(
         submessage_counter += 1;
         inserted_submsg.push_str(
             data.formatter
-                .format_into_message(
-                    html_proc::BoardMessageType::Submessage,
+                .format_into_submessage(
                     row,
                     &info.board,
                     &current_page.to_string(),
-                    Some(submessage_counter),
+                    submessage_counter,
                 )
                 .await
                 .as_str(),

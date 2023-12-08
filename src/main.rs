@@ -60,7 +60,9 @@ async fn main() -> std::io::Result<()> {
     let frontend_name: String = config.site_frontend.clone();
 
     // creating db connection through DatabaseWrapper
-    let raw_client = db_control::DatabaseWrapper::new().await.expect("Error reading database parameters (check your .env)");
+    let raw_client = db_control::DatabaseWrapper::new()
+        .await
+        .expect("Error reading database parameters (check your .env)");
     let client = Arc::new(Mutex::new(raw_client));
 
     // creating html formatter
