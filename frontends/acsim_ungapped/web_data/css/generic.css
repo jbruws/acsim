@@ -22,6 +22,12 @@ body {
 }
 
 /* FORMATTING */
+h1, h2, h3 {
+	font-size: 125%;
+	margin-top: 1rem;
+	margin-bottom: 1rem;
+}
+
 span.italic {
 	font-style: italic;
 }

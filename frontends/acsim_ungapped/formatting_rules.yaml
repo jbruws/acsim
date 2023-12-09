@@ -1,22 +1,36 @@
 # This file describes the style of user message formatting used by the current
 # ACSIM frontend. ACSIM uses Markdown-esque formatting by default, but
-# you can change it to any formatting type.
+# you can change it to any formatting type (if you can write regex correctly).
 
-# The first string in the pair is an html template which defines the <span> or
-# any other block formatted text will be placed in. The second string is a 
+# The first string in the pair is an HTML template which defines the <span> or
+# any other block formatted text will be placed in. Which text is picked
+# is based on the names of regex match groups (see below). The second string is a
 # regex that matches text by characters (such as ** or _) that enwrap it.
 
 # Keep in mind that order of pairs matters! If messages are formatted
-# incorrectly, try switching the order up. The recommended order is as
-# follows: greentext (quotes) -> double newlines -> single newlines ->
-# -> links -> everything else.
+# incorrectly, try switching the order up. The recommended order is provided here.
 
 ---
+# block quotes (greentext)
 '${nl}<span class="quote">${text}</span>${nl}': '(^|(?<nl>\n))(?<text>>[^\n]+)'
-'<br><br>': '(?<newline>(\n(\s|\n){2,}|\r(\s|\r){2,}))'
-'<br>': '(?<newline>(\n(\s|\n)+|\r(\s|\r)+))' 
+
+# horizontal rules
+'${nl_head}<hr>${nl_trail}': '(?<nl_head>\r(\s|\r)+)(?<hr_block>[\*|_|\-]{3})(?<nl_trail>\r(\s|\r)+)'
+
+# headings. Markdown headings 3-6 are compressed into HTML's <h3>
+'<h1>${head_text}</h1>': '(^|(\r(\s|\r)+))#\ (?<head_text>.+)(\r(\s|\r)+)'
+'<h2>${head_text}</h2>': '(^|(\r(\s|\r)+))##\ (?<head_text>.+)(\r(\s|\r)+)'
+'<h3>${head_text}</h3>': '(^|(\r(\s|\r)+))#{3,6}\ (?<head_text>.+)(\r(\s|\r)+)'
+
+# 2+ and single newlines. 2+ newlines are collapsed into two
+'<br><br>': '(\r(\s|\r)+)'
+'<br>': '(\r(\s|\r){2,})'
+
+# links to other messages and external websites
 '<a target="_blank" rel="noopener noreferrer" class="msglink" href="/${board}/topic/${msg}#${submsg}">${board}>${msg}${dotted}</a>': '(?<board>\w{1,16})>(?<msg>\d+)(?<dotted>\.(?<submsg>\d+))?'
 '<a target="_blank" rel="noopener noreferrer" href="${text}">${text}</a>': '(?<text>https?:\/\/[\w-]*?\.[a-z]{2,}(\/\S*)?)'
+
+# misc text formatting
 '<span class="codeblock">${text}</span>': '`(?<text>[^`]*)`'
 '<span class="bold">${text}</span>': '\*\*(?<text>[^*]*)\*\*'
 '<span class="italic">${text}</span>': '\*(?<text>[^*]*)\*'
