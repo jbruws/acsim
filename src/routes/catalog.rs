@@ -38,11 +38,7 @@ pub async fn board_catalog(
             .unwrap();
     } else {
         catalog_messages = client
-            .get_messages(
-                &info.board,
-                current_page as i64,
-                data.config.page_limit as i64,
-            )
+            .get_messages(&info.board, current_page, data.config.page_limit as i64)
             .await
             .unwrap()
     }

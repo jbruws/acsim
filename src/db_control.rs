@@ -1,10 +1,7 @@
 //! Struct used for handling connection and queries
 //! to PostgreSQL database used by ACSIM.
 
-//use tokio_postgres::error::Error;
-//use tokio_postgres::row::Row;
-
-use sqlx::{postgres::PgPoolOptions, PgPool, Pool, Row};
+use sqlx::{postgres::PgPoolOptions, PgPool};
 
 /// Struct used to deserialize messages from DB rows
 #[derive(Debug)]
@@ -30,25 +27,18 @@ pub struct SubmessageRow {
 
 /// Wrapper for PostgreSQL DB client
 pub struct DatabaseWrapper {
-    // There used to be a `tokio_postgres::Client`
-    // but I moved to sqlx
     db_pool: PgPool,
 }
 
 impl DatabaseWrapper {
     pub async fn new() -> Result<DatabaseWrapper, sqlx::Error> {
-        //let db_host = std::env::var("DB_HOST").expect("Must specify DB host in .env");
-        //let db_user = std::env::var("DB_USER").expect("Must specify DB user in .env");
-        //let db_password = match std::env::var("DB_PASSWORD") {
-            //Ok(p) => format!(":{}", p),
-            //Err(_) => "".to_string(),
-        //};
-
         // You must set DATABASE_URL at compile time, i. e. through `.env`. Setting it with
         // std::env does not work. What a shame
 
         // connecting to the database
-        let pool = PgPoolOptions::new().connect(&std::env::var("DATABASE_URL").unwrap()).await?;
+        let pool = PgPoolOptions::new()
+            .connect(&std::env::var("DATABASE_URL").unwrap())
+            .await?;
 
         Ok(DatabaseWrapper { db_pool: pool })
     }

@@ -124,26 +124,76 @@ impl HtmlFormatter<'_> {
         Ok(raw_config)
     }
 
-    /// Fits form data into submessage HTML template.
+    /// Turns string of file paths (separated by semicolons) into HTML image blocks
+    pub fn process_image_data(&self, images: &str, message_type: &BoardMessageType) -> String {
+        let mut image_container = String::new();
+        for image in images.split(';') {
+            let file_type = valid_file(image);
+            if file_type != FileType::Invalid {
+                let image_web_path: String = if message_type == &BoardMessageType::ParentMessage
+                    || message_type == &BoardMessageType::Submessage
+                {
+                    // descend two dirs if message is in topic (/{board}/topic/*)
+                    format!("../../{}", image)
+                } else {
+                    format!("../{}", image)
+                };
+
+                let template_path = match file_type {
+                    FileType::Image => "templates/message_contents/image_block.html",
+                    FileType::Video => "templates/message_contents/video_block.html",
+                    _ => "templates/message_contents/image_block.html",
+                };
+
+                image_container.push_str(
+                    &self
+                        .handle
+                        .render_template(
+                            &self.get_file(template_path),
+                            &json!({ "img_link": image_web_path, "img_name": image[12..]}),
+                        )
+                        .unwrap(),
+                );
+            }
+        }
+        image_container
+    }
+
+    /// Fits form data into submessage HTML template. Accepts `SubmessageRow` structs.
     pub async fn format_into_submessage(
         &self,
         db_row: SubmessageRow,
-        board: &str,
-        page: &str,
+        _board: &str,
+        _page: &str,
         msgid_override: i64,
     ) -> String {
+
+        let msg = self.create_formatting(&db_row.submsg).await;
+
+        // processing images
+        let images = db_row.image;
+        let image_container = self.process_image_data(&images, &BoardMessageType::Submessage);
+
+        let msg_contents = self
+            .handle
+            .render_template(
+                &self.get_file("templates/message_contents/contents.html"),
+                &json!({"img_block": image_container, "msg": msg}),
+            )
+            .unwrap();
+
         self.handle
             .render_template(
                 &self.get_file("templates/message_blocks/submessage.html"),
                 &json!({"id": msgid_override,
-                "time": db_row.time,
+                "time": get_time(db_row.time),
                 "author": db_row.author,
-                "msg": db_row.submsg}),
+                "msg": msg_contents}),
             )
             .unwrap()
     }
 
-    /// Fits form data into one of several HTML templates Only accepts `MessageRow` structs.
+    /// Fits form data into one of several HTML templates. Only accepts `MessageRow` structs.
     pub async fn format_into_message(
         &self,
         message_type: BoardMessageType,
@@ -171,38 +221,8 @@ impl HtmlFormatter<'_> {
         msg = self.create_formatting(&msg).await;
 
         // processing images/videos
-        let mut image_container = String::new();
         let images = db_row.image;
-
-        for image in images.split(';') {
-            let file_type = valid_file(image);
-            if file_type != FileType::Invalid {
-                let image_web_path: String = if message_type == BoardMessageType::ParentMessage
-                    || message_type == BoardMessageType::Submessage
-                {
-                    // descend two dirs if message is in topic (/{board}/topic/*)
-                    format!("../../{}", image)
-                } else {
-                    format!("../{}", image)
-                };
-
-                let template_path = match file_type {
-                    FileType::Image => "templates/message_contents/image_block.html",
-                    FileType::Video => "templates/message_contents/video_block.html",
-                    _ => "templates/message_contents/image_block.html",
-                };
-
-                image_container.push_str(
-                    &self
-                        .handle
-                        .render_template(
-                            &self.get_file(template_path),
-                            &json!({ "img_link": image_web_path, "img_name": image[12..]}),
-                        )
-                        .unwrap(),
-                );
-            }
-        }
+        let image_container = self.process_image_data(&images, &message_type);
 
         let msg_contents = self
             .handle

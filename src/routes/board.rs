@@ -10,8 +10,6 @@ use crate::routes::MsgForm;
 use crate::routes::PathInfo;
 use crate::routes::QueryOptions;
 
-use crate::db_control::{MessageRow, SubmessageRow};
-
 /// Responder for boards
 #[get("/{board}")]
 pub async fn board(
@@ -32,11 +30,7 @@ pub async fn board(
 
     // Restoring messages from DB
     for row in client
-        .get_messages(
-            &info.board,
-            current_page as i64,
-            data.config.page_limit as i64,
-        )
+        .get_messages(&info.board, current_page, data.config.page_limit as i64)
         .await
         .unwrap()
         .into_iter()
