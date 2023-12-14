@@ -1,10 +1,10 @@
 //! Struct used for handling connection and queries
 //! to PostgreSQL database used by ACSIM.
 
-use sqlx::{postgres::PgPoolOptions, PgPool};
+use sqlx::{any::AnyPoolOptions, AnyPool, Row};
 
 /// Struct used to deserialize messages from DB rows
-#[derive(Debug)]
+#[derive(Debug, sqlx::FromRow)]
 pub struct MessageRow {
     pub msgid: i64,
     pub time: i64,
@@ -16,7 +16,7 @@ pub struct MessageRow {
 }
 
 /// Struct used to deserialize submessages from DB rows
-#[derive(Debug)]
+#[derive(Debug, sqlx::FromRow)]
 pub struct SubmessageRow {
     pub parent_msg: i64,
     pub time: i64,
@@ -27,16 +27,18 @@ pub struct SubmessageRow {
 
 /// Wrapper for PostgreSQL DB client
 pub struct DatabaseWrapper {
-    db_pool: PgPool,
+    db_pool: AnyPool,
 }
 
 impl DatabaseWrapper {
     pub async fn new() -> Result<DatabaseWrapper, sqlx::Error> {
+        sqlx::any::install_default_drivers();
+
         // You must set DATABASE_URL at compile time, i. e. through `.env`. Setting it with
         // std::env does not work. What a shame
 
         // connecting to the database
-        let pool = PgPoolOptions::new()
+        let pool = AnyPoolOptions::new()
             .connect(&std::env::var("DATABASE_URL").unwrap())
             .await?;
 
@@ -51,34 +53,35 @@ impl DatabaseWrapper {
     }
 
     pub async fn count_messages(&self, board: &str) -> Result<i64, sqlx::Error> {
-        let count_struct = sqlx::query!("SELECT COUNT(msgid) FROM messages WHERE board=$1", board,)
+        let count_struct = sqlx::query("SELECT COUNT(msgid) FROM messages WHERE board=$1")
+            .bind(String::from(board))
             .fetch_one(&self.db_pool)
             .await;
-        Ok(count_struct.unwrap().count.unwrap())
+        Ok(count_struct.unwrap().try_get(0).unwrap())
     }
 
     pub async fn count_submessages(&self, msgid: i64) -> Result<i64, sqlx::Error> {
-        let count_struct = sqlx::query!(
-            "SELECT COUNT(*) FROM submessages WHERE parent_msg=$1",
-            msgid,
-        )
-        .fetch_one(&self.db_pool)
-        .await;
-        Ok(count_struct.unwrap().count.unwrap())
+        let count_struct = sqlx::query("SELECT COUNT(*) FROM submessages WHERE parent_msg=$1")
+            .bind(msgid)
+            .fetch_one(&self.db_pool)
+            .await;
+        Ok(count_struct.unwrap().try_get(0).unwrap())
     }
 
     pub async fn delete_least_active(&self, board: &str) {
-        DatabaseWrapper::log_query_status(sqlx::query!("DELETE FROM messages WHERE latest_submsg = (SELECT MIN(latest_submsg) FROM messages WHERE board=$1)", board).execute(&self.db_pool).await, "Deleting least active message");
+        DatabaseWrapper::log_query_status(
+            sqlx::query("DELETE FROM messages WHERE latest_submsg = (SELECT MIN(latest_submsg) FROM messages WHERE board=$1)")
+            .bind(String::from(board))
+            .execute(&self.db_pool).await,
+            "Deleting least active message"
+        );
     }
 
     pub async fn get_submessages(&self, msgid: i64) -> Result<Vec<SubmessageRow>, sqlx::Error> {
-        sqlx::query_as!(
-            SubmessageRow,
-            "SELECT * FROM submessages WHERE parent_msg=$1",
-            msgid
-        )
-        .fetch_all(&self.db_pool)
-        .await
+        sqlx::query_as::<_, SubmessageRow>("SELECT * FROM submessages WHERE parent_msg=$1")
+            .bind(msgid)
+            .fetch_all(&self.db_pool)
+            .await
     }
 
     pub async fn get_messages(
@@ -87,11 +90,9 @@ impl DatabaseWrapper {
         page: i64,
         limit: i64,
     ) -> Result<Vec<MessageRow>, sqlx::Error> {
-        sqlx::query_as!(
-                MessageRow,
-                "SELECT * FROM messages WHERE board=$1 AND (msgid BETWEEN $2 AND $3) ORDER BY latest_submsg DESC",
-                board, (&limit * (&page - 1)), (&limit * &page),
-            )
+        sqlx::query_as::<_, MessageRow>(
+                "SELECT * FROM messages WHERE board=$1 AND (msgid BETWEEN $2 AND $3) ORDER BY latest_submsg DESC")
+                .bind(board.to_string()).bind(limit * (page - 1)).bind(limit * page)
             .fetch_all(&self.db_pool).await
     }
 
@@ -102,16 +103,15 @@ impl DatabaseWrapper {
         limit: i64,
         substring: &str,
     ) -> Result<Vec<MessageRow>, sqlx::Error> {
-        sqlx::query_as!(
-                MessageRow,
-                "SELECT * FROM (SELECT * FROM messages WHERE board=$1 ORDER BY latest_submsg DESC OFFSET $3 LIMIT $4) AS limited WHERE limited.msg LIKE '%' || $2 || '%'",
-                board, substring, page, limit,
-            )
+        sqlx::query_as::<_, MessageRow>(
+                "SELECT * FROM (SELECT * FROM messages WHERE board=$1 ORDER BY latest_submsg DESC OFFSET $3 LIMIT $4) AS limited WHERE limited.msg LIKE '%' || $2 || '%'")
+                .bind(board.to_string()).bind(substring.to_string()).bind(page).bind(limit)
             .fetch_all(&self.db_pool).await
     }
 
     pub async fn get_single_message(&self, msgid: i64) -> Result<MessageRow, sqlx::Error> {
-        match sqlx::query_as!(MessageRow, "SELECT * FROM messages WHERE msgid=$1", msgid)
+        match sqlx::query_as::<_, MessageRow>("SELECT * FROM messages WHERE msgid=$1")
+            .bind(msgid)
             .fetch_optional(&self.db_pool)
             .await
         {
@@ -125,13 +125,11 @@ impl DatabaseWrapper {
 
     pub async fn update_message_activity(&self, msgid: i64, since_epoch: i64) {
         DatabaseWrapper::log_query_status(
-            sqlx::query!(
-                "UPDATE messages SET latest_submsg = $1 WHERE msgid = $2",
-                msgid,
-                since_epoch,
-            )
-            .execute(&self.db_pool)
-            .await,
+            sqlx::query("UPDATE messages SET latest_submsg = $1 WHERE msgid = $2")
+                .bind(msgid.to_string())
+                .bind(since_epoch.to_string())
+                .execute(&self.db_pool)
+                .await,
             "Updating message activity timer",
         );
     }
@@ -145,7 +143,10 @@ impl DatabaseWrapper {
         latest_submsg: i64,
         board: &str,
     ) {
-        DatabaseWrapper::log_query_status(sqlx::query!("INSERT INTO messages(time, author, msg, image, latest_submsg, board) VALUES ($1, $2, $3, $4, $5, $6)", time, author, msg, image, latest_submsg, board).execute(&self.db_pool).await, "Inserting row into messages table");
+        DatabaseWrapper::log_query_status(
+            sqlx::query("INSERT INTO messages(time, author, msg, image, latest_submsg, board) VALUES ($1, $2, $3, $4, $5, $6)")
+            .bind(time).bind(author.to_string()).bind(msg.to_string()).bind(image.to_string()).bind(latest_submsg).bind(board.to_string()).execute(&self.db_pool).await, "Inserting row into messages table"
+        );
     }
 
     pub async fn insert_to_submessages(
@@ -156,6 +157,9 @@ impl DatabaseWrapper {
         submsg: &str,
         image: &str,
     ) {
-        DatabaseWrapper::log_query_status(sqlx::query!("INSERT INTO submessages(parent_msg, time, author, submsg, image) VALUES ($1, $2, $3, $4, $5)", parent_msg, time, author, submsg, image).execute(&self.db_pool).await, "Inserting row into submessages table");
+        DatabaseWrapper::log_query_status(
+            sqlx::query("INSERT INTO submessages(parent_msg, time, author, submsg, image) VALUES ($1, $2, $3, $4, $5)")
+            .bind(parent_msg).bind(time).bind(author.to_string()).bind(submsg.to_string()).bind(image.to_string()).execute(&self.db_pool).await, "Inserting row into submessages table"
+        );
     }
 }

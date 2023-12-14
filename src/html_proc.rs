@@ -167,7 +167,6 @@ impl HtmlFormatter<'_> {
         _page: &str,
         msgid_override: i64,
     ) -> String {
-
         let msg = self.create_formatting(&db_row.submsg).await;
 
         // processing images

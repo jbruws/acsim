@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "acsim"
-version = "0.8.6"
+version = "0.8.8"
 dependencies = [
  "actix-files",
  "actix-multipart",

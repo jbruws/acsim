@@ -61,18 +61,18 @@ echo 'Creating table scheme'
 echo 'CREATE TABLE IF NOT EXISTS messages (
 		msgid BIGSERIAL PRIMARY KEY,
 		time BIGINT NOT NULL,
-		author VARCHAR (63) NOT NULL,
-		msg VARCHAR (4095) NOT NULL,
-		image VARCHAR (255) NOT NULL,
+		author TEXT NOT NULL,
+		msg TEXT NOT NULL,
+		image TEXT NOT NULL,
 		latest_submsg BIGINT NOT NULL,
-		board VARCHAR (15) NOT NULL
+		board TEXT NOT NULL
 	);
 	CREATE TABLE IF NOT EXISTS submessages (
 		parent_msg BIGINT NOT NULL,
 		time BIGINT NOT NULL,
-		author VARCHAR (63) NOT NULL,
-		submsg VARCHAR (4095) NOT NULL,
-		image VARCHAR (255) NOT NULL,
+		author TEXT NOT NULL,
+		submsg TEXT NOT NULL,
+		image TEXT NOT NULL,
 		CONSTRAINT bind_msg
 			FOREIGN KEY(parent_msg)
 				REFERENCES messages(msgid)

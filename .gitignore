@@ -8,3 +8,4 @@ acsim.log
 *.jpeg
 /keys/*
 .env
+acsim.db
