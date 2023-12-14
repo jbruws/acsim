@@ -1,6 +1,12 @@
 # `acsim` - Asynchronous Simple Imageboard
 
-Basic imageboard engine written in `rust` and `actix-web`. Lightweight and completely JS-free.
+Basic imageboard engine written in `rust` and `actix-web`.
+
+Features:
+
+- Written in Rust (blazingly fast btw) and completely JS-free by default
+- Website frontend is completely data-driven; you can change it in any way (as long as you keep handlebars templates)
+- Supports both SQLite and Postgres databases  
 
 The engine is still in active development. Expect some bugs, missing features and drastic changes in design.
 
@@ -16,17 +22,17 @@ Here's the dependency list:
 ### Manual installation
 1. Clone the repository:
     
-    `git clone https://github.com/jbruws/acsim.git`
+   `git clone https://github.com/jbruws/acsim.git`
     
-    `cd acsim`
+   `cd acsim`
     
 2. Once you're in the `acsim` directory, run the `setup.sh` script, either with `SQLITE` argument and no username or `POSTGRES` argument and username you wish to use to connect to the database. Here's examples:
 
-    `./setup.sh POSTGRES postgres`
+    - `./setup.sh POSTGRES postgres`
     
-    `./setup.sh SQLITE`
+    - `./setup.sh SQLITE`
 
-    View the `.env` file and check it for any errors.
+    View `.env` and `config.yaml` files and check them for any errors.
     
 4. Finally, run the program:
     
