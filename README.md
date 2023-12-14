@@ -5,56 +5,30 @@ Basic imageboard engine written in `rust` and `actix-web`. Lightweight and compl
 The engine is still in active development. Expect some bugs, missing features and drastic changes in design.
 
 ## Installation
+
+Here's the dependency list:
+
+- `cargo`
+- `git`
+- `sqlite3` (if you will use SQLite database)
+- `postgresql` (if you will use Postgres database)
+
 ### Manual installation
-#### 1. PostgreSQL Installation
-
-1. Debian/Ubuntu-based systems:
-    
-    `# apt install postgresql`
-
-2. Arch-based systems:
-    
-    `# pacman -S postgresql`
-    
-3. Then, start and enable the service.
-
-    *If you use OpenRC as your init system, install `postgresql-openrc` for service scripts!*
-    
-    `# systemctl enable postgresql && systemctl start postgresql`
-    
-    or
-    
-    `# rc-update add postgresql default && rc-service postgres start`
-
-#### 2. ACSIM configuration
-
 1. Clone the repository:
     
     `git clone https://github.com/jbruws/acsim.git`
     
     `cd acsim`
     
-2. Once you're in the `acsim` directory, run the `setup.sh` script with the username you wish to use to create and modify databases.
+2. Once you're in the `acsim` directory, run the `setup.sh` script, either with `SQLITE` argument and no username or `POSTGRES` argument and username you wish to use to connect to the database. Here's examples:
+
+    `./setup.sh POSTGRES postgres`
     
-    `./setup.sh [postgres_username]`
+    `./setup.sh SQLITE`
 
-3. OPTIONAL: you can add password protection to Postgres. This will be especially useful if you're running Postgres on a machine with multiple users. Enter the shell:
-
-    `psql -U [postgres_username]`
-
-    and change the password for your user:
-
-    `[postgres_username]=# \password`
-
-    A prompt will appear. Enter the new password twice and `exit` from the shell.
-
-    Edit the `config.json` file from the `acsim`'s project directory to include the new password in the `db_password` field.
-
-    Finally, you need to edit the `/var/lib/postgres/data/pg_hba.conf` and replace `trust` (in the `METHOD` field) with `md5` in all lines where it's present.
-
-    Now your Postgres installation requires a password for interacting with databases. ACSIM will use the password from the config for connection.
+    View the `.env` file and check it for any errors.
     
-5. Finally, run the program:
+4. Finally, run the program:
     
     `cargo run`
     
