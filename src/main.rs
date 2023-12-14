@@ -46,35 +46,6 @@ fn create_ssl_acceptor() -> SslAcceptorBuilder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // loading database data from .env
-    dotenv::dotenv().ok();
-
-    // reading board config
-    let raw_config: BoardConfig = serde_yaml::from_str(
-        &read_to_string("./config.yaml")
-            .unwrap_or_else(|_| panic!("Critical: can't read config.yaml")),
-    )
-    .expect("Critical: can't parse config.yaml");
-
-    let config = Arc::new(raw_config);
-    let frontend_name: String = config.site_frontend.clone();
-
-    // creating db connection through DatabaseWrapper
-    let raw_client = db_control::DatabaseWrapper::new()
-        .await
-        .expect("Error reading database parameters (check your .env)");
-    let client = Arc::new(Mutex::new(raw_client));
-
-    // creating html formatter
-    let formatter = Arc::new(html_proc::HtmlFormatter::new(frontend_name.clone()));
-
-    // creating application state
-    let application_data = web::Data::new(routes::ApplicationState {
-        db_client: Arc::clone(&client),
-        formatter: Arc::clone(&formatter),
-        config: Arc::clone(&config),
-    });
-
     // starting the logger
     let logger = fern::Dispatch::new()
         .format(|out, message, record| {
@@ -93,6 +64,35 @@ async fn main() -> std::io::Result<()> {
         Ok(_) => log::info!("ACSIM starting"),
         Err(e) => println!("WARNING: Failed to start logger: {}", e),
     };
+
+    // loading database data from .env
+    dotenv::dotenv().ok();
+
+    // reading board config
+    let raw_config: BoardConfig = serde_yaml::from_str(
+        &read_to_string("./config.yaml")
+            .unwrap_or_else(|_| panic!("Critical: can't read config.yaml")),
+    )
+    .expect("Critical: can't parse config.yaml");
+
+    let config = Arc::new(raw_config);
+    let frontend_name: String = config.site_frontend.clone();
+
+    // creating db connection through DatabaseWrapper
+    let raw_client = db_control::DatabaseWrapper::new()
+        .await
+        .expect("Something went wrong during database connection");
+    let client = Arc::new(Mutex::new(raw_client));
+
+    // creating html formatter
+    let formatter = Arc::new(html_proc::HtmlFormatter::new(frontend_name.clone()));
+
+    // creating application state
+    let application_data = web::Data::new(routes::ApplicationState {
+        db_client: Arc::clone(&client),
+        formatter: Arc::clone(&formatter),
+        config: Arc::clone(&config),
+    });
 
     // configuring and starting the server
     let server = HttpServer::new(move || {

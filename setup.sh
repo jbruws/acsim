@@ -4,15 +4,6 @@ if [ ! -d ./user_images ]; then
 	mkdir ./user_images
 fi
 
-if [ ! -f ".env" ]; then
-	echo 'Creating .env file'
-	echo "
-DB_HOST=\"127.0.0.1\"
-DB_USER=\"$1\"
-DB_PASSWORD=\"changethis\"
-" > .env
-fi
-
 if [ ! -f "config.yaml" ]; then
 	echo 'Creating default config file for server'
 	echo "
@@ -53,30 +44,62 @@ taglines:
 " > config.yaml
 fi
 
-# Creating database tables
-echo 'Creating postgres database'
-createdb -U $1 acsim_db 
+# matching database type argument
+if [ "$1" == "POSTGRES" ]; then
+	echo 'Creating database'
+	createdb -U $2 acsim_db
 
-echo 'Creating table scheme'
-echo 'CREATE TABLE IF NOT EXISTS messages (
-		msgid BIGSERIAL PRIMARY KEY,
-		time BIGINT NOT NULL,
-		author TEXT NOT NULL,
-		msg TEXT NOT NULL,
-		image TEXT NOT NULL,
-		latest_submsg BIGINT NOT NULL,
-		board TEXT NOT NULL
-	);
-	CREATE TABLE IF NOT EXISTS submessages (
-		parent_msg BIGINT NOT NULL,
-		time BIGINT NOT NULL,
-		author TEXT NOT NULL,
-		submsg TEXT NOT NULL,
-		image TEXT NOT NULL,
-		CONSTRAINT bind_msg
-			FOREIGN KEY(parent_msg)
-				REFERENCES messages(msgid)
-				ON DELETE CASCADE
-	);' | psql -U $1 -d acsim_db;
+	echo 'Creating table scheme'
+	echo 'CREATE TABLE IF NOT EXISTS messages (
+			msgid BIGSERIAL PRIMARY KEY,
+			time BIGINT NOT NULL,
+			author TEXT NOT NULL,
+			msg TEXT NOT NULL,
+			image TEXT NOT NULL,
+			latest_submsg BIGINT NOT NULL,
+			board TEXT NOT NULL
+		);
+		CREATE TABLE IF NOT EXISTS submessages (
+			parent_msg BIGINT NOT NULL,
+			time BIGINT NOT NULL,
+			author TEXT NOT NULL,
+			submsg TEXT NOT NULL,
+			image TEXT NOT NULL,
+			CONSTRAINT bind_msg
+				FOREIGN KEY(parent_msg)
+					REFERENCES messages(msgid)
+					ON DELETE CASCADE
+		);' | psql -U $2 -d acsim_db;
+	echo "Writing database URL to .env"
+	echo "DATABASE_URL=\"postgres://$2@localhost:5432/acsim_db\"" > .env
+elif [ "$1" == "SQLITE" ]; then
+	echo "Creating database"
+	echo "Creating table scheme" # same thing here
+	sqlite3 -line acsim.db 'CREATE TABLE IF NOT EXISTS messages (
+			msgid INTEGER PRIMARY KEY,
+			time BIGINT NOT NULL,
+			author TEXT NOT NULL,
+			msg TEXT NOT NULL,
+			image TEXT NOT NULL,
+			latest_submsg BIGINT NOT NULL,
+			board TEXT NOT NULL
+		);
+		CREATE TABLE IF NOT EXISTS submessages (
+			parent_msg BIGINT NOT NULL,
+			time BIGINT NOT NULL,
+			author TEXT NOT NULL,
+			submsg TEXT NOT NULL,
+			image TEXT NOT NULL,
+			CONSTRAINT bind_msg
+				FOREIGN KEY(parent_msg)
+					REFERENCES messages(msgid)
+					ON DELETE CASCADE
+			);'
+	echo "Writing database URL to .env"
+	echo 'DATABASE_URL="sqlite://acsim.db"' > .env
+else
+	echo "Please specify database type (POSTGRES or SQLITE) in script args"
+	exit
+fi
 
 echo 'Success'

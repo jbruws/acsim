@@ -32,14 +32,17 @@ pub struct DatabaseWrapper {
 
 impl DatabaseWrapper {
     pub async fn new() -> Result<DatabaseWrapper, sqlx::Error> {
+        // loading database drivers
         sqlx::any::install_default_drivers();
 
-        // You must set DATABASE_URL at compile time, i. e. through `.env`. Setting it with
-        // std::env does not work. What a shame
+        let url = match std::env::var("DATABASE_URL") {
+            Ok(u) => u,
+            Err(_) => panic!("DATABASE_URL variable is not set (check .env file)"),
+        };
 
         // connecting to the database
         let pool = AnyPoolOptions::new()
-            .connect(&std::env::var("DATABASE_URL").unwrap())
+            .connect(&url)
             .await?;
 
         Ok(DatabaseWrapper { db_pool: pool })
