@@ -45,7 +45,7 @@ taglines:
 fi
 
 # matching database type argument
-if [ "$1" == "POSTGRES" ]; then
+if [ "$1" = "POSTGRES" ]; then
 	echo 'Creating database'
 	createdb -U $2 acsim_db
 
@@ -72,7 +72,7 @@ if [ "$1" == "POSTGRES" ]; then
 		);' | psql -U $2 -d acsim_db;
 	echo "Writing database URL to .env"
 	echo "DATABASE_URL=\"postgres://$2@localhost:5432/acsim_db\"" > .env
-elif [ "$1" == "SQLITE" ]; then
+elif [ "$1" = "SQLITE" ]; then
 	echo "Creating database"
 	echo "Creating table scheme" # same thing here
 	sqlite3 -line acsim.db 'CREATE TABLE IF NOT EXISTS messages (
