@@ -12,21 +12,30 @@ The engine is still in active development. Expect some bugs, missing features an
 
 ## Installation
 
-Here's the dependency list:
+### Docker container
 
-- `cargo`
-- `git`
-- `sqlite3` (if you will use SQLite database)
-- `postgresql` (if you will use Postgres database)
+A Docker image is available for ACSIM, although it doesn't have persistent storage (yet). You can use it to test ACSIM or quickly spin up an instance. Run:
+
+`# docker run --net=host jbruws/acsim:0.9`
 
 ### Manual installation
-1. Clone the repository:
+
+1. Install the dependencies:
+
+    - `cargo`
+    - `git`
+    - `sqlite3` (if you will use SQLite database)
+    - `postgresql` (if you will use Postgres database)
+    - `libssl-dev`
+    - `libmagic-dev`
+
+2. Clone the repository and enter it:
     
    `git clone https://github.com/jbruws/acsim.git`
     
    `cd acsim`
     
-2. Once you're in the `acsim` directory, run the `setup.sh` script, either with `SQLITE` argument and no username or `POSTGRES` argument and username you wish to use to connect to the database. Here's examples:
+3. Once you're in the `acsim` directory, run the `setup.sh` script, either with `SQLITE` argument and no username or `POSTGRES` argument and username you wish to use to connect to the database. Here's examples:
 
     - `./setup.sh POSTGRES postgres`
     
