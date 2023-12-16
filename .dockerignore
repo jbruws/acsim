@@ -1,0 +1,11 @@
+/target
+/user_images/*
+config.yaml
+acsim.log
+*.png
+*.jpg
+*.gif
+*.jpeg
+/keys/*
+.env
+acsim.db
