@@ -23,10 +23,14 @@ header {
 }
 
 footer {
-	grid-area: ft;
-	font-size: 75%;
-	padding: 1rem;
-	margin-top: 2rem;
+    width: 100%;
+    grid-area: auto;
+    font-size: 75%;
+    padding: 1rem;
+    margin-top: auto;
+    position: fixed;
+    top: initial;
+    bottom: 0;
 }
 
 footer > div#page_links {
