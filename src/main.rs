@@ -38,9 +38,9 @@ fn create_ssl_acceptor() -> SslAcceptorBuilder {
     // loading ssl keys
     let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
     builder
-        .set_private_key_file("keys/key.pem", openssl::ssl::SslFiletype::PEM)
+        .set_private_key_file("./data/keys/key.pem", openssl::ssl::SslFiletype::PEM)
         .unwrap();
-    builder.set_certificate_chain_file("keys/cert.pem").unwrap();
+    builder.set_certificate_chain_file("./data/keys/cert.pem").unwrap();
     builder
 }
 
@@ -58,7 +58,7 @@ async fn main() -> std::io::Result<()> {
         })
         .level(log::LevelFilter::Info) // change `Info` to `Debug` for db query logs
         .chain(std::io::stdout())
-        .chain(fern::log_file("./acsim.log").unwrap())
+        .chain(fern::log_file("./data/acsim.log").unwrap())
         .apply();
     match logger {
         Ok(_) => log::info!("ACSIM starting"),
@@ -66,14 +66,17 @@ async fn main() -> std::io::Result<()> {
     };
 
     // loading database data from .env
-    dotenv::dotenv().ok();
+    match dotenv::dotenv() {
+        Ok(v) => log::info!("Loaded .env file. Path: {}", v.display()),
+        Err(_) => log::error!(".env file failed to load. What happened?"),
+    };
 
     // reading board config
     let raw_config: BoardConfig = serde_yaml::from_str(
-        &read_to_string("./config.yaml")
-            .unwrap_or_else(|_| panic!("Critical: can't read config.yaml")),
+        &read_to_string("./data/config.yaml")
+            .unwrap_or_else(|_| panic!("Critical: can't read data/config.yaml")),
     )
-    .expect("Critical: can't parse config.yaml");
+    .expect("Critical: can't parse data/config.yaml");
 
     let config = Arc::new(raw_config);
     let frontend_name: String = config.site_frontend.clone();
@@ -106,7 +109,7 @@ async fn main() -> std::io::Result<()> {
                 "/web_data",
                 format!("./frontends/{}/web_data", &frontend_name.clone()),
             ))
-            .service(actix_files::Files::new("/user_images", "./user_images"))
+            .service(actix_files::Files::new("/user_images", "./data/user_images"))
             .service(routes::index::root)
             .service(routes::board::board)
             .service(routes::board::board_process_form)

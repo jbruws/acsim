@@ -1,10 +1,16 @@
 # Setting up environment for the server
-if [ ! -d ./user_images ]; then
-	echo 'Creating directory for user images'
-	mkdir ./user_images
+
+if [ ! -d ./data ]; then
+	echo 'Creating directory for persistent data'
+	mkdir ./data
 fi
 
-if [ ! -f "config.yaml" ]; then
+if [ ! -d ./data/user_images ]; then
+	echo 'Creating directory for user images'
+	mkdir ./data/user_images
+fi
+
+if [ ! -f "./data/config.yaml" ]; then
 	echo 'Creating default config file for server'
 	echo "
 ---
@@ -41,7 +47,7 @@ boards:
 # Taglines. Put whatever you want here. Use quotation marks if the server refuses to starts afterwards.
 # If you don't want to use taglines at all, just leave this empty
 taglines:
-" > config.yaml
+" > ./data/config.yaml
 fi
 
 # matching database type argument
@@ -75,7 +81,7 @@ if [ "$1" = "POSTGRES" ]; then
 elif [ "$1" = "SQLITE" ]; then
 	echo "Creating database"
 	echo "Creating table scheme" # same thing here
-	sqlite3 -line acsim.db 'CREATE TABLE IF NOT EXISTS messages (
+	sqlite3 -line ./data/acsim.db 'CREATE TABLE IF NOT EXISTS messages (
 			msgid INTEGER PRIMARY KEY,
 			time BIGINT NOT NULL,
 			author TEXT NOT NULL,
@@ -96,7 +102,7 @@ elif [ "$1" = "SQLITE" ]; then
 					ON DELETE CASCADE
 			);'
 	echo "Writing database URL to .env"
-	echo 'DATABASE_URL="sqlite://acsim.db"' > .env
+	echo 'DATABASE_URL="sqlite://data/acsim.db"' > .env
 else
 	echo "Please specify database type (POSTGRES or SQLITE) in script args"
 	exit

@@ -54,20 +54,17 @@ pub fn valid_file(image: &str) -> FileType {
         return FileType::Invalid;
     }
 
-    let mut image_fs_path: String = format!("./{}", image);
-    if image.starts_with('/') {
-        image_fs_path = image.to_string();
-    }
-    let image_fs_path = &image_fs_path[..image_fs_path.len()]; // path ends with "\" for some reason
+    let mut image_fs_path = image.to_string();
+    image_fs_path = (&image_fs_path[..image_fs_path.len()]).to_string(); // path ends with "\" for some reason
 
     // libmagic image validation
     let cookie = magic::Cookie::open(magic::cookie::Flags::ERROR).unwrap();
     let database = Default::default();
     let cookie = cookie.load(&database).unwrap();
-    let file_type = cookie.file(image_fs_path);
+    let file_type = cookie.file(&image_fs_path);
 
     if let Ok(raw_type) = file_type {
-        if Path::new(image_fs_path).exists() {
+        if Path::new(&image_fs_path).exists() {
             if raw_type.contains("image data") {
                 return FileType::Image;
             } else if raw_type.contains("MP4 Base Media") || raw_type.contains("WebM") {
@@ -133,10 +130,10 @@ impl HtmlFormatter<'_> {
                 let image_web_path: String = if message_type == &BoardMessageType::ParentMessage
                     || message_type == &BoardMessageType::Submessage
                 {
-                    // descend two dirs if message is in topic (/{board}/topic/*)
-                    format!("../../{}", image)
+                    // descend three dirs if message is in topic (/{board}/topic/*)
+                    format!("../../{}", &image[4..image.len()])
                 } else {
-                    format!("../{}", image)
+                    format!("../{}", &image[4..image.len()])
                 };
 
                 let template_path = match file_type {

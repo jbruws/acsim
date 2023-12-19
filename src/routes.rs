@@ -104,7 +104,7 @@ pub async fn process_files(files: &Vec<TempFile>) -> String {
             .split('.')
             .collect::<Vec<&str>>();
         let new_name = rand::random::<u64>().to_string();
-        let new_filepath = PathBuf::from(format!("user_images/{}.{}", new_name, orig_name[1]));
+        let new_filepath = PathBuf::from(format!("data/user_images/{}.{}", new_name, orig_name[1]));
         let _copy_status = std::fs::copy(temp_file_path, new_filepath.clone());
         let _remove_status = std::fs::remove_file(temp_file_path);
         filepath_collection.push_str(new_filepath.to_str().unwrap());
