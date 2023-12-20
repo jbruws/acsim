@@ -27,9 +27,10 @@ pub struct BoardConfig {
     use_https: bool,
     bumplimit: u16,
     hard_limit: u16,
+    page_limit: u16,
+    requests_limit: u16,
     site_name: String,
     site_frontend: String,
-    page_limit: u16,
     boards: BTreeMap<String, String>,
     taglines: Vec<String>,
 }
@@ -97,12 +98,20 @@ async fn main() -> std::io::Result<()> {
         config: Arc::clone(&config),
     });
 
+    // rate limiting
+    let governor_conf = actix_governor::GovernorConfigBuilder::default()
+            .per_second(5)
+            .burst_size(config.requests_limit as u32)
+            .finish()
+            .unwrap();
+
     // configuring and starting the server
     let server = HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
             .wrap(middleware::NormalizePath::trim())
+            .wrap(actix_governor::Governor::new(&governor_conf))
             .app_data(application_data.clone())
             .app_data(web::PayloadConfig::new(1024 * 1024 * 100))
             .service(actix_files::Files::new(

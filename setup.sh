@@ -31,14 +31,18 @@ bumplimit: 200
 # Max amount of messages on one board
 hard_limit: 125
 
+# Limit for number of messages on one page
+page_limit: 20
+
+# Max number of requests (in a row) that one IP can send before being blocked.
+# Setting this below tripled page_limit is not recommended.
+requests_limit: 60
+
 # Name of the imageboard displayed to users
 site_name: ACSIM
 
 # Frontend used by the imageboard
 site_frontend: acsim_ungapped
-
-# Limit for number of messages on one page
-page_limit: 20
 
 # Boards served to users. Consists of board designation and short description
 boards:
