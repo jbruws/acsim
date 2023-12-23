@@ -7,7 +7,7 @@ RUN cargo install --path .
 
 FROM debian:bookworm-slim
 
-RUN apt-get update && apt-get install -y sqlite3 libssl-dev libssl3 librust-openssl-sys-dev libmagic1 libmagic-dev && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y vim sqlite3 libssl3 libmagic1 && rm -rf /var/lib/apt/lists/*
 RUN ldconfig
 COPY --from=builder /usr/local/cargo/bin/acsim /usr/local/bin/acsim
 COPY --from=builder /usr/src/acsim/setup.sh /usr/local/bin/setup.sh

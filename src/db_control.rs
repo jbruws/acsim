@@ -94,8 +94,8 @@ impl DatabaseWrapper {
         limit: i64,
     ) -> Result<Vec<MessageRow>, sqlx::Error> {
         sqlx::query_as::<_, MessageRow>(
-                "SELECT * FROM messages WHERE board=$1 AND (msgid BETWEEN $2 AND $3) ORDER BY latest_submsg DESC")
-                .bind(board.to_string()).bind(limit * (page - 1)).bind(limit * page)
+                "SELECT * FROM messages WHERE board=$1 ORDER BY latest_submsg DESC OFFSET $2 LIMIT $3")
+                .bind(board.to_string()).bind((page-1)*limit).bind(limit)
             .fetch_all(&self.db_pool).await
     }
 
