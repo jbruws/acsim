@@ -98,6 +98,13 @@ pub async fn board_process_form(
         };
         let filtered_msg = data.formatter.filter_tags(trimmed_message).await;
 
+        // Checking against the last message (to prevent spam)
+        if let Ok(last_msg) = client.get_nth_most_active(&info.board, 0).await {
+            if last_msg.msg == filtered_msg {
+                return web::Redirect::to("/").see_other();
+            }
+        }
+
         client
             .insert_to_messages(
                 since_epoch,
