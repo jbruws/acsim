@@ -18,7 +18,8 @@ pub async fn board(
     page_data: web::Query<QueryOptions>,
 ) -> impl Responder {
     if !data.config.boards.contains_key(&info.board) {
-        return HttpResponse::Ok().body("Does not exist");
+        // we will have to manually format and send the response
+        return HttpResponse::Ok().body(data.formatter.format_into_error(404).await);
     }
     let client = data.db_client.lock().await;
     let mut inserted_msg = String::from("");
@@ -75,7 +76,7 @@ pub async fn board_process_form(
     const MAX_MESSAGE_LENGTH: usize = 4000;
 
     if !data.config.boards.contains_key(&info.board) {
-        return web::Redirect::to("/").see_other();
+        return web::Redirect::to("/error?error_code=404").see_other();
     }
 
     let client = data.db_client.lock().await;
@@ -101,7 +102,7 @@ pub async fn board_process_form(
         // Checking against the last message (to prevent spam)
         if let Ok(last_msg) = client.get_nth_most_active(&info.board, 0).await {
             if last_msg.msg == filtered_msg {
-                return web::Redirect::to("/").see_other();
+                return web::Redirect::to("/error?error_code=403").see_other();
             }
         }
 

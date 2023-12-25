@@ -41,9 +41,7 @@ impl DatabaseWrapper {
         };
 
         // connecting to the database
-        let pool = AnyPoolOptions::new()
-            .connect(&url)
-            .await?;
+        let pool = AnyPoolOptions::new().connect(&url).await?;
 
         Ok(DatabaseWrapper { db_pool: pool })
     }
@@ -94,9 +92,13 @@ impl DatabaseWrapper {
         limit: i64,
     ) -> Result<Vec<MessageRow>, sqlx::Error> {
         sqlx::query_as::<_, MessageRow>(
-                "SELECT * FROM messages WHERE board=$1 ORDER BY latest_submsg DESC OFFSET $2 LIMIT $3")
-                .bind(board.to_string()).bind((page-1)*limit).bind(limit)
-            .fetch_all(&self.db_pool).await
+            "SELECT * FROM messages WHERE board=$1 ORDER BY latest_submsg DESC OFFSET $2 LIMIT $3",
+        )
+        .bind(board.to_string())
+        .bind((page - 1) * limit)
+        .bind(limit)
+        .fetch_all(&self.db_pool)
+        .await
     }
 
     pub async fn search_messages(
@@ -112,12 +114,18 @@ impl DatabaseWrapper {
             .fetch_all(&self.db_pool).await
     }
 
-    pub async fn get_nth_most_active(&self, board: &str, index: i64) -> Result<MessageRow, sqlx::Error> {
-        match sqlx::query_as::<_, MessageRow>("SELECT * FROM messages WHERE board=$1 ORDER BY latest_submsg DESC OFFSET $2 LIMIT 1")
-            .bind(board)
-            .bind(index)
-            .fetch_optional(&self.db_pool)
-            .await
+    pub async fn get_nth_most_active(
+        &self,
+        board: &str,
+        index: i64,
+    ) -> Result<MessageRow, sqlx::Error> {
+        match sqlx::query_as::<_, MessageRow>(
+            "SELECT * FROM messages WHERE board=$1 ORDER BY latest_submsg DESC OFFSET $2 LIMIT 1",
+        )
+        .bind(board)
+        .bind(index)
+        .fetch_optional(&self.db_pool)
+        .await
         {
             Ok(val) => match val {
                 Some(r) => Ok(r),

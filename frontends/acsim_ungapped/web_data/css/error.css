@@ -1,0 +1,17 @@
+/* HEADER */
+
+h1#error_header, h2#error_description {
+	display: block;
+	text-align: center;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+h1#error_header {
+	font-size: 3rem;
+}
+
+h2#error_description {
+	margin-top: 2rem;
+	font-size: 2rem;
+}

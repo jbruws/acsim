@@ -17,6 +17,7 @@ use crate::BoardConfig;
 
 pub mod board;
 pub mod catalog;
+pub mod error;
 pub mod index;
 pub mod topic;
 
@@ -42,6 +43,12 @@ pub struct PathInfo {
 pub struct QueryOptions {
     page: Option<i64>,
     search_string: Option<String>,
+}
+
+/// Type of error (used for error page formatting)
+#[derive(Deserialize)]
+pub struct ErrorQuery {
+    error_code: Option<i64>,
 }
 
 impl fmt::Display for QueryOptions {

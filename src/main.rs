@@ -41,7 +41,9 @@ fn create_ssl_acceptor() -> SslAcceptorBuilder {
     builder
         .set_private_key_file("./data/keys/key.pem", openssl::ssl::SslFiletype::PEM)
         .unwrap();
-    builder.set_certificate_chain_file("./data/keys/cert.pem").unwrap();
+    builder
+        .set_certificate_chain_file("./data/keys/cert.pem")
+        .unwrap();
     builder
 }
 
@@ -100,10 +102,10 @@ async fn main() -> std::io::Result<()> {
 
     // rate limiting
     let governor_conf = actix_governor::GovernorConfigBuilder::default()
-            .per_second(5)
-            .burst_size(config.requests_limit as u32)
-            .finish()
-            .unwrap();
+        .per_second(5)
+        .burst_size(config.requests_limit as u32)
+        .finish()
+        .unwrap();
 
     // configuring and starting the server
     let server = HttpServer::new(move || {
@@ -118,8 +120,12 @@ async fn main() -> std::io::Result<()> {
                 "/web_data",
                 format!("./frontends/{}/web_data", &frontend_name.clone()),
             ))
-            .service(actix_files::Files::new("/user_images", "./data/user_images"))
+            .service(actix_files::Files::new(
+                "/user_images",
+                "./data/user_images",
+            ))
             .service(routes::index::root)
+            .service(routes::error::error_page)
             .service(routes::board::board)
             .service(routes::board::board_process_form)
             .service(routes::topic::topic)

@@ -333,6 +333,15 @@ impl HtmlFormatter<'_> {
             .unwrap()
     }
 
+    pub async fn format_into_error(&self, error_id: i64) -> String {
+        self.handle
+            .render_template(
+                &self.get_file("web_data/error.html"),
+                &json!({"error_id": error_id.to_string()}),
+            )
+            .unwrap()
+    }
+
     /// Formats data into `topic.html` (topic pages)
     pub async fn format_into_topic(
         &self,
