@@ -1,7 +1,7 @@
 //! Handlers for boards
 
 use actix_multipart::form::MultipartForm;
-use actix_web::{get, post, web, HttpResponse, Responder};
+use actix_web::{get, post, web, HttpResponse, http::StatusCode, Responder};
 
 use crate::html_proc;
 use crate::routes::process_files;
@@ -19,7 +19,7 @@ pub async fn board(
 ) -> impl Responder {
     if !data.config.boards.contains_key(&info.board) {
         // we will have to manually format and send the response
-        return HttpResponse::Ok().body(data.formatter.format_into_error(404).await);
+        return HttpResponse::Ok().body(data.formatter.format_into_error(StatusCode::NOT_FOUND).await);
     }
     let client = data.db_client.lock().await;
     let mut inserted_msg = String::from("");

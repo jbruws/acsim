@@ -55,7 +55,7 @@ pub fn valid_file(image: &str) -> FileType {
     }
 
     let mut image_fs_path = image.to_string();
-    image_fs_path = (&image_fs_path[..image_fs_path.len()]).to_string(); // path ends with "\" for some reason
+    image_fs_path = image_fs_path[..image_fs_path.len()].to_string(); // path ends with "\" for some reason
 
     // libmagic image validation
     let cookie = magic::Cookie::open(magic::cookie::Flags::ERROR).unwrap();
@@ -333,11 +333,11 @@ impl HtmlFormatter<'_> {
             .unwrap()
     }
 
-    pub async fn format_into_error(&self, error_id: i64) -> String {
+    pub async fn format_into_error(&self, error_code: actix_web::http::StatusCode) -> String {
         self.handle
             .render_template(
                 &self.get_file("web_data/error.html"),
-                &json!({"error_id": error_id.to_string()}),
+                &json!({"error_id": error_code.as_u16(), "error_desc": error_code.to_string()[4..]}),
             )
             .unwrap()
     }

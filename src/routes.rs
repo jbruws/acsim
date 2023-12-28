@@ -95,12 +95,17 @@ pub struct ApplicationState<'a> {
 pub async fn process_files(files: &Vec<TempFile>) -> String {
     let mut filepath_collection = String::from("");
     for (i, item) in files.iter().enumerate() {
-        if i == 4 {
-            break;
-        }
+        // only process the first 4 files, delete the rest
         let f = &item;
         let temp_file_path = f.file.path();
-        // test to see if it is an actual image
+        if i > 4 {
+            let remove_excess_status = std::fs::remove_file(temp_file_path);
+            if remove_excess_status.is_err() {
+                log::error!("Failed to delete unwanted (excess) file: {}", temp_file_path.display());
+            }
+            continue;
+        }
+        // test to see if it is an actual image/video
         if !html_proc::valid_file(temp_file_path.to_str().unwrap()) {
             continue;
         }
@@ -112,8 +117,16 @@ pub async fn process_files(files: &Vec<TempFile>) -> String {
             .collect::<Vec<&str>>();
         let new_name = rand::random::<u64>().to_string();
         let new_filepath = PathBuf::from(format!("data/user_images/{}.{}", new_name, orig_name[1]));
-        let _copy_status = std::fs::copy(temp_file_path, new_filepath.clone());
-        let _remove_status = std::fs::remove_file(temp_file_path);
+        let copy_status = std::fs::copy(temp_file_path, new_filepath.clone());
+        let remove_status = std::fs::remove_file(temp_file_path);
+
+        if copy_status.is_err() {
+            log::error!("Failed to move file {} to {}", temp_file_path.display(), &new_filepath.display());
+        }
+        if remove_status.is_err() {
+            log::error!("Failed to delete file: {}", temp_file_path.display());
+        }
+
         filepath_collection.push_str(new_filepath.to_str().unwrap());
         filepath_collection.push(';');
     }

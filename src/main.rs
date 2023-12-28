@@ -2,14 +2,11 @@
 //! ACSIM is a basic imageboard engine designed to have a small codebase,
 //! as well as simple configuration and deployment process.
 
-// std
 use std::collections::BTreeMap;
 use std::fs::read_to_string;
 use std::sync::Arc;
-// actix and serde
 use actix_web::{middleware, web, App, HttpServer};
 use serde::Deserialize;
-// async mutex
 use openssl::ssl::{SslAcceptor, SslAcceptorBuilder, SslMethod};
 use tokio::sync::Mutex;
 
