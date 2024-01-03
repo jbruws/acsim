@@ -26,10 +26,12 @@ footer {
     width: 100%;
 	grid-area: auto;
     font-size: 75%;
+	border-top: 2px solid var(--text-color);
     padding: 1rem;
     margin-top: auto;
     position: fixed;
     top: initial;
+	height: 4rem;
     bottom: 0;
 }
 
@@ -47,6 +49,7 @@ div#message_container {
 	grid-area: ms;
 	display: block;
 	margin-top: 0;
+	margin-bottom: 6rem;
 }
 
 div#sidebar {
