@@ -92,7 +92,7 @@ impl DatabaseWrapper {
         limit: i64,
     ) -> Result<Vec<MessageRow>, sqlx::Error> {
         sqlx::query_as::<_, MessageRow>(
-            "SELECT * FROM messages WHERE board=$1 ORDER BY latest_submsg DESC OFFSET $2 LIMIT $3",
+            "SELECT * FROM messages WHERE board=$1 ORDER BY latest_submsg DESC LIMIT $3 OFFSET $2",
         )
         .bind(board.to_string())
         .bind((page - 1) * limit)
