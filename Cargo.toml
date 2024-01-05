@@ -6,8 +6,8 @@ edition = "2021"
 
 repository = "https://github.com/jbruws/acsim/"
 license-file = "LICENSE"
-readme = "REAMDE.md"
-keywords = ["bbs", "engine", "imageboard", "postgres", "web"]
+readme = "README.md"
+keywords = ["bbs", "engine", "imageboard", "web"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
