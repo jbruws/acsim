@@ -120,7 +120,7 @@ impl DatabaseWrapper {
         index: i64,
     ) -> Result<MessageRow, sqlx::Error> {
         match sqlx::query_as::<_, MessageRow>(
-            "SELECT * FROM messages WHERE board=$1 ORDER BY latest_submsg DESC OFFSET $2 LIMIT 1",
+            "SELECT * FROM messages WHERE board=$1 ORDER BY latest_submsg DESC LIMIT 1 OFFSET $2",
         )
         .bind(board)
         .bind(index)
