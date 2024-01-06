@@ -20,7 +20,7 @@ A Docker image is available for ACSIM. You can use it to test the engine or quic
 
 #### Data persistency
 
-You can make message data persist between container restarts by creating a Docker volume, putting files contained in `./data` into it (you can create said files with `./setup.sh`) and running something like:
+You can make message data persist between container restarts by creating a Docker volume, putting files contained in `./data` into it (you can create said files by running `./setup.sh SQLITE`) and running:
 
 `# docker run --net=host --mount source=your_container_name,target=/usr/local/bin/data jbruws/acsim:0.10`
 
