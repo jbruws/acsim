@@ -10,21 +10,23 @@ Features:
 
 The engine is still in active development. Expect some bugs, missing features and drastic changes in design.
 
-## Installation
+# Installation
 
-### Docker container
+## Docker container
 
 A Docker image is available for ACSIM. You can use it to test the engine or quickly spin up an instance. Run:
 
 `# docker run --net=host jbruws/acsim:0.10`
 
-#### Data persistency
+### Data persistency
 
-You can make message data persist between container restarts by creating a Docker volume, putting files contained in `./data` into it (you can create said files by running `./setup.sh SQLITE`) and running:
+You can make message data persist between container restarts by creating a Docker volume (through `# docker volume create your_volume_name`) and running:
 
-`# docker run --net=host --mount source=your_container_name,target=/usr/local/bin/data jbruws/acsim:0.10`
+`# docker run --net=host --mount source=your_volume_name,target=/usr/local/bin/data jbruws/acsim:0.10`
 
-### Manual installation
+Server data will be stored in `/var/lib/docker/volumes/your_volume_name/_data`. To change said data, edit the relevant files then restart the container.
+
+## Manual installation
 
 1. Install the dependencies:
 
@@ -55,7 +57,7 @@ You can make message data persist between container restarts by creating a Docke
     
 Once the compilation finishes, application logs will start appearing in the console and in `acsim.log` file. Navigate to `127.0.0.1:8080` in your browser, and you should be greeted with ACSIM's home page. By default, the server will be accessible with any IP (`0.0.0.0`), **as long as the port 8080 is open.**
 
-## Special Thanks
+# Special Thanks
 
 [@ZueffC](https://github.com/ZueffC) - testing, coding advice
 
