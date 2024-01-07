@@ -60,6 +60,8 @@ div#sidebar {
 	padding: 0.5rem;
 	position: sticky;
 	top: 0px;
+	margin-left: 1rem;
+	margin-right: 0;
 }
 
 div#sidebar > hr {

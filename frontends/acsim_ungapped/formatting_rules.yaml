@@ -8,23 +8,23 @@
 # regex that matches text by characters (such as ** or _) that enwrap it.
 
 # Keep in mind that order of pairs matters! If messages are formatted
-# incorrectly, try switching the order up. The recommended order is provided here.
+# incorrectly, try switching the order up. The default order is provided here.
 
 ---
 # block quotes (greentext)
 '${nl}<span class="quote">${text}</span>${nl}': '(^|(?<nl>\n))(?<text>>[^\n]+)'
 
-# horizontal rules
-'${nl_head}<hr>${nl_trail}': '(?<nl_head>\r(\s|\r)+)(?<hr_block>[\*|_|\-]{3})(?<nl_trail>\r(\s|\r)+)'
-
 # headings. Markdown headings 3-6 are compressed into HTML's <h3>
-'<h1>${head_text}</h1>': '(^|(\r(\s|\r)+))#\ (?<head_text>.+)(\r(\s|\r)+)'
-'<h2>${head_text}</h2>': '(^|(\r(\s|\r)+))##\ (?<head_text>.+)(\r(\s|\r)+)'
-'<h3>${head_text}</h3>': '(^|(\r(\s|\r)+))#{3,6}\ (?<head_text>.+)(\r(\s|\r)+)'
+'${h_head}<h1>${head_text}</h1><br>': '(?<h_head>^|(\r(\s|\r)+))#\ (?<head_text>.+)(?<h_trail>\r(\s|\r)+)'
+'${h_head}<h2>${head_text}</h2><br>': '(?<h_head>^|(\r(\s|\r)+))##\ (?<head_text>.+)(?<h_trail>\r(\s|\r)+)'
+'${h_head}<h3>${head_text}</h3><br>': '(?<h_head>^|(\r(\s|\r)+))#{3,6}\ (?<head_text>.+)(?<h_trail>\r(\s|\r)+)'
 
 # 2+ and single newlines. 2+ newlines are collapsed into two
 '<br><br>': '(\r(\s|\r)+)'
 '<br>': '(\r(\s|\r){2,})'
+
+# horizontal rules
+'<br><hr>': '(<br>)(?<hr_block>[\*|_|\-]{3})(<br>)'
 
 # links to other messages and external websites
 '<a target="_blank" rel="noopener noreferrer" class="msglink" href="/${board}/topic/${msg}#${submsg}">${board}>${msg}${dotted}</a>': '(?<board>\w{1,16})>(?<msg>\d+)(?<dotted>\.(?<submsg>\d+))?'

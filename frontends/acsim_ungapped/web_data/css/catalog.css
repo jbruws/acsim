@@ -1,5 +1,6 @@
 div#grid_root {
 	display: grid;
+	grid-template-columns: minmax(0, 1fr);
 	grid-template-areas:
 		"form"
 		"msg"
@@ -21,14 +22,24 @@ div#message_container {
 	grid-gap: 1rem;
 	grid-template-rows: repeat(auto-fill, 1fr);
 	grid-template-columns: repeat(4, 1fr);
+	margin-bottom: 6rem;
+	margin-left: 1rem;
+	margin-right: 1rem;
 }
 
 footer {
-	grid-area: footer;
-	margin-top: 2rem;
+	grid-area: auto;
 	text-align: center;
-	padding: 1rem;
 	background-color: var(--bg-msg);
+    width: 100%;
+    font-size: 125%;
+	border-top: 2px solid var(--text-color);
+    padding: 1rem;
+    margin-top: auto;
+    position: fixed;
+    top: initial;
+	height: 4rem;
+    bottom: 0;
 }
 
 div.message_item {
