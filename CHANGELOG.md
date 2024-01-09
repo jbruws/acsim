@@ -2,7 +2,7 @@
 
 Changelog may get imprecise in earlier versions, since I started writing it at version 0.10; apologies in advance for any inaccuracies (although it hardly matters for early versions).
 
-## v0.11.0
+## Unreleased
 
 ### Added
 
@@ -20,7 +20,7 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 - `acsim_ungapped` now has higher color contrast
 - Restructured `CHANGELOG.md`
 
-## v0.10.0
+## v0.10.0 - 03.01.2024
 
 ### Added
 
@@ -39,7 +39,7 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 
 - Moved server data (such as config file and user images) to `./data` directory
 
-## v0.9.0
+## v0.9.0 - 14.12.2023
 
 ### Added
 
@@ -63,7 +63,7 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 - Moved database URL to `.env` file (`sqlx` requires it, see above)
 - ACSIM now accepts trailing slashes in URLs
 
-## v0.8.0
+## v0.8.0 - 08.11.2023
 
 ### Added
 
@@ -77,7 +77,7 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 - Changed index page formatting for better readability
 - HTML formatting methods now accept `Row` objects instead of separate variables
 
-## v0.7.0
+## v0.7.0 - 04.11.2023
 
 ### Added
 
@@ -89,7 +89,7 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 - Moved config explanation comments into the config itself (they used to be in `README.md`
 - Split `routes.rs` into several modules, according to which page they serve
 
-## v0.6.0
+## v0.6.0 - 26.10.2023
 
 ### Added
 
@@ -108,7 +108,7 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 
 - Username is no longer required in messages; empty usernames are replaced with "Anonymous"
 
-## v0.5.0
+## v0.5.0 - 19.10.2023
 
 ### Added
 
@@ -126,7 +126,7 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 
 - Removed default `acsim_base` frontend in favor of `acsim_ungapped`
 
-## v0.4.0
+## v0.4.0 - 15.10.2023
 
 ### Added
 
@@ -138,7 +138,7 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 - Config is now in YAML instead of JSON
 - Shrank database fields for additional protection against excessively long messages
 
-## v0.3.0
+## v0.3.0 - 11.10.2023
 
 ### Fixed
 
@@ -155,7 +155,7 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 
 - Removed unused 'soft limit' functionality (I couldn't get it to work with Tokio)
 
-## v0.2.0
+## v0.2.0 - 07.10.2023
 
 ### Added
 
@@ -167,7 +167,7 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 
 - Changed license from BSD 3-Clause to GPLv3
 
-## v0.1.0
+## v0.1.0 - 06.10.2023
 
 ### Added
     - Initial version
