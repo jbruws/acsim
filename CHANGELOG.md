@@ -170,6 +170,7 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 ## v0.1.0 - 06.10.2023
 
 ### Added
+
     - Initial version
     - Setup script (`setup.sh`) that creates database, tables and config
     - Logging with `fern`
