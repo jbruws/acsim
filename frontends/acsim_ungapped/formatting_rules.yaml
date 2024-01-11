@@ -14,14 +14,17 @@
 # block quotes (greentext)
 '${nl}<span class="quote">${text}</span>${nl}': '(^|(?<nl>\n))(?<text>>[^\n]+)'
 
-# headings. Markdown headings 3-6 are compressed into HTML's <h3>
-'${h_head}<h1>${head_text}</h1><br>': '(?<h_head>^|(\r(\s|\r)+))#\ (?<head_text>.+)(?<h_trail>\r(\s|\r)+)'
-'${h_head}<h2>${head_text}</h2><br>': '(?<h_head>^|(\r(\s|\r)+))##\ (?<head_text>.+)(?<h_trail>\r(\s|\r)+)'
-'${h_head}<h3>${head_text}</h3><br>': '(?<h_head>^|(\r(\s|\r)+))#{3,6}\ (?<head_text>.+)(?<h_trail>\r(\s|\r)+)'
-
 # 2+ and single newlines. 2+ newlines are collapsed into two
 '<br><br>': '(\r(\s|\r)+)'
 '<br>': '(\r(\s|\r){2,})'
+
+# headings
+'${h_head}<h1>${head_text}</h1>': '(?<h_head>^|<br>)#\ (?<head_text>.+?)(?<h_trail><br>)'
+'${h_head}<h2>${head_text}</h2>': '(?<h_head>^|<br>)##\ (?<head_text>.+?)(?<h_trail><br>)'
+'${h_head}<h3>${head_text}</h3>': '(?<h_head>^|<br>)###\ (?<head_text>.+?)(?<h_trail><br>)'
+'${h_head}<h4>${head_text}</h4>': '(?<h_head>^|<br>)####\ (?<head_text>.+?)(?<h_trail><br>)'
+'${h_head}<h5>${head_text}</h5>': '(?<h_head>^|<br>)#####\ (?<head_text>.+?)(?<h_trail><br>)'
+'${h_head}<h6>${head_text}</h6>': '(?<h_head>^|<br>)######\ (?<head_text>.+?)(?<h_trail><br>)'
 
 # horizontal rules
 '<br><hr>': '(<br>)(?<hr_block>[\*|_|\-]{3})(<br>)'
