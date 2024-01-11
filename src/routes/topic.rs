@@ -106,6 +106,14 @@ pub async fn topic_process_form(
             _ => data.formatter.filter_tags(trimmed_author).await,
         };
         let filtered_msg = data.formatter.filter_tags(trimmed_message).await;
+
+        // Checking against the last message (to prevent spam)
+        if let Ok(last_msg) = client.get_last_submessage(&message_num).await {
+            if last_msg.submsg == filtered_msg {
+                return web::Redirect::to("/error?error_code=403").see_other();
+            }
+        }
+
         client
             .insert_to_submessages(
                 message_num,

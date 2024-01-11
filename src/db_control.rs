@@ -114,16 +114,33 @@ impl DatabaseWrapper {
             .fetch_all(&self.db_pool).await
     }
 
-    pub async fn get_nth_most_active(
+    pub async fn get_last_message(
         &self,
         board: &str,
-        index: i64,
     ) -> Result<MessageRow, sqlx::Error> {
         match sqlx::query_as::<_, MessageRow>(
-            "SELECT * FROM messages WHERE board=$1 ORDER BY latest_submsg DESC LIMIT 1 OFFSET $2",
+            "SELECT * FROM messages WHERE board=$1 ORDER BY latest_submsg DESC LIMIT 1",
         )
         .bind(board)
-        .bind(index)
+        .fetch_optional(&self.db_pool)
+        .await
+        {
+            Ok(val) => match val {
+                Some(r) => Ok(r),
+                None => Err(sqlx::Error::RowNotFound), //wha??
+            },
+            Err(e) => Err(e),
+        }
+    }
+
+    pub async fn get_last_submessage( // duplicate code. bruh...
+        &self,
+        parent_msgid: &i64,
+    ) -> Result<SubmessageRow, sqlx::Error> {
+        match sqlx::query_as::<_, SubmessageRow>(
+            "SELECT * FROM submessages WHERE parent_msg=$1 ORDER BY time DESC LIMIT 1",
+        )
+        .bind(parent_msgid)
         .fetch_optional(&self.db_pool)
         .await
         {

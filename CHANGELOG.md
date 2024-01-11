@@ -14,10 +14,12 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 - Fixed footers not being the width of the entire screen
 - Fixed formatter displaying unnecessary line breaks in formatted messages
 - (Hopefully) fixed broken page structures when resizing in Safari
+- Spam protection by message comparison is now applied to submessages as well
 
 ### Changed
 
 - Changed link color
+- `get_nth_most_active` has been renamed to `get_last_message` and had its functionality changed accordingly
 - All headers (\<h1\> to \<h6\>) are now available in message formatting
 - Cleaned up `formatting_rules.yaml`
 - `acsim_ungapped` now has higher color contrast
