@@ -2,12 +2,12 @@
 //! ACSIM is a basic imageboard engine designed to have a small codebase,
 //! as well as simple configuration and deployment process.
 
+use actix_web::{middleware, web, App, HttpServer};
+use openssl::ssl::{SslAcceptor, SslAcceptorBuilder, SslMethod};
+use serde::Deserialize;
 use std::collections::BTreeMap;
 use std::fs::read_to_string;
 use std::sync::Arc;
-use actix_web::{middleware, web, App, HttpServer};
-use serde::Deserialize;
-use openssl::ssl::{SslAcceptor, SslAcceptorBuilder, SslMethod};
 use tokio::sync::Mutex;
 
 mod db_control;
@@ -26,6 +26,7 @@ pub struct BoardConfig {
     hard_limit: u16,
     page_limit: u16,
     requests_limit: u16,
+    log_debug_data: bool,
     site_name: String,
     site_frontend: String,
     boards: BTreeMap<String, String>,
@@ -46,6 +47,13 @@ fn create_ssl_acceptor() -> SslAcceptorBuilder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    // reading board config
+    let raw_config: BoardConfig = serde_yaml::from_str(
+        &read_to_string("./data/config.yaml")
+            .unwrap_or_else(|_| panic!("Critical: can't read data/config.yaml")),
+    )
+    .expect("Critical: can't parse data/config.yaml");
+
     // starting the logger
     let logger = fern::Dispatch::new()
         .format(|out, message, record| {
@@ -56,13 +64,26 @@ async fn main() -> std::io::Result<()> {
                 message,
             ))
         })
-        .level(log::LevelFilter::Info) // change `Info` to `Debug` for db query logs
+        .level(if raw_config.log_debug_data {
+            log::LevelFilter::Debug
+        } else {
+            log::LevelFilter::Info
+        })
         .chain(std::io::stdout())
         .chain(fern::log_file("./data/acsim.log").unwrap())
         .apply();
+
+    let acsim_ver = std::env::var("CARGO_PKG_VERSION");
+
     match logger {
-        Ok(_) => log::info!("ACSIM starting"),
-        Err(e) => println!("WARNING: Failed to start logger: {}", e),
+        Ok(_) => match acsim_ver {
+            Ok(ver) => log::info!("ACSIM v{} starting", ver),
+            Err(e) => panic!(
+                "Critical: failed to get ACSIM version from CARGO_PKG_VERSION: {}",
+                e
+            ),
+        },
+        Err(e) => panic!("Critical: failed to start logger: {}", e),
     };
 
     // loading database data from .env
@@ -71,20 +92,13 @@ async fn main() -> std::io::Result<()> {
         Err(_) => log::error!(".env file failed to load. What happened?"),
     };
 
-    // reading board config
-    let raw_config: BoardConfig = serde_yaml::from_str(
-        &read_to_string("./data/config.yaml")
-            .unwrap_or_else(|_| panic!("Critical: can't read data/config.yaml")),
-    )
-    .expect("Critical: can't parse data/config.yaml");
-
     let config = Arc::new(raw_config);
     let frontend_name: String = config.site_frontend.clone();
 
     // creating db connection through DatabaseWrapper
     let raw_client = db_control::DatabaseWrapper::new()
         .await
-        .expect("Something went wrong during database connection");
+        .expect("Critical: something went wrong during database connection");
     let client = Arc::new(Mutex::new(raw_client));
 
     // creating html formatter

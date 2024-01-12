@@ -101,7 +101,10 @@ pub async fn process_files(files: &Vec<TempFile>) -> String {
         if i > 4 {
             let remove_excess_status = std::fs::remove_file(temp_file_path);
             if remove_excess_status.is_err() {
-                log::error!("Failed to delete unwanted (excess) file: {}", temp_file_path.display());
+                log::error!(
+                    "Failed to delete unwanted (excess) file: {}",
+                    temp_file_path.display()
+                );
             }
             continue;
         }
@@ -121,7 +124,11 @@ pub async fn process_files(files: &Vec<TempFile>) -> String {
         let remove_status = std::fs::remove_file(temp_file_path);
 
         if copy_status.is_err() {
-            log::error!("Failed to move file {} to {}", temp_file_path.display(), &new_filepath.display());
+            log::error!(
+                "Failed to move file {} to {}",
+                temp_file_path.display(),
+                &new_filepath.display()
+            );
         }
         if remove_status.is_err() {
             log::error!("Failed to delete file: {}", temp_file_path.display());

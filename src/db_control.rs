@@ -114,10 +114,7 @@ impl DatabaseWrapper {
             .fetch_all(&self.db_pool).await
     }
 
-    pub async fn get_last_message(
-        &self,
-        board: &str,
-    ) -> Result<MessageRow, sqlx::Error> {
+    pub async fn get_last_message(&self, board: &str) -> Result<MessageRow, sqlx::Error> {
         match sqlx::query_as::<_, MessageRow>(
             "SELECT * FROM messages WHERE board=$1 ORDER BY latest_submsg DESC LIMIT 1",
         )
@@ -133,7 +130,8 @@ impl DatabaseWrapper {
         }
     }
 
-    pub async fn get_last_submessage( // duplicate code. bruh...
+    pub async fn get_last_submessage(
+        // duplicate code. bruh...
         &self,
         parent_msgid: &i64,
     ) -> Result<SubmessageRow, sqlx::Error> {

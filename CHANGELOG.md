@@ -19,6 +19,9 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 ### Changed
 
 - Changed link color
+- Logging of debug data is now configurable in `config.yaml`
+- ACSIM now panics when logger initialization fails
+- Logs now include app version
 - `get_nth_most_active` has been renamed to `get_last_message` and had its functionality changed accordingly
 - All headers (\<h1\> to \<h6\>) are now available in message formatting
 - Cleaned up `formatting_rules.yaml`

@@ -12,5 +12,11 @@ pub async fn error_page(
     q: web::Query<ErrorQuery>,
 ) -> impl Responder {
     let ecode_unwrapped = q.error_code.unwrap_or(500);
-    HttpResponse::Ok().body(data.formatter.format_into_error(actix_web::http::StatusCode::from_u16(ecode_unwrapped.try_into().unwrap()).unwrap()).await)
+    HttpResponse::Ok().body(
+        data.formatter
+            .format_into_error(
+                actix_web::http::StatusCode::from_u16(ecode_unwrapped.try_into().unwrap()).unwrap(),
+            )
+            .await,
+    )
 }

@@ -38,6 +38,10 @@ page_limit: 20
 # Setting this below tripled page_limit is not recommended.
 requests_limit: 60
 
+# Enables debug logs, for example database query logging
+# and handlebars logging. Can bloat log files very fast.
+log_debug_data: false
+
 # Name of the imageboard displayed to users
 site_name: ACSIM
 
