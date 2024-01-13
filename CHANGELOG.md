@@ -19,10 +19,11 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 ### Changed
 
 - Changed link color
+- Board list on the main page now appears in the order specified in config file instead of being alphabetically sorted
+- Log format now includes the module "issuing" the log
 - Logging of debug data is now configurable in `config.yaml`
 - ACSIM now panics when logger initialization fails
-- Logs now include app version
-- `get_nth_most_active` has been renamed to `get_last_message` and had its functionality changed accordingly
+- `get_nth_most_active` method has been renamed to `get_last_message` and had its functionality changed accordingly
 - All headers (\<h1\> to \<h6\>) are now available in message formatting
 - Cleaned up `formatting_rules.yaml`
 - `acsim_ungapped` now has higher color contrast

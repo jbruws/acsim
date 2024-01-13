@@ -5,7 +5,7 @@
 use actix_web::{middleware, web, App, HttpServer};
 use openssl::ssl::{SslAcceptor, SslAcceptorBuilder, SslMethod};
 use serde::Deserialize;
-use std::collections::BTreeMap;
+use indexmap::map::IndexMap;
 use std::fs::read_to_string;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -29,7 +29,7 @@ pub struct BoardConfig {
     log_debug_data: bool,
     site_name: String,
     site_frontend: String,
-    boards: BTreeMap<String, String>,
+    boards: IndexMap<String, String>,
     taglines: Vec<String>,
 }
 
@@ -58,9 +58,9 @@ async fn main() -> std::io::Result<()> {
     let logger = fern::Dispatch::new()
         .format(|out, message, record| {
             out.finish(format_args!(
-                "[{} {}] {}",
+                "[{} ({})] {}",
                 html_proc::get_time(html_proc::since_epoch()),
-                record.level(),
+                record.target(),
                 message,
             ))
         })
@@ -69,6 +69,8 @@ async fn main() -> std::io::Result<()> {
         } else {
             log::LevelFilter::Info
         })
+        // disabling handlebars logs (they clog up the file too much)
+        .level_for("handlebars", log::LevelFilter::Info)
         .chain(std::io::stdout())
         .chain(fern::log_file("./data/acsim.log").unwrap())
         .apply();
