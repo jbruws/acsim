@@ -3,9 +3,9 @@
 //! as well as simple configuration and deployment process.
 
 use actix_web::{middleware, web, App, HttpServer};
+use indexmap::map::IndexMap;
 use openssl::ssl::{SslAcceptor, SslAcceptorBuilder, SslMethod};
 use serde::Deserialize;
-use indexmap::map::IndexMap;
 use std::fs::read_to_string;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -47,6 +47,22 @@ fn create_ssl_acceptor() -> SslAcceptorBuilder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    // Setting working directory
+    let path_local = format!("{}/.local/share/acsim", std::env::var("HOME").unwrap());
+
+    let acsim_dir = if std::path::Path::new("./data").exists() {
+        ".".to_string()
+    } else if std::path::Path::new(&path_local).exists() {
+        path_local
+    } else {
+        panic!("Cannot locate data directory")
+    };
+
+    match std::env::set_current_dir(&std::path::Path::new(&acsim_dir)) {
+        Ok(_) => println!("[PRELOG] Successfully set working directory to {}", acsim_dir),
+        Err(e) => println!("[PRELOG] Failed to set working directory to {}: {}", acsim_dir, e),
+    };
+
     // reading board config
     let raw_config: BoardConfig = serde_yaml::from_str(
         &read_to_string("./data/config.yaml")

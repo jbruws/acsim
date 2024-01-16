@@ -8,6 +8,7 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 
 - Links now have underlines (again)
 - Retroactively added `CHANGELOG.md` entries for versions before 0.10
+- ACSIM now looks in `~/.local/share/acsim` if no server data is found in `.`
 
 ### Fixed
 
