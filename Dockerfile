@@ -9,12 +9,13 @@ FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y vim sqlite3 libssl3 libmagic1 && rm -rf /var/lib/apt/lists/*
 RUN ldconfig
-COPY --from=builder /usr/local/cargo/bin/acsim /usr/local/bin/acsim
-COPY --from=builder /usr/src/acsim/setup.sh /usr/local/bin/setup.sh
-COPY --from=builder /usr/src/acsim/frontends /usr/local/bin/frontends
-COPY --from=builder /usr/src/acsim/README.md /usr/local/bin/README.md
-COPY --from=builder /usr/src/acsim/LICENSE /usr/local/bin/LICENSE
-WORKDIR "/usr/local/bin"
+RUN mkdir -p /acsim
+COPY --from=builder /usr/local/cargo/bin/acsim /acsim/acsim
+COPY --from=builder /usr/src/acsim/setup.sh /acsim/setup.sh
+COPY --from=builder /usr/src/acsim/frontends /acsim/frontends
+COPY --from=builder /usr/src/acsim/README.md /acsim/README.md
+COPY --from=builder /usr/src/acsim/LICENSE /acsim/LICENSE
+WORKDIR "/acsim"
 RUN ./setup.sh SQLITE
 
-CMD ["acsim"]
+CMD ["/acsim/acsim"]

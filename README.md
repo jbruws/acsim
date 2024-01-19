@@ -22,7 +22,7 @@ A Docker image is available for ACSIM. You can use it to test the engine or quic
 
 You can make message data persist between container restarts by creating a Docker volume (through `# docker volume create your_volume_name`) and running:
 
-`# docker run --net=host --mount source=your_volume_name,target=/usr/local/bin/data jbruws/acsim:0.10`
+`# docker run --net=host --mount source=your_volume_name,target=/acsim/data jbruws/acsim:0.10`
 
 Server data will be stored in `/var/lib/docker/volumes/your_volume_name/_data`. To change said data, edit the relevant files then restart the container.
 

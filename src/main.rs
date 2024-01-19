@@ -59,8 +59,8 @@ async fn main() -> std::io::Result<()> {
     };
 
     match std::env::set_current_dir(&std::path::Path::new(&acsim_dir)) {
-        Ok(_) => println!("[PRELOG] Successfully set working directory to {}", acsim_dir),
-        Err(e) => println!("[PRELOG] Failed to set working directory to {}: {}", acsim_dir, e),
+        Ok(_) => log::info!("Successfully set working directory to {}", acsim_dir),
+        Err(e) => log::error!("Failed to set working directory to {}: {}", acsim_dir, e),
     };
 
     // reading board config
@@ -91,14 +91,13 @@ async fn main() -> std::io::Result<()> {
         .chain(fern::log_file("./data/acsim.log").unwrap())
         .apply();
 
-    let acsim_ver = std::env::var("CARGO_PKG_VERSION");
+    let acsim_ver = std::option_env!("CARGO_PKG_VERSION");
 
     match logger {
         Ok(_) => match acsim_ver {
-            Ok(ver) => log::info!("ACSIM v{} starting", ver),
-            Err(e) => panic!(
-                "Critical: failed to get ACSIM version from CARGO_PKG_VERSION: {}",
-                e
+            Some(ver) => log::info!("ACSIM v{} starting", ver),
+            None => panic!(
+                "Critical: failed to get ACSIM version from CARGO_PKG_VERSION",
             ),
         },
         Err(e) => panic!("Critical: failed to start logger: {}", e),
