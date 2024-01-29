@@ -177,3 +177,21 @@ form#message_form > p {
 	font-size: 70%;
 }
 
+/* MOBILE MODIFICATIONS */
+@media only screen and (max-device-width: 761px) {
+	body {
+		font-size: 200%;
+	}
+
+	textarea[name="message"], textarea[name="author"] {
+		font-size: 50%;
+	}
+
+	textarea[name="author"] {
+		height: 2rem;
+	}
+
+	textarea[name="message"] {
+		height: 4rem;
+	}
+}

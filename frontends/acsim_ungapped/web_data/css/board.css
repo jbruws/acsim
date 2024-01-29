@@ -119,8 +119,9 @@ div#linkbar {
 		max-width: 90%;
 	}
 
-	body {
-		font-size: 25px;
+	header {
+		padding: 0;
+		margin: 0;
 	}
 
 	div#grid_root {
@@ -134,8 +135,28 @@ div#linkbar {
 		padding: 0.5rem;
 	}
 
+	footer {
+		font-size: 50%;
+	}
+
 	div#sidebar {
+		margin-top: 0;
 		background-color: var(--bg);
+		margin-left: auto;
+		margin-right: auto;
+		width: 100%;
+		border-bottom: 2px solid var(--text-color);
+	}
+
+	div#sidebar > * {
+		width: 70%;
+		margin-left: auto;
+		margin-right: auto;
+	}
+
+	div#message_container {
+		margin-left: auto;
+		margin-right: auto;
 	}
 }
 

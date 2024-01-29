@@ -111,6 +111,7 @@ impl HtmlFormatter<'_> {
 
     /// Returns contents of specified file from `work_dir` or its subdirectories
     fn get_file(&self, rel_path: &str) -> String {
+        // TODO: rework this to include include_dir capabilities
         read_to_string(format!("{}/{}", &self.work_dir, rel_path))
             .unwrap_or_else(|_| panic!("Can't read {}/{}", &self.work_dir, rel_path))
     }
