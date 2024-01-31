@@ -47,9 +47,6 @@ fn create_ssl_acceptor() -> SslAcceptorBuilder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // Including setup.sh script
-    let setup = include_str!("/setup.sh");
-
     // Setting working directory
     let path_local = format!("{}/.local/share/acsim", std::env::var("HOME").unwrap());
 

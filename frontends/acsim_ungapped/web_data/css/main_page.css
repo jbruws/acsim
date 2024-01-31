@@ -42,3 +42,9 @@ div.main_page_link {
 a:hover {
 	color: var(--text-color);
 }
+
+@media only screen and (max-device-width: 761px) {
+	div#links {
+		width: 80%;
+	}
+}

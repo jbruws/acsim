@@ -18,13 +18,10 @@
 '<br><br>': '(\r(\s|\r)+)'
 '<br>': '(\r(\s|\r){2,})'
 
-# headings
+# headings (<h3> to <h6> are compressed into <h3>)
 '${h_head}<h1>${head_text}</h1>': '(?<h_head>^|<br>)#\ (?<head_text>.+?)(?<h_trail><br>)'
 '${h_head}<h2>${head_text}</h2>': '(?<h_head>^|<br>)##\ (?<head_text>.+?)(?<h_trail><br>)'
-'${h_head}<h3>${head_text}</h3>': '(?<h_head>^|<br>)###\ (?<head_text>.+?)(?<h_trail><br>)'
-'${h_head}<h4>${head_text}</h4>': '(?<h_head>^|<br>)####\ (?<head_text>.+?)(?<h_trail><br>)'
-'${h_head}<h5>${head_text}</h5>': '(?<h_head>^|<br>)#####\ (?<head_text>.+?)(?<h_trail><br>)'
-'${h_head}<h6>${head_text}</h6>': '(?<h_head>^|<br>)######\ (?<head_text>.+?)(?<h_trail><br>)'
+'${h_head}<h3>${head_text}</h3>': '(?<h_head>^|<br>)#{3,6}\ (?<head_text>.+?)(?<h_trail><br>)'
 
 # horizontal rules
 '<br><hr>': '(<br>)(?<hr_block>[\*|_|\-]{3})(<br>)'

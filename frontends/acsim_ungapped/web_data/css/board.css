@@ -124,6 +124,10 @@ div#linkbar {
 		margin: 0;
 	}
 
+	div#website_data_block {
+		width: 90%;
+	}
+
 	div#grid_root {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr); 

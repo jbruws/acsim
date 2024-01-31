@@ -2,7 +2,7 @@
 
 Changelog may get imprecise in earlier versions, since I started writing it at version 0.10; apologies in advance for any inaccuracies (although it hardly matters for early versions).
 
-## Unreleased
+## v0.11.0 - 31.01.2024
 
 ### Added
 
@@ -25,10 +25,10 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 - Logging of debug data is now configurable in `config.yaml`
 - ACSIM now panics when logger initialization fails
 - `get_nth_most_active` method has been renamed to `get_last_message` and had its functionality changed accordingly
-- All headers (\<h1\> to \<h6\>) are now available in message formatting
 - Cleaned up `formatting_rules.yaml`
 - `acsim_ungapped` now has higher color contrast
 - Restructured `CHANGELOG.md`
+- Improved page layout on mobile devices
 
 ## v0.10.0 - 03.01.2024
 
