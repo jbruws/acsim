@@ -16,6 +16,7 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 - Fixed formatter displaying unnecessary line breaks in formatted messages
 - (Hopefully) fixed broken page structures when resizing in Safari
 - Spam protection by message comparison is now applied to submessages as well
+- Fixed several Dependabot alerts
 
 ### Changed
 
