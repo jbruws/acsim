@@ -16,7 +16,7 @@ The engine is still in active development. Expect some bugs, missing features an
 
 A Docker image is available for ACSIM. You can use it to test the engine or quickly spin up an instance. Run:
 
-`# docker run --net=host jbruws/acsim:0.10`
+`# docker run --net=host jbruws/acsim:0.11`
 
 ### Data persistency
 
