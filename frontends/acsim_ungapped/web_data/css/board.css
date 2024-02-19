@@ -103,6 +103,11 @@ p.message_header {
 	margin-top: 0.5rem;
 }
 
+p.message_header > span {
+	float: right;
+	margin-right: 0;
+}
+
 div.message_contents {
 	padding: 1rem;
 }

@@ -85,8 +85,9 @@ if [ "$1" = "POSTGRES" ]; then
 		);
 		CREATE TABLE IF NOT EXISTS flagged_messages (
 			msg_type TEXT NOT NULL,
-			msgid BIGINT NOT NULL,
-			submsg_index BIGINT
+			msgid BIGINT NOT NULL UNIQUE,
+			submsg_index BIGINT,
+			UNIQUE(msgid,submsg_index)
 		);' | psql -U $2 -d acsim_db;
 	echo "Writing database URL to .env"
 	echo "DATABASE_URL=\"postgres://$2@localhost:5432/acsim_db\"" > .env
@@ -116,7 +117,8 @@ elif [ "$1" = "SQLITE" ]; then
 			CREATE TABLE IF NOT EXISTS flagged_messages (
 				msg_type TEXT NOT NULL,
 				msgid BIGINT NOT NULL,
-				submsg_index BIGINT
+				submsg_index BIGINT,
+				UNIQUE(msgid,submsg_index)
 			);'
 	echo "Writing database URL to .env"
 	echo 'DATABASE_URL="sqlite://data/acsim.db"' > .env

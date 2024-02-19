@@ -61,6 +61,11 @@ p.head_message_header {
 	padding: 1rem;
 }
 
+p.head_message_header > span {
+	float: right;
+	margin-right: 0;
+}
+
 p.head_message_contents, p.submessage_contents {
 	margin-bottom: 0;
 	margin-top: 0;
@@ -86,6 +91,11 @@ p.submessage_header {
 	text-align: left;
 	margin-bottom: 0.5rem;
 	margin-top: 0.5rem;
+}
+
+p.submessage_header > span {
+	float: right;
+	margin-right: 0;
 }
 
 /* MOBILE MODIFICATIONS */

@@ -19,6 +19,7 @@ pub mod board;
 pub mod catalog;
 pub mod error;
 pub mod index;
+pub mod report;
 pub mod topic;
 
 /// Form used to send messages and images
@@ -43,6 +44,13 @@ pub struct PathInfo {
 pub struct QueryOptions {
     page: Option<i64>,
     search_string: Option<String>,
+}
+
+/// Options that specify report options
+#[derive(Deserialize)]
+pub struct ReportQueryOptions {
+    id: i64,
+    subid: Option<i64>,
 }
 
 /// Type of error (used for error page formatting)

@@ -96,9 +96,7 @@ async fn main() -> std::io::Result<()> {
     match logger {
         Ok(_) => match acsim_ver {
             Some(ver) => log::info!("ACSIM v{} starting", ver),
-            None => panic!(
-                "Critical: failed to get ACSIM version from CARGO_PKG_VERSION",
-            ),
+            None => panic!("Critical: failed to get ACSIM version from CARGO_PKG_VERSION",),
         },
         Err(e) => panic!("Critical: failed to start logger: {}", e),
     };
@@ -154,6 +152,7 @@ async fn main() -> std::io::Result<()> {
             ))
             .service(routes::index::root)
             .service(routes::error::error_page)
+            .service(routes::report::report_msg)
             .service(routes::board::board)
             .service(routes::board::board_process_form)
             .service(routes::topic::topic)

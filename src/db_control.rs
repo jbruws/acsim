@@ -25,12 +25,12 @@ pub struct SubmessageRow {
     pub image: String,
 }
 
-/// Struct used to deserialize flagged messages and submessages 
+/// Struct used to deserialize flagged messages and submessages
 #[derive(Debug, sqlx::FromRow)]
 pub struct FlaggedRow {
     pub msg_type: String,
     pub msgid: i64,
-    pub submsg_index: i64,
+    pub submsg_index: Option<i64>,
 }
 
 /// Wrapper for PostgreSQL DB client
@@ -209,6 +209,20 @@ impl DatabaseWrapper {
         DatabaseWrapper::log_query_status(
             sqlx::query("INSERT INTO submessages(parent_msg, time, author, submsg, image) VALUES ($1, $2, $3, $4, $5)")
             .bind(parent_msg).bind(time).bind(author.to_string()).bind(submsg.to_string()).bind(image.to_string()).execute(&self.db_pool).await, "Inserting row into submessages table"
+        );
+    }
+
+    pub async fn insert_to_flagged(&self, msg_type: String, msgid: i64, submsgid: Option<i64>) {
+        DatabaseWrapper::log_query_status(
+            sqlx::query(
+                "INSERT INTO flagged_messages(msg_type, msgid, submsg_index) VALUES ($1, $2, $3)",
+            )
+            .bind(msg_type)
+            .bind(msgid)
+            .bind(submsgid.unwrap_or(0))
+            .execute(&self.db_pool)
+            .await,
+            "Inserting row into flagged_messages table",
         );
     }
 }

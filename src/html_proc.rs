@@ -386,6 +386,16 @@ impl HtmlFormatter<'_> {
             .unwrap()
     }
 
+    /// Formats data into simple 'report accepted' page
+    pub async fn format_into_report(&self, backlink: String) -> String {
+        self.handle
+            .render_template(
+                &self.get_file("web_data/report.html"),
+                &json!({"backlink": backlink}),
+            )
+            .unwrap()
+    }
+
     /// Removes HTML tags from strings. Called when writing data to database
     pub async fn filter_tags(&self, inp_string: &str) -> String {
         let filter = Regex::new(r##"<.*?>"##).unwrap();
