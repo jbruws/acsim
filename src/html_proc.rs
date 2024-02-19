@@ -161,7 +161,7 @@ impl HtmlFormatter<'_> {
     pub async fn format_into_submessage(
         &self,
         db_row: SubmessageRow,
-        _board: &str,
+        board: &str,
         _page: &str,
         msgid_override: i64,
     ) -> String {
@@ -185,6 +185,8 @@ impl HtmlFormatter<'_> {
                 &json!({"id": msgid_override,
                 "time": get_time(db_row.time),
                 "author": db_row.author,
+                "board": board,
+                "parent_id": db_row.parent_msg,
                 "msg": msg_contents}),
             )
             .unwrap()

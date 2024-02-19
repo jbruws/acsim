@@ -25,6 +25,14 @@ pub struct SubmessageRow {
     pub image: String,
 }
 
+/// Struct used to deserialize flagged messages and submessages 
+#[derive(Debug, sqlx::FromRow)]
+pub struct FlaggedRow {
+    pub msg_type: String,
+    pub msgid: i64,
+    pub submsg_index: i64,
+}
+
 /// Wrapper for PostgreSQL DB client
 pub struct DatabaseWrapper {
     db_pool: AnyPool,

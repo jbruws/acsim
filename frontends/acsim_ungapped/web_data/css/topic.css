@@ -38,7 +38,8 @@ div#head_message {
 }
 
 div#head_message > hr {
-	width: 70%;
+	width: 60%;
+	margin-left: 0.5rem;
 	margin-bottom: 2rem;
 }
 
@@ -55,9 +56,9 @@ div#sidebar > form > textarea[name="message"] {
 
 /* HEAD MESSAGE STRUCTURE */
 p.head_message_header {
-	text-align: center;
+	text-align: left;
 	margin-top: 0;
-	padding: 0;
+	padding: 1rem;
 }
 
 p.head_message_contents, p.submessage_contents {
@@ -75,12 +76,14 @@ div.submessage {
 }
 
 div.submessage > hr {
+	margin-left:0;
 	width: 40%;
-	margin-bottom: 2rem;
+	margin-top: 1rem;
+	margin-bottom: 1rem;
 }
 
 p.submessage_header {
-	text-align: center;
+	text-align: left;
 	margin-bottom: 0.5rem;
 	margin-top: 0.5rem;
 }

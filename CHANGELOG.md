@@ -2,6 +2,17 @@
 
 Changelog may get imprecise in earlier versions, since I started writing it at version 0.10; apologies in advance for any inaccuracies (although it hardly matters for early versions).
 
+## Unreleased
+
+### Fixed
+
+- Fixed catalog page not displaying properly
+
+### Changed
+
+- Changed message header formatting to a more traditional style
+- Gaps between messages on boards are now larger
+
 ## v0.11.0 - 31.01.2024
 
 ### Added
