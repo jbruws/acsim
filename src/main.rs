@@ -58,7 +58,7 @@ async fn main() -> std::io::Result<()> {
         panic!("Cannot locate data directory")
     };
 
-    match std::env::set_current_dir(&std::path::Path::new(&acsim_dir)) {
+    match std::env::set_current_dir(std::path::Path::new(&acsim_dir)) {
         Ok(_) => log::info!("Successfully set working directory to {}", acsim_dir),
         Err(e) => log::error!("Failed to set working directory to {}: {}", acsim_dir, e),
     };

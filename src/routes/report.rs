@@ -1,12 +1,12 @@
 //! Handlers for message reporting
 
-use actix_multipart::form::MultipartForm;
-use actix_web::{get, http::StatusCode, post, web, HttpResponse, Responder};
 
-use crate::html_proc;
-use crate::routes::process_files;
+use actix_web::{get, web, HttpResponse, Responder};
+
+
+
 use crate::routes::ApplicationState;
-use crate::routes::MsgForm;
+
 use crate::routes::ReportQueryOptions;
 
 /// Unified handler for reporting messages and submessages
@@ -17,7 +17,7 @@ pub async fn report_msg(
 ) -> impl Responder {
     let client = data.db_client.lock().await;
     let message_type = match page_data.subid {
-        Some(v) => "submsg",
+        Some(_v) => "submsg",
         None => "msg",
     };
     client
