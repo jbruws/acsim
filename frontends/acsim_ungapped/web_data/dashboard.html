@@ -3,12 +3,18 @@
 <head>
 	<title>Admin Dashboard</title>
 	<link rel="stylesheet" type="text/css" href="/web_data/css/generic.css">
+	<link rel="stylesheet" type="text/css" href="/web_data/css/message_blocks.css">
 	<link rel="stylesheet" type="text/css" href="/web_data/css/dashboard.css">
 	<meta charset="UTF-8">
 </head>
 
 <body>
-	<a href="/dashboard?flagged_type=msg">Flagged messages</a>
-	<a href="/dashboard?flagged_type=submsg">Flagged submessages</a>
-	{{flagged_list}}	
+	<header>
+		<a href="/dashboard?flagged_type=msg">Flagged messages</a> |
+		<a href="/dashboard">Main</a> |
+		<a href="/dashboard?flagged_type=submsg">Flagged submessages</a>
+	</header>
+	<div id="flagged_container">
+		{{{flagged_list}}}
+	</div>
 </body>

@@ -50,14 +50,7 @@ pub async fn topic(
     }
     let mut inserted_submsg = String::from("");
     for row in client.get_submessages(message_num).await.unwrap() {
-        inserted_submsg.push_str(
-            data.formatter
-                .format_into_submessage(
-                    row,
-                )
-                .await
-                .as_str(),
-        );
+        inserted_submsg.push_str(data.formatter.format_into_submessage(row).await.as_str());
     }
 
     HttpResponse::Ok().body(

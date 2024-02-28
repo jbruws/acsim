@@ -36,7 +36,7 @@ page_limit: 20
 
 # Max number of requests (in a row) that one IP can send before being blocked.
 # Setting this below tripled page_limit is not recommended.
-requests_limit: 60
+requests_limit: 90
 
 # Enables debug logs, for example database query logging. Can bloat log files very fast.
 log_debug_data: false
@@ -92,6 +92,7 @@ if [ "$1" = "POSTGRES" ]; then
 					ON DELETE CASCADE
 		);
 		CREATE TABLE IF NOT EXISTS flagged_messages (
+			entry_id INTEGER PRIMARY KEY,
 			msg_type TEXT NOT NULL,
 			msgid BIGINT NOT NULL UNIQUE,
 			submsg_index BIGINT,
@@ -129,6 +130,7 @@ elif [ "$1" = "SQLITE" ]; then
 					ON DELETE CASCADE
 			);
 			CREATE TABLE IF NOT EXISTS flagged_messages (
+				entry_id INTEGER PRIMARY KEY,
 				msg_type TEXT NOT NULL,
 				msgid BIGINT NOT NULL,
 				submsg_index BIGINT,

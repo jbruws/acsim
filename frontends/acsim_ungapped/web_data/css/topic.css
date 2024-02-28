@@ -31,16 +31,6 @@ div#sidebar {
 
 div#head_message {
 	grid-area: hd;
-	background-color: var(--bg-msg);
-	width: 100%;
-	margin-right: auto;
-	padding: 1rem;
-}
-
-div#head_message > hr {
-	width: 60%;
-	margin-left: 0.5rem;
-	margin-bottom: 2rem;
 }
 
 /* SIDEBAR FORM */
@@ -52,50 +42,6 @@ div#sidebar > form {
 
 div#sidebar > form > textarea[name="message"] {
 	height: 10rem;
-}
-
-/* HEAD MESSAGE STRUCTURE */
-p.head_message_header {
-	text-align: left;
-	margin-top: 0;
-	padding: 1rem;
-}
-
-p.head_message_header > span {
-	float: right;
-	margin-right: 0;
-}
-
-p.head_message_contents, p.submessage_contents {
-	margin-bottom: 0;
-	margin-top: 0;
-}
-
-/* SUBMESSAGE STRUCTURE */
-div.submessage {
-	background-color: var(--bg-msg);
-	margin-right: auto;
-	margin-bottom: 5px;
-	width: 80%;
-	padding: 1rem;
-}
-
-div.submessage > hr {
-	margin-left:0;
-	width: 40%;
-	margin-top: 1rem;
-	margin-bottom: 1rem;
-}
-
-p.submessage_header {
-	text-align: left;
-	margin-bottom: 0.5rem;
-	margin-top: 0.5rem;
-}
-
-p.submessage_header > span {
-	float: right;
-	margin-right: 0;
 }
 
 /* MOBILE MODIFICATIONS */

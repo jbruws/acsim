@@ -80,38 +80,6 @@ div#website_data_block {
 	font-size: 1.5rem;
 }
 
-/* MESSAGE STRUCTURE */
-div.message {
-	background-color: var(--bg-msg);
-	margin-left: auto;
-	margin-right: auto;
-	margin-bottom: 1rem;
-	max-width: 90%;
-	padding: 1rem;
-}
-
-div.message > hr {
-	margin-left: 0;
-	width: 50%;
-}
-
-div.message:hover {
-	outline: 2px solid var(--text-color);
-}
-
-p.message_header {
-	margin-top: 0.5rem;
-}
-
-p.message_header > span {
-	float: right;
-	margin-right: 0;
-}
-
-div.message_contents {
-	padding: 1rem;
-}
-
 div#linkbar {
 	text-align: center;
 	margin-left: auto;

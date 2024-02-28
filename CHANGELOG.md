@@ -15,6 +15,9 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 ### Changed
 
 - Changed message header formatting to a more traditional style
+- CSS styles for message blocks are split into a separate file
+- Head message links no longer lead back to the board
+- Board message links now open a new tab when clicked
 - Submessage indices are now recorded in DB
 - Gaps between messages on boards are now larger
 - Removed the awful, redundant match exressions from `src/db_control.rs`
@@ -199,19 +202,18 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 
 ### Added
 
-    - Initial version
-    - Setup script (`setup.sh`) that creates database, tables and config
-    - Logging with `fern`
-    - Basic image upload functionality
-    - Message/submessage (reply) system
-    - HTML tag filtering
-    - Links to other board messages
-    - Hard and soft limit for number of messages (latter not implemented)
-    - Basic CSS specifically for mobile devices
-    - Bindings to IPv4 and IPv6 addresses
+- Initial version
+- Setup script (`setup.sh`) that creates database, tables and config
+- Logging with `fern`
+- Basic image upload functionality
+- Message/submessage (reply) system
+- HTML tag filtering
+- Links to other board messages
+- Hard and soft limit for number of messages (latter not implemented)
+- Basic CSS specifically for mobile devices
+- Bindings to IPv4 and IPv6 addresses
 
 ### Changed
     
-    - Renamed project twice
-    - Split messages into several boards
-
+- Renamed project twice
+- Split messages into several boards

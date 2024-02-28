@@ -150,7 +150,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(
                 actix_session::SessionMiddleware::builder(
                     actix_session::storage::CookieSessionStore::default(),
-                    cookie_key.clone()
+                    cookie_key.clone(),
                 )
                 .cookie_name(String::from("acsim-admin-cookie"))
                 .session_lifecycle(actix_session::config::BrowserSession::default())

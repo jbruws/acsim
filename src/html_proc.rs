@@ -148,7 +148,7 @@ impl HtmlFormatter<'_> {
                         .handle
                         .render_template(
                             &self.get_file(template_path),
-                            &json!({ "img_link": image_web_path, "img_name": image[12..]}),
+                            &json!({ "img_link": image_web_path, "img_name": image[10..]}),
                         )
                         .unwrap(),
                 );
@@ -158,10 +158,7 @@ impl HtmlFormatter<'_> {
     }
 
     /// Fits form data into submessage HTML template. Accepts `SubmessageRow` structs.
-    pub async fn format_into_submessage(
-        &self,
-        db_row: SubmessageRow,
-    ) -> String {
+    pub async fn format_into_submessage(&self, db_row: SubmessageRow) -> String {
         let msg = self.create_formatting(&db_row.submsg).await;
 
         // processing images
@@ -395,6 +392,16 @@ impl HtmlFormatter<'_> {
     /// Loads the login page for admin dashboard
     pub async fn format_into_login(&self) -> String {
         self.get_file("web_data/login.html")
+    }
+
+    /// Formats the admin dashboard and relevant flagged messages
+    pub async fn format_into_dashboard(&self, flagged: String) -> String {
+        self.handle
+            .render_template(
+                &self.get_file("web_data/dashboard.html"),
+                &json!({"flagged_list": flagged}),
+            )
+            .unwrap()
     }
 
     /// Removes HTML tags from strings. Called when writing data to database

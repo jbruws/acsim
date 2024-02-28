@@ -30,6 +30,7 @@ pub struct SubmessageRow {
 /// Struct used to deserialize flagged messages and submessages
 #[derive(Debug, sqlx::FromRow)]
 pub struct FlaggedRow {
+    pub entry_id: i64,
     pub msg_type: String,
     pub msgid: i64,
     pub submsg_index: Option<i64>,
@@ -153,13 +154,13 @@ impl DatabaseWrapper {
     }
 
     pub async fn get_flagged_messages(&self) -> Result<Vec<MessageRow>, sqlx::Error> {
-        sqlx::query_as::<_, MessageRow>("SELECT * FROM messages WHERE msgid IN (SELECT msgid FROM flagged_messages WHERE msg_type='msg')")
+        sqlx::query_as::<_, MessageRow>("SELECT * FROM messages WHERE msgid IN (SELECT msgid FROM flagged_messages WHERE msg_type='msg') ORDER BY time DESC")
             .fetch_all(&self.db_pool)
             .await
     }
 
     pub async fn get_flagged_submessages(&self) -> Result<Vec<SubmessageRow>, sqlx::Error> {
-        sqlx::query_as::<_, SubmessageRow>("SELECT * FROM submessages WHERE parent_msg IN (SELECT msgid FROM flagged_messages WHERE msg_type='submsg') AND submsg_id IN (SELECT submsg_index FROM flagged_messages)")
+        sqlx::query_as::<_, SubmessageRow>("SELECT * FROM submessages WHERE parent_msg IN (SELECT msgid FROM flagged_messages WHERE msg_type='submsg') AND submsg_id IN (SELECT submsg_index FROM flagged_messages) ORDER BY time DESC")
             .fetch_all(&self.db_pool)
             .await
     }
