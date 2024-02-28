@@ -7,18 +7,20 @@ use sqlx::{any::AnyPoolOptions, AnyPool, Row};
 #[derive(Debug, sqlx::FromRow)]
 pub struct MessageRow {
     pub msgid: i64,
+    pub board: String,
     pub time: i64,
     pub author: String,
     pub msg: String,
     pub image: String,
     pub latest_submsg: i64,
-    pub board: String,
 }
 
 /// Struct used to deserialize submessages from DB rows
 #[derive(Debug, sqlx::FromRow)]
 pub struct SubmessageRow {
     pub parent_msg: i64,
+    pub submsg_id: i64,
+    pub board: String,
     pub time: i64,
     pub author: String,
     pub submsg: String,
@@ -33,7 +35,7 @@ pub struct FlaggedRow {
     pub submsg_index: Option<i64>,
 }
 
-/// Wrapper for PostgreSQL DB client
+/// Wrapper for the DB client
 pub struct DatabaseWrapper {
     db_pool: AnyPool,
 }
@@ -123,53 +125,43 @@ impl DatabaseWrapper {
     }
 
     pub async fn get_last_message(&self, board: &str) -> Result<MessageRow, sqlx::Error> {
-        match sqlx::query_as::<_, MessageRow>(
+        sqlx::query_as::<_, MessageRow>(
             "SELECT * FROM messages WHERE board=$1 ORDER BY latest_submsg DESC LIMIT 1",
         )
         .bind(board)
-        .fetch_optional(&self.db_pool)
+        .fetch_one(&self.db_pool)
         .await
-        {
-            Ok(val) => match val {
-                Some(r) => Ok(r),
-                None => Err(sqlx::Error::RowNotFound), //wha??
-            },
-            Err(e) => Err(e),
-        }
     }
 
     pub async fn get_last_submessage(
-        // duplicate code. bruh...
         &self,
         parent_msgid: &i64,
     ) -> Result<SubmessageRow, sqlx::Error> {
-        match sqlx::query_as::<_, SubmessageRow>(
+        sqlx::query_as::<_, SubmessageRow>(
             "SELECT * FROM submessages WHERE parent_msg=$1 ORDER BY time DESC LIMIT 1",
         )
         .bind(parent_msgid)
-        .fetch_optional(&self.db_pool)
+        .fetch_one(&self.db_pool)
         .await
-        {
-            Ok(val) => match val {
-                Some(r) => Ok(r),
-                None => Err(sqlx::Error::RowNotFound), //wha??
-            },
-            Err(e) => Err(e),
-        }
     }
 
     pub async fn get_single_message(&self, msgid: i64) -> Result<MessageRow, sqlx::Error> {
-        match sqlx::query_as::<_, MessageRow>("SELECT * FROM messages WHERE msgid=$1")
+        sqlx::query_as::<_, MessageRow>("SELECT * FROM messages WHERE msgid=$1")
             .bind(msgid)
-            .fetch_optional(&self.db_pool)
+            .fetch_one(&self.db_pool)
             .await
-        {
-            Ok(val) => match val {
-                Some(r) => Ok(r),
-                None => Err(sqlx::Error::RowNotFound), //wha??
-            },
-            Err(e) => Err(e),
-        }
+    }
+
+    pub async fn get_flagged_messages(&self) -> Result<Vec<MessageRow>, sqlx::Error> {
+        sqlx::query_as::<_, MessageRow>("SELECT * FROM messages WHERE msgid IN (SELECT msgid FROM flagged_messages WHERE msg_type='msg')")
+            .fetch_all(&self.db_pool)
+            .await
+    }
+
+    pub async fn get_flagged_submessages(&self) -> Result<Vec<SubmessageRow>, sqlx::Error> {
+        sqlx::query_as::<_, SubmessageRow>("SELECT * FROM submessages WHERE parent_msg IN (SELECT msgid FROM flagged_messages WHERE msg_type='submsg') AND submsg_id IN (SELECT submsg_index FROM flagged_messages)")
+            .fetch_all(&self.db_pool)
+            .await
     }
 
     pub async fn update_message_activity(&self, msgid: i64, since_epoch: i64) {
@@ -185,30 +177,32 @@ impl DatabaseWrapper {
 
     pub async fn insert_to_messages(
         &self,
+        board: &str,
         time: i64,
         author: &str,
         msg: &str,
         image: &str,
         latest_submsg: i64,
-        board: &str,
     ) {
         DatabaseWrapper::log_query_status(
-            sqlx::query("INSERT INTO messages(time, author, msg, image, latest_submsg, board) VALUES ($1, $2, $3, $4, $5, $6)")
-            .bind(time).bind(author.to_string()).bind(msg.to_string()).bind(image.to_string()).bind(latest_submsg).bind(board.to_string()).execute(&self.db_pool).await, "Inserting row into messages table"
+            sqlx::query("INSERT INTO messages(board, time, author, msg, image, latest_submsg) VALUES ($1, $2, $3, $4, $5, $6)")
+            .bind(board.to_string()).bind(time).bind(author.to_string()).bind(msg.to_string()).bind(image.to_string()).bind(latest_submsg).execute(&self.db_pool).await, "Inserting row into messages table"
         );
     }
 
     pub async fn insert_to_submessages(
         &self,
         parent_msg: i64,
+        submsg_id: i64,
+        board: &str,
         time: i64,
         author: &str,
         submsg: &str,
         image: &str,
     ) {
         DatabaseWrapper::log_query_status(
-            sqlx::query("INSERT INTO submessages(parent_msg, time, author, submsg, image) VALUES ($1, $2, $3, $4, $5)")
-            .bind(parent_msg).bind(time).bind(author.to_string()).bind(submsg.to_string()).bind(image.to_string()).execute(&self.db_pool).await, "Inserting row into submessages table"
+            sqlx::query("INSERT INTO submessages(parent_msg, submsg_id, board, time, author, submsg, image) VALUES ($1, $2, $3, $4, $5, $6, $7)")
+            .bind(parent_msg).bind(submsg_id).bind(board.to_string()).bind(time).bind(author.to_string()).bind(submsg.to_string()).bind(image.to_string()).execute(&self.db_pool).await, "Inserting row into submessages table"
         );
     }
 

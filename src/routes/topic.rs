@@ -37,7 +37,6 @@ pub async fn topic(
             .format_into_message(
                 html_proc::BoardMessageType::ParentMessage,
                 d,
-                &info.board,
                 &current_page.to_string(),
                 None,
             )
@@ -50,16 +49,11 @@ pub async fn topic(
         );
     }
     let mut inserted_submsg = String::from("");
-    let mut submessage_counter = 0;
     for row in client.get_submessages(message_num).await.unwrap() {
-        submessage_counter += 1;
         inserted_submsg.push_str(
             data.formatter
                 .format_into_submessage(
                     row,
-                    &info.board,
-                    &current_page.to_string(),
-                    submessage_counter,
                 )
                 .await
                 .as_str(),
@@ -122,9 +116,13 @@ pub async fn topic_process_form(
             }
         }
 
+        let submsg_count = client.count_submessages(message_num).await.unwrap();
+
         client
             .insert_to_submessages(
                 message_num,
+                submsg_count + 1,
+                &info.board,
                 since_epoch,
                 &filtered_author,
                 &filtered_msg,
@@ -132,9 +130,7 @@ pub async fn topic_process_form(
             )
             .await;
 
-        let submsg_count = client.count_submessages(message_num).await.unwrap();
-
-        if submsg_count <= data.config.bumplimit.into() && form.sage.is_none() {
+        if submsg_count < data.config.bumplimit.into() && form.sage.is_none() {
             client
                 .update_message_activity(since_epoch, message_num)
                 .await;

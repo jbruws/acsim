@@ -41,6 +41,12 @@ requests_limit: 60
 # Enables debug logs, for example database query logging. Can bloat log files very fast.
 log_debug_data: false
 
+# Displays log level at the start of each log line
+display_log_level: true
+
+# Password for admin dashboard. Keep that safe.
+admin_password: changethis
+
 # Name of the imageboard displayed to users
 site_name: ACSIM
 
@@ -65,15 +71,17 @@ if [ "$1" = "POSTGRES" ]; then
 	echo 'Creating table scheme'
 	echo 'CREATE TABLE IF NOT EXISTS messages (
 			msgid BIGSERIAL PRIMARY KEY,
+			board TEXT NOT NULL,
 			time BIGINT NOT NULL,
 			author TEXT NOT NULL,
 			msg TEXT NOT NULL,
 			image TEXT NOT NULL,
-			latest_submsg BIGINT NOT NULL,
-			board TEXT NOT NULL
+			latest_submsg BIGINT NOT NULL
 		);
 		CREATE TABLE IF NOT EXISTS submessages (
 			parent_msg BIGINT NOT NULL,
+			submsg_id BIGINT NOT NULL,
+			board TEXT NOT NULL,
 			time BIGINT NOT NULL,
 			author TEXT NOT NULL,
 			submsg TEXT NOT NULL,
@@ -87,7 +95,11 @@ if [ "$1" = "POSTGRES" ]; then
 			msg_type TEXT NOT NULL,
 			msgid BIGINT NOT NULL UNIQUE,
 			submsg_index BIGINT,
-			UNIQUE(msgid,submsg_index)
+			UNIQUE(msgid,submsg_index),
+			CONSTRAINT bind_msg
+				FOREIGN KEY(msgid)
+					REFERENCES messages(msgid)
+					ON DELETE CASCADE
 		);' | psql -U $2 -d acsim_db;
 	echo "Writing database URL to .env"
 	echo "DATABASE_URL=\"postgres://$2@localhost:5432/acsim_db\"" > .env
@@ -96,15 +108,17 @@ elif [ "$1" = "SQLITE" ]; then
 	echo "Creating table scheme" # same thing here
 	sqlite3 -line ./data/acsim.db 'CREATE TABLE IF NOT EXISTS messages (
 			msgid INTEGER PRIMARY KEY,
+			board TEXT NOT NULL,
 			time BIGINT NOT NULL,
 			author TEXT NOT NULL,
 			msg TEXT NOT NULL,
 			image TEXT NOT NULL,
-			latest_submsg BIGINT NOT NULL,
-			board TEXT NOT NULL
+			latest_submsg BIGINT NOT NULL
 		);
 		CREATE TABLE IF NOT EXISTS submessages (
 			parent_msg BIGINT NOT NULL,
+			submsg_id BIGINT NOT NULL,
+			board TEXT NOT NULL,
 			time BIGINT NOT NULL,
 			author TEXT NOT NULL,
 			submsg TEXT NOT NULL,
@@ -118,7 +132,11 @@ elif [ "$1" = "SQLITE" ]; then
 				msg_type TEXT NOT NULL,
 				msgid BIGINT NOT NULL,
 				submsg_index BIGINT,
-				UNIQUE(msgid,submsg_index)
+				UNIQUE(msgid,submsg_index),
+				CONSTRAINT bind_msg
+					FOREIGN KEY(msgid)
+						REFERENCES messages(msgid)
+						ON DELETE CASCADE
 			);'
 	echo "Writing database URL to .env"
 	echo 'DATABASE_URL="sqlite://data/acsim.db"' > .env

@@ -3,7 +3,12 @@
 use actix_web::{get, web, HttpResponse, Responder};
 
 use crate::routes::ApplicationState;
-use crate::routes::ErrorQuery;
+
+/// Type of error (used for error page formatting)
+#[derive(serde::Deserialize)]
+struct ErrorQuery {
+    error_code: Option<i64>,
+}
 
 /// Returns the error page with appropriate error displayed
 #[get("/error")]

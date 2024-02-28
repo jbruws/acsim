@@ -1,22 +1,19 @@
 //! Module containing functions responsible for actual
 //! handling of HTTP requests
 
-// std
-use std::fmt;
-use std::path::PathBuf;
-use std::sync::Arc;
-// actix and serde
-use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
-use serde::Deserialize;
-// misc
-use tokio::sync::Mutex;
-// crate
 use crate::db_control;
 use crate::html_proc;
 use crate::BoardConfig;
+use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
+use serde::Deserialize;
+use std::fmt;
+use std::path::PathBuf;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 pub mod board;
 pub mod catalog;
+pub mod dashboard;
 pub mod error;
 pub mod index;
 pub mod report;
@@ -44,19 +41,6 @@ pub struct PathInfo {
 pub struct QueryOptions {
     page: Option<i64>,
     search_string: Option<String>,
-}
-
-/// Options that specify report options
-#[derive(Deserialize)]
-pub struct ReportQueryOptions {
-    id: i64,
-    subid: Option<i64>,
-}
-
-/// Type of error (used for error page formatting)
-#[derive(Deserialize)]
-pub struct ErrorQuery {
-    error_code: Option<i64>,
 }
 
 impl fmt::Display for QueryOptions {

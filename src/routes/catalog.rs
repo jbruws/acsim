@@ -50,7 +50,6 @@ pub async fn board_catalog(
                 .format_into_message(
                     html_proc::BoardMessageType::CatalogMessage,
                     row,
-                    &info.board,
                     &current_page.to_string(),
                     None,
                 )

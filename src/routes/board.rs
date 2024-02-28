@@ -45,7 +45,6 @@ pub async fn board(
                 .format_into_message(
                     html_proc::BoardMessageType::Message,
                     row,
-                    &info.board,
                     &current_page.to_string(),
                     None,
                 )
@@ -112,12 +111,12 @@ pub async fn board_process_form(
 
         client
             .insert_to_messages(
+                &info.board,
                 since_epoch,
                 &filtered_author,
                 &filtered_msg,
                 &filepath_collection,
                 since_epoch,
-                &info.board,
             )
             .await;
 

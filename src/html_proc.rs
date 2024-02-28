@@ -131,7 +131,7 @@ impl HtmlFormatter<'_> {
                 let image_web_path: String = if message_type == &BoardMessageType::ParentMessage
                     || message_type == &BoardMessageType::Submessage
                 {
-                    // descend three dirs if message is in topic (/{board}/topic/*)
+                    // descend several dirs if message is in topic (/{board}/topic/{number})
                     format!("../../{}", &image[4..image.len()])
                 } else {
                     format!("../{}", &image[4..image.len()])
@@ -161,9 +161,6 @@ impl HtmlFormatter<'_> {
     pub async fn format_into_submessage(
         &self,
         db_row: SubmessageRow,
-        board: &str,
-        _page: &str,
-        msgid_override: i64,
     ) -> String {
         let msg = self.create_formatting(&db_row.submsg).await;
 
@@ -182,10 +179,10 @@ impl HtmlFormatter<'_> {
         self.handle
             .render_template(
                 &self.get_file("templates/message_blocks/submessage.html"),
-                &json!({"id": msgid_override,
+                &json!({"id": db_row.submsg_id,
                 "time": get_time(db_row.time),
                 "author": db_row.author,
-                "board": board,
+                "board": db_row.board,
                 "parent_id": db_row.parent_msg,
                 "msg": msg_contents}),
             )
@@ -197,7 +194,6 @@ impl HtmlFormatter<'_> {
         &self,
         message_type: BoardMessageType,
         db_row: MessageRow,
-        board: &str,
         page: &str,
         msgid_override: Option<i64>,
     ) -> String {
@@ -239,7 +235,7 @@ impl HtmlFormatter<'_> {
                 .handle
                 .render_template(
                     &self.get_file("templates/message_blocks/message.html"),
-                    &json!({"board": board,
+                    &json!({"board": db_row.board,
                 "id": id,
                 "time": time,
                 "page": page,
@@ -265,7 +261,7 @@ impl HtmlFormatter<'_> {
                     &self.get_file("templates/message_blocks/catalog_message.html"),
                     &json!({"id": id,
                 "time": time,
-                "board": board,
+                "board": db_row.board,
                 "page": page,
                 "msg": msg_contents}),
                 )
@@ -394,6 +390,11 @@ impl HtmlFormatter<'_> {
                 &json!({"backlink": backlink}),
             )
             .unwrap()
+    }
+
+    /// Loads the login page for admin dashboard
+    pub async fn format_into_login(&self) -> String {
+        self.get_file("web_data/login.html")
     }
 
     /// Removes HTML tags from strings. Called when writing data to database

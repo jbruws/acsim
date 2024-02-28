@@ -1,13 +1,14 @@
-//! Handlers for message reporting
-
-
-use actix_web::{get, web, HttpResponse, Responder};
-
-
+//! Handler for message reporting
 
 use crate::routes::ApplicationState;
+use actix_web::{get, web, HttpResponse, Responder};
 
-use crate::routes::ReportQueryOptions;
+/// Options that specify reported messages
+#[derive(serde::Deserialize)]
+struct ReportQueryOptions {
+    id: i64,
+    subid: Option<i64>,
+}
 
 /// Unified handler for reporting messages and submessages
 #[get("/report")]

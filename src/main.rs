@@ -27,6 +27,8 @@ pub struct BoardConfig {
     page_limit: u16,
     requests_limit: u16,
     log_debug_data: bool,
+    display_log_level: bool,
+    admin_password: String,
     site_name: String,
     site_frontend: String,
     boards: IndexMap<String, String>,
@@ -71,10 +73,15 @@ async fn main() -> std::io::Result<()> {
     .expect("Critical: can't parse data/config.yaml");
 
     // starting the logger
+    let display_option = raw_config.display_log_level;
     let logger = fern::Dispatch::new()
-        .format(|out, message, record| {
+        .format(move |out, message, record| {
             out.finish(format_args!(
-                "[{} ({})] {}",
+                "{}[{} ({})] {}",
+                match display_option {
+                    true => format!("[{}] ", record.level()),
+                    false => "".to_string(),
+                },
                 html_proc::get_time(html_proc::since_epoch()),
                 record.target(),
                 message,
@@ -107,7 +114,7 @@ async fn main() -> std::io::Result<()> {
         Err(_) => log::error!(".env file failed to load. What happened?"),
     };
 
-    let config = Arc::new(raw_config);
+    let config = Arc::new(raw_config.clone());
     let frontend_name: String = config.site_frontend.clone();
 
     // creating db connection through DatabaseWrapper
@@ -134,11 +141,24 @@ async fn main() -> std::io::Result<()> {
         .unwrap();
 
     // configuring and starting the server
+    let cookie_key = actix_web::cookie::Key::generate();
     let server = HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
             .wrap(middleware::NormalizePath::trim())
+            .wrap(
+                actix_session::SessionMiddleware::builder(
+                    actix_session::storage::CookieSessionStore::default(),
+                    cookie_key.clone()
+                )
+                .cookie_name(String::from("acsim-admin-cookie"))
+                .session_lifecycle(actix_session::config::BrowserSession::default())
+                .cookie_content_security(actix_session::config::CookieContentSecurity::Private)
+                .cookie_secure(false)
+                .cookie_http_only(true)
+                .build(),
+            )
             .wrap(actix_governor::Governor::new(&governor_conf))
             .app_data(application_data.clone())
             .app_data(web::PayloadConfig::new(1024 * 1024 * 100))
@@ -153,6 +173,8 @@ async fn main() -> std::io::Result<()> {
             .service(routes::index::root)
             .service(routes::error::error_page)
             .service(routes::report::report_msg)
+            .service(routes::dashboard::view_dashboard)
+            .service(routes::dashboard::login_page)
             .service(routes::board::board)
             .service(routes::board::board_process_form)
             .service(routes::topic::topic)

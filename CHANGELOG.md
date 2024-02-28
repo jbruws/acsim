@@ -4,6 +4,10 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 
 ## Unreleased
 
+### Added
+
+- Added a config option for displaying or hiding log level
+
 ### Fixed
 
 - Fixed catalog page not displaying properly
@@ -11,7 +15,9 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 ### Changed
 
 - Changed message header formatting to a more traditional style
+- Submessage indices are now recorded in DB
 - Gaps between messages on boards are now larger
+- Removed the awful, redundant match exressions from `src/db_control.rs`
 
 ## v0.11.0 - 31.01.2024
 
