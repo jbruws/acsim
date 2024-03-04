@@ -120,7 +120,7 @@ impl DatabaseWrapper {
         substring: &str,
     ) -> Result<Vec<MessageRow>, sqlx::Error> {
         sqlx::query_as::<_, MessageRow>(
-                "SELECT * FROM (SELECT * FROM messages WHERE board=$1 ORDER BY latest_submsg DESC OFFSET $3 LIMIT $4) AS limited WHERE limited.msg LIKE '%' || $2 || '%'")
+                "SELECT * FROM (SELECT * FROM messages WHERE board=$1 ORDER BY latest_submsg DESC LIMIT $4 OFFSET $3) AS limited WHERE limited.msg LIKE '%' || $2 || '%'")
                 .bind(board.to_string()).bind(substring.to_string()).bind(page).bind(limit)
             .fetch_all(&self.db_pool).await
     }
@@ -153,6 +153,20 @@ impl DatabaseWrapper {
             .await
     }
 
+    pub async fn get_single_submessage(
+        &self,
+        parent_id: i64,
+        submsgid: i64,
+    ) -> Result<SubmessageRow, sqlx::Error> {
+        sqlx::query_as::<_, SubmessageRow>(
+            "SELECT * FROM submessages WHERE parent_msg=$1 AND submsg_id=$2",
+        )
+        .bind(parent_id)
+        .bind(submsgid)
+        .fetch_one(&self.db_pool)
+        .await
+    }
+
     pub async fn get_flagged_messages(&self) -> Result<Vec<MessageRow>, sqlx::Error> {
         sqlx::query_as::<_, MessageRow>("SELECT * FROM messages WHERE msgid IN (SELECT msgid FROM flagged_messages WHERE msg_type='msg') ORDER BY time DESC")
             .fetch_all(&self.db_pool)
@@ -173,6 +187,27 @@ impl DatabaseWrapper {
                 .execute(&self.db_pool)
                 .await,
             "Updating message activity timer",
+        );
+    }
+
+    pub async fn delete_msg(&self, msgid: i64) {
+        DatabaseWrapper::log_query_status(
+            sqlx::query("DELETE FROM messages WHERE msgid=$1")
+                .bind(msgid)
+                .execute(&self.db_pool)
+                .await,
+            "Deleting message",
+        );
+    }
+
+    pub async fn delete_submsg(&self, msgid: i64, submsgid: i64) {
+        DatabaseWrapper::log_query_status(
+            sqlx::query("DELETE FROM submessages WHERE parent_msg=$1 AND submsg_id=$2")
+                .bind(msgid)
+                .bind(submsgid)
+                .execute(&self.db_pool)
+                .await,
+            "Deleting submessage",
         );
     }
 

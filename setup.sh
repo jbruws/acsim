@@ -10,6 +10,10 @@ if [ ! -d ./data/user_images ]; then
 	mkdir ./data/user_images
 fi
 
+echo -n "Enter the password that will be used for admin dashboard: "
+read pass
+passhashed=$(echo -n $pass | sha256sum | head -c 64)
+
 if [ ! -f "./data/config.yaml" ]; then
 	echo 'Creating default config file for server'
 	echo "
@@ -44,8 +48,8 @@ log_debug_data: false
 # Displays log level at the start of each log line
 display_log_level: true
 
-# Password for admin dashboard. Keep that safe.
-admin_password: changethis
+# Password for admin dashboard, stored as a SHA-256 hash
+admin_password: $passhashed
 
 # Name of the imageboard displayed to users
 site_name: ACSIM

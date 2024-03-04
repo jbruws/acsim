@@ -174,6 +174,7 @@ async fn main() -> std::io::Result<()> {
             .service(routes::error::error_page)
             .service(routes::report::report_msg)
             .service(routes::dashboard::view_dashboard)
+            .service(routes::dashboard::delete_msg)
             .service(routes::dashboard::login_page)
             .service(routes::board::board)
             .service(routes::board::board_process_form)

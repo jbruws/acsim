@@ -7,10 +7,12 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 ### Added
 
 - Added a config option for displaying or hiding log level
+- Added an admin dashboard with message deletion capabilities
 
 ### Fixed
 
 - Fixed catalog page not displaying properly
+- Fixed broken message search due to incorrect query
 
 ### Changed
 
