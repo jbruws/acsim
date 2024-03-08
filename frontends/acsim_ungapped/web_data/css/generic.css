@@ -122,7 +122,8 @@ form#message_form {
 	gap: 0.5rem;
 }
 
-textarea {
+textarea,
+input#passphrase {
 	resize: none;
 	background-color: var(--textbox-color);
 	border: 2px solid var(--text-color);

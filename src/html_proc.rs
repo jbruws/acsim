@@ -267,6 +267,21 @@ impl HtmlFormatter<'_> {
         }
     }
 
+    /// Formats board data into dashboard block
+    pub async fn format_into_board_data(&self, data: Vec<(String, i64, i64, i64, i64)>) -> String {
+        let mut res = String::new(); 
+        for i in data {
+            res.push_str("<tr>");
+            res.push_str(format!("<td><a href=\"/{}\">/{}/</a></td>\n<td>{}</td>\n<td>{}</td>\n<td>{}</td>\n<td>{}</td>\n", i.0, i.0, i.1, i.2, i.3, i.4).as_str());
+            res.push_str("</tr>");
+            res.push('\n');
+        }
+        self.handle
+            .render_template(
+                &self.get_file("templates/message_blocks/dashboard_data.html"),
+                &json!({"board_data": res})).unwrap()
+    }
+
     /// Formats data into `board.html` (board pages)
     pub async fn format_into_board(
         &self,

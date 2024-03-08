@@ -72,6 +72,14 @@ impl DatabaseWrapper {
         Ok(count_struct.unwrap().try_get(0).unwrap())
     }
 
+    pub async fn count_board_submessages(&self, board: &str) -> Result<i64, sqlx::Error> {
+        let count_struct = sqlx::query("SELECT COUNT(submsg_id) FROM submessages WHERE board=$1")
+            .bind(String::from(board))
+            .fetch_one(&self.db_pool)
+            .await;
+        Ok(count_struct.unwrap().try_get(0).unwrap())
+    }
+
     pub async fn count_submessages(&self, msgid: i64) -> Result<i64, sqlx::Error> {
         let count_struct = sqlx::query("SELECT COUNT(*) FROM submessages WHERE parent_msg=$1")
             .bind(msgid)
@@ -94,6 +102,16 @@ impl DatabaseWrapper {
             .bind(msgid)
             .fetch_all(&self.db_pool)
             .await
+    }
+
+    pub async fn get_posting_rate(&self, board: &str, time_period: i64) -> Result<i64, sqlx::Error> {
+        let count_struct = sqlx::query("SELECT COUNT(*) FROM messages WHERE board=$1 AND time > $2")
+            .bind(board)
+            // now we select all messages sent later than "current time" - `time_period` seconds ago
+            .bind(crate::html_proc::since_epoch() - time_period)
+            .fetch_one(&self.db_pool)
+            .await;
+        Ok(count_struct.unwrap().try_get(0).unwrap())
     }
 
     pub async fn get_messages(

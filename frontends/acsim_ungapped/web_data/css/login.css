@@ -7,8 +7,9 @@ form#login_form {
 	width: 75%;
 }
 
-form#login_form > textarea {
+form#login_form > input#passphrase {
 	display: block;
+	padding: 1rem;
 	margin-left: auto;
 	margin-right: auto;
 	margin-bottom: 2rem;
@@ -17,7 +18,7 @@ form#login_form > textarea {
 	font-size: 200%;
 }
 
-form#login_form > input {
+form#login_form > input#submit {
 	display: block;
 	font-size: 200%;
 	width: 60%;

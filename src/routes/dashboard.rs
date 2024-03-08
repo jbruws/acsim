@@ -88,7 +88,17 @@ pub async fn view_dashboard(
                 result
             }
         },
-        None => "".to_string(),
+        None => {
+            let mut board_raw: Vec<(String, i64, i64, i64, i64)> = Vec::new();   
+            for i in data.config.boards.keys() {
+                let count_msg = client.count_messages(i).await.unwrap_or(0);
+                let count_submsg = client.count_board_submessages(i).await.unwrap_or(0);
+                let rate = client.get_posting_rate(i, 3600).await.unwrap_or(0);
+                board_raw.push((String::from(i), count_msg, count_submsg, count_msg + count_submsg, rate));
+            }
+            let result = data.formatter.format_into_board_data(board_raw).await;
+            result
+        },
     };
 
     HttpResponse::Ok().body(
