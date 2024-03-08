@@ -105,7 +105,7 @@ impl DatabaseWrapper {
     }
 
     pub async fn get_posting_rate(&self, board: &str, time_period: i64) -> Result<i64, sqlx::Error> {
-        let count_struct = sqlx::query("SELECT COUNT(*) FROM messages WHERE board=$1 AND time > $2")
+        let count_struct = sqlx::query("SELECT COUNT(*) FROM (SELECT board, time FROM messages UNION SELECT board, time FROM submessages) WHERE board=$1 AND time > $2")
             .bind(board)
             // now we select all messages sent later than "current time" - `time_period` seconds ago
             .bind(crate::html_proc::since_epoch() - time_period)

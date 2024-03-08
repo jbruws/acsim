@@ -23,6 +23,7 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 - Submessage indices are now recorded in DB
 - Gaps between messages on boards are now larger
 - Removed the awful, redundant match exressions from `src/db_control.rs`
+- Added more etymological clarity
 
 ## v0.11.0 - 31.01.2024
 

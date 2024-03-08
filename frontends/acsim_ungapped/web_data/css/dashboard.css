@@ -58,7 +58,7 @@ div.message {
 /* Actual dashboard ('main' page) */
 div#dashboard_segment {
 	display: block;
-	width: 80%;
+	width: 60%;
 	margin-left: auto;
 	margin-right: auto;
 	text-align: center;
@@ -76,4 +76,17 @@ table {
 tr, td, th {
 	padding: 0.5rem;
 	border: 2px solid var(--text-color);
+}
+
+/* MOBILE MODIFICATIONS */
+@media only screen and (max-device-width: 761px) {
+	div#dashboard_segment {
+		width: 90%;
+	}
+
+	header {
+		font-size: 75%;
+		padding: 1rem;
+		width: 100%;
+	}
 }

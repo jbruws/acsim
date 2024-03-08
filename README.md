@@ -5,10 +5,8 @@ Basic imageboard engine written in `rust` and `actix-web`.
 Features:
 
 - Written in Rust (blazingly fast btw) and completely JS-free by default
-- Website frontend is completely data-driven; you can change it in any way (as long as you keep handlebars templates)
+- Website frontend is completely data-driven; you can change it in any way (as long as you keep the handlebars templates and general file structure)
 - Supports both SQLite and Postgres databases  
-
-The engine is still in active development. Expect some bugs, missing features and drastic changes in design.
 
 # Installation
 
@@ -18,13 +16,15 @@ A Docker image is available for ACSIM. You can use it to test the engine or quic
 
 `# docker run --net=host jbruws/acsim:latest`
 
+***WARNING! If you use this method, the admin password will be left as default. Consider using the method described below.***
+
 ### Data persistency
 
 You can make message data persist between container restarts by creating a Docker volume (through `# docker volume create your_volume_name`) and running:
 
 `# docker run --net=host --mount source=your_volume_name,target=/acsim/data jbruws/acsim:latest`
 
-Server data will be stored in `/var/lib/docker/volumes/your_volume_name/_data`. To change said data, edit the relevant files then restart the container.
+Server data will be stored in `/var/lib/docker/volumes/your_volume_name/_data`. To change said data, edit the relevant files then restart the container. **If you left the admin password as default, don't forget to change it by generating a sha256 hash from your new password and pasting it into `config.yaml`!**
 
 ## Manual installation
 
@@ -49,13 +49,15 @@ Server data will be stored in `/var/lib/docker/volumes/your_volume_name/_data`. 
     
     - `./setup.sh SQLITE`
 
-    View `.env` and `config.yaml` files and check them for any errors.
+    You'll be prompted for a admin password. It's stored as a hash, so don't forget it! 
+
+    View `.env` and `data/config.yaml` files and check them for any errors.
     
 4. Finally, run the program:
     
     `cargo run`
     
-Once the compilation finishes, application logs will start appearing in the console and in `acsim.log` file. Navigate to `127.0.0.1:8080` in your browser, and you should be greeted with ACSIM's home page. By default, the server will be accessible with any IP (`0.0.0.0`), **as long as the port 8080 is open.**
+Once the compilation finishes, application logs will start appearing in the console and in `data/acsim.log` file. Navigate to `127.0.0.1:8080` in your browser, and you should be greeted with ACSIM's home page. By default, the server will be accessible with any IP (`0.0.0.0`), **as long as the port 8080 is open.**
 
 # Special Thanks
 

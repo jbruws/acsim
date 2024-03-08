@@ -16,6 +16,6 @@ COPY --from=builder /usr/src/acsim/frontends /acsim/frontends
 COPY --from=builder /usr/src/acsim/README.md /acsim/README.md
 COPY --from=builder /usr/src/acsim/LICENSE /acsim/LICENSE
 WORKDIR "/acsim"
-RUN ./setup.sh SQLITE
+RUN acsim_pass=CHANGE_THIS ./setup.sh SQLITE
 
 CMD ["/acsim/acsim"]

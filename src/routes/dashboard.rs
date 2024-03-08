@@ -115,7 +115,7 @@ pub async fn login_page(
     session: actix_session::Session,
     form: web::Form<LoginForm>,
 ) -> impl Responder {
-    // the password is stored as a hash
+    // the password is stored as a hash. no im not hashing it client-side.
     let hashed = sha256::digest(&form.password);
     if hashed == data.config.admin_password {
         let session_insert_result = session.insert("logged_in", true);
@@ -165,6 +165,7 @@ pub async fn delete_msg(
     return web::Redirect::to("/dashboard").see_other();
 }
 
+/// Removes all specified file paths
 fn purge_images(paths: Vec<&str>) {
     for i in paths {
         match std::fs::remove_file(std::path::Path::new(&format!("{}/{}", env!("CARGO_MANIFEST_DIR"), i))) {
