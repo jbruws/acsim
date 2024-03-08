@@ -14,7 +14,7 @@ if [[ -z "${acsim_pass}" ]]; then
 	echo -n "Enter the password that will be used for admin dashboard: "
 	read acsim_pass
 fi
-echo $acsim_pass
+
 passhashed=$(echo -n $acsim_pass | sha256sum | head -c 64)
 
 if [ ! -f "./data/config.yaml" ]; then
