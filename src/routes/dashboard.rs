@@ -47,7 +47,7 @@ pub async fn view_dashboard(
                 let mut result = "".to_string();
                 if let Ok(v) = msg_vec {
                     for i in v {
-                        let msgid = i.msgid.clone();
+                        let msgid = i.msgid;
                         result.push_str(
                             &data
                                 .formatter
@@ -72,13 +72,13 @@ pub async fn view_dashboard(
                 let mut result = "".to_string();
                 if let Ok(v) = msg_vec {
                     for i in v {
-                        let parentid = i.parent_msg.clone();
-                        let submsgid = i.submsg_id.clone();
+                        let parent_msg = i.parent_msg;
+                        let submsg_id = i.submsg_id;
                         result.push_str(&data.formatter.format_into_submessage(i).await);
                         result.push_str(
                             format!(
                                 "<a href=\"/delete?msgid={}&submsgid={}\">Delete</a>\n",
-                                parentid, submsgid
+                                parent_msg, submsg_id
                             )
                             .as_str(),
                         );
@@ -96,8 +96,7 @@ pub async fn view_dashboard(
                 let rate = client.get_posting_rate(i, 3600).await.unwrap_or(0);
                 board_raw.push((String::from(i), count_msg, count_submsg, count_msg + count_submsg, rate));
             }
-            let result = data.formatter.format_into_board_data(board_raw).await;
-            result
+            data.formatter.format_into_board_data(board_raw).await
         },
     };
 
@@ -162,7 +161,7 @@ pub async fn delete_msg(
         purge_images(image_paths);
         client.delete_msg(query.msgid).await;
     }
-    return web::Redirect::to("/dashboard").see_other();
+    web::Redirect::to("/dashboard").see_other()
 }
 
 /// Removes all specified file paths
