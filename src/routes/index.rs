@@ -4,7 +4,7 @@ use actix_web::{get, web, HttpResponse, Responder};
 
 use crate::routes::ApplicationState;
 
-/// Responder for site root (redirects to /b/ by default)
+/// Responder for site root
 #[get("/")]
 pub async fn root(data: web::Data<ApplicationState<'_>>) -> impl Responder {
     let mut board_links = Vec::new();

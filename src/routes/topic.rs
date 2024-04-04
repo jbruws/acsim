@@ -1,14 +1,10 @@
-//! Handlers for pages for individual posts
+//! Handlers for individual threads' pages
 
 use actix_multipart::form::MultipartForm;
 use actix_web::{get, http::StatusCode, post, web, HttpResponse, Responder};
 
 use crate::html_proc;
-use crate::routes::process_files;
-use crate::routes::ApplicationState;
-use crate::routes::MsgForm;
-use crate::routes::PathInfo;
-use crate::routes::QueryOptions;
+use crate::routes::*;
 
 /// Responder for individual topics/threads
 #[get("{board}/topic/{message_num}")]
@@ -101,6 +97,13 @@ pub async fn topic_process_form(
             _ => data.formatter.filter_tags(trimmed_author).await,
         };
         let filtered_msg = data.formatter.filter_tags(trimmed_message).await;
+
+        // checking for banned words
+        if contains_banned_words(&filtered_author).await
+            || contains_banned_words(&filtered_msg).await
+        {
+            return web::Redirect::to("/error?error_code=403").see_other();
+        }
 
         // Checking against the last message (to prevent spam)
         if let Ok(last_msg) = client.get_last_submessage(&message_num).await {

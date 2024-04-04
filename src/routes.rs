@@ -1,5 +1,5 @@
-//! Module containing functions responsible for actual
-//! handling of HTTP requests
+//! Module containing common functions and structs
+//! used in handling user requests
 
 use crate::db_control;
 use crate::html_proc;
@@ -7,6 +7,8 @@ use crate::BoardConfig;
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use serde::Deserialize;
 use std::fmt;
+use std::path::Path;
+use std::ops::Not;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -19,7 +21,7 @@ pub mod index;
 pub mod report;
 pub mod topic;
 
-/// Form used to send messages and images
+/// Multipart form template for sending messages with file attachments
 #[derive(MultipartForm)]
 pub struct MsgForm {
     message: Text<String>,
@@ -29,14 +31,14 @@ pub struct MsgForm {
     files: Vec<TempFile>,
 }
 
-/// Information about URL path
+/// Information about board URL
 #[derive(Deserialize)]
 pub struct PathInfo {
     board: String,
     message_num: Option<i64>,
 }
 
-/// Options that can be specified in query strings in URL
+/// Options for query parameters in board URLs
 #[derive(Deserialize)]
 pub struct QueryOptions {
     page: Option<i64>,
@@ -76,14 +78,75 @@ impl QueryOptions {
     }
 }
 
-/// Struct containing various components of the application
+/// File categories that can be sent by users
+#[derive(PartialEq)]
+pub enum FileType {
+    Image,
+    Video,
+    Invalid,
+}
+
+impl Not for FileType {
+    type Output = bool;
+
+    fn not(self) -> Self::Output {
+        matches!(self, FileType::Invalid)
+    }
+}
+
+/// Container for essential parts of the web app, such as a database client and config file
 pub struct ApplicationState<'a> {
     pub db_client: Arc<Mutex<db_control::DatabaseWrapper>>,
     pub formatter: Arc<html_proc::HtmlFormatter<'a>>,
     pub config: Arc<BoardConfig>,
 }
 
-/// Function for handling files in multipart forms
+/// Function for checking a string for banned words
+pub async fn contains_banned_words(checked: &str) -> bool {
+    // maybe i ought to replace some of those with include_str! TODO
+    // you know, to avoid opening and reading the file each time a message is sent
+    let check_lower = checked.to_lowercase();
+    let raw_banlist = std::fs::read_to_string("./data/banlist.yaml")
+        .unwrap_or_else(|_| panic!("Can't read ./data/banlist.yaml. Is it there?"));
+    let banlist: Vec<String> = serde_yaml::from_str(&raw_banlist).unwrap();
+    for word in banlist {
+        if check_lower.contains(&word) {
+            return true;
+        }
+    }
+    false
+}
+
+/// Validates images sent by users using libmagic
+pub fn valid_file(image: &str) -> FileType {
+    if image.is_empty() {
+        return FileType::Invalid;
+    }
+
+    let mut image_fs_path = image.to_string();
+    image_fs_path = image_fs_path[..image_fs_path.len()].to_string(); // path ends with "\" for some reason
+
+    // libmagic image validation
+    let cookie = magic::Cookie::open(magic::cookie::Flags::ERROR).unwrap();
+    let database = Default::default();
+    let cookie = cookie.load(&database).unwrap();
+    let file_type = cookie.file(&image_fs_path);
+
+    if let Ok(raw_type) = file_type {
+        if Path::new(&image_fs_path).exists() {
+            if raw_type.contains("image data") {
+                return FileType::Image;
+            } else if raw_type.contains("MP4 Base Media") || raw_type.contains("WebM") {
+                return FileType::Video;
+            }
+        }
+    }
+
+    FileType::Invalid
+}
+
+
+/// Handler for files in multipart forms
 pub async fn process_files(files: &Vec<TempFile>) -> String {
     let mut filepath_collection = String::from("");
     for (i, item) in files.iter().enumerate() {
@@ -101,7 +164,7 @@ pub async fn process_files(files: &Vec<TempFile>) -> String {
             continue;
         }
         // test to see if it is an actual image/video
-        if !html_proc::valid_file(temp_file_path.to_str().unwrap()) {
+        if !valid_file(temp_file_path.to_str().unwrap()) {
             continue;
         }
         let orig_name = f

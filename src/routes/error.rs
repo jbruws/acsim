@@ -4,7 +4,7 @@ use actix_web::{get, web, HttpResponse, Responder};
 
 use crate::routes::ApplicationState;
 
-/// Type of error (used for error page formatting)
+/// Query params containing required error code
 #[derive(serde::Deserialize)]
 struct ErrorQuery {
     error_code: Option<i64>,

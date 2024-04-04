@@ -4,11 +4,7 @@ use actix_multipart::form::MultipartForm;
 use actix_web::{get, http::StatusCode, post, web, HttpResponse, Responder};
 
 use crate::html_proc;
-use crate::routes::process_files;
-use crate::routes::ApplicationState;
-use crate::routes::MsgForm;
-use crate::routes::PathInfo;
-use crate::routes::QueryOptions;
+use crate::routes::*;
 
 /// Responder for boards
 #[get("/{board}")]
@@ -91,7 +87,7 @@ pub async fn board_process_form(
     let trimmed_author = form.author.trim();
     let trimmed_message = form.message.trim();
 
-    // if fits, push new message into DB and vector
+    // if fits, run some checks and push new message into DB and vector
     if trimmed_author.len() < MAX_AUTHOR_LENGTH
         && !trimmed_message.is_empty()
         && trimmed_message.len() < MAX_MESSAGE_LENGTH
@@ -101,6 +97,13 @@ pub async fn board_process_form(
             _ => data.formatter.filter_tags(trimmed_author).await,
         };
         let filtered_msg = data.formatter.filter_tags(trimmed_message).await;
+
+        // checking for banned words
+        if contains_banned_words(&filtered_author).await
+            || contains_banned_words(&filtered_msg).await
+        {
+            return web::Redirect::to("/error?error_code=403").see_other();
+        }
 
         // Checking against the last message (to prevent spam)
         if let Ok(last_msg) = client.get_last_message(&info.board).await {

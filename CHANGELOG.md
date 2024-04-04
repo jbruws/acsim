@@ -2,6 +2,16 @@
 
 Changelog may get imprecise in earlier versions, since I started writing it at version 0.10; apologies in advance for any inaccuracies (although it hardly matters for early versions).
 
+## Unreleased
+
+### Added
+
+- Added a function that blocks messages if it detects a banned word
+
+### Changed
+
+- Improved documentation comments in code (somewhat)
+
 ## v1.0.0 - 08.03.2024
 
 ### Added

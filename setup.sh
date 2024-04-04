@@ -10,6 +10,11 @@ if [ ! -d ./data/user_images ]; then
 	mkdir ./data/user_images
 fi
 
+if [ ! -f "./data/banlist.yaml" ]; then
+	echo 'Creating empty banword list'
+	echo '# This is a global list of banned words in YAML format. Expect regex support sometime in the future.\n' > ./data/banlist.yaml
+fi
+
 if [[ -z "${acsim_pass}" ]]; then
 	echo -n "Enter the password that will be used for admin dashboard: "
 	read acsim_pass

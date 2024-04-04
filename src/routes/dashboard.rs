@@ -3,13 +3,13 @@
 use crate::routes::ApplicationState;
 use actix_web::{get, post, web, HttpResponse, Responder};
 
-/// Struct containing query options for dashboard
+/// Query params for dashboard page switching
 #[derive(serde::Deserialize)]
 struct DashboardQueryOptions {
     flagged_type: Option<String>,
 }
 
-/// Form used to contain data for message deletion
+/// Container for query parameters regarding deleted messages
 #[derive(serde::Deserialize)]
 struct DeletionQueryOptions {
     msgid: i64,
@@ -89,15 +89,21 @@ pub async fn view_dashboard(
             }
         },
         None => {
-            let mut board_raw: Vec<(String, i64, i64, i64, i64)> = Vec::new();   
+            let mut board_raw: Vec<(String, i64, i64, i64, i64)> = Vec::new();
             for i in data.config.boards.keys() {
                 let count_msg = client.count_messages(i).await.unwrap_or(0);
                 let count_submsg = client.count_board_submessages(i).await.unwrap_or(0);
                 let rate = client.get_posting_rate(i, 3600).await.unwrap_or(0);
-                board_raw.push((String::from(i), count_msg, count_submsg, count_msg + count_submsg, rate));
+                board_raw.push((
+                    String::from(i),
+                    count_msg,
+                    count_submsg,
+                    count_msg + count_submsg,
+                    rate,
+                ));
             }
             data.formatter.format_into_board_data(board_raw).await
-        },
+        }
     };
 
     HttpResponse::Ok().body(
@@ -144,7 +150,10 @@ pub async fn delete_msg(
     }
     let client = data.db_client.lock().await;
     if let Some(submsgid) = query.submsgid {
-        let row = client.get_single_submessage(query.msgid, submsgid).await.unwrap();
+        let row = client
+            .get_single_submessage(query.msgid, submsgid)
+            .await
+            .unwrap();
         let image_paths = row.image.split(';').collect::<Vec<&str>>();
         purge_images(image_paths);
         client.delete_submsg(query.msgid, submsgid).await;
@@ -167,7 +176,11 @@ pub async fn delete_msg(
 /// Removes all specified file paths
 fn purge_images(paths: Vec<&str>) {
     for i in paths {
-        match std::fs::remove_file(std::path::Path::new(&format!("{}/{}", env!("CARGO_MANIFEST_DIR"), i))) {
+        match std::fs::remove_file(std::path::Path::new(&format!(
+            "{}/{}",
+            env!("CARGO_MANIFEST_DIR"),
+            i
+        ))) {
             Ok(_) => log::debug!("Deleted media file: {}", i),
             Err(_) => log::error!("Media file deletion failed: {}", i),
         };

@@ -3,7 +3,7 @@
 use crate::routes::ApplicationState;
 use actix_web::{get, web, HttpResponse, Responder};
 
-/// Options that specify reported messages
+/// Query params that specify reported messages
 #[derive(serde::Deserialize)]
 struct ReportQueryOptions {
     id: i64,

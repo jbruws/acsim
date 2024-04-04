@@ -1,5 +1,5 @@
-//! Functions for formatting database data into
-//! HTML, which is then taken by the server to display to users.
+//! Functions and structs for formatting database data into
+//! HTML served to end users
 
 use chrono::{offset::Local, DateTime, NaiveDateTime};
 use handlebars::Handlebars;
@@ -8,28 +8,10 @@ use rand::prelude::SliceRandom;
 use regex::Regex;
 use serde_json::json;
 use std::fs::read_to_string;
-use std::ops::Not;
-use std::path::Path;
 use std::str;
 
 use crate::db_control::{MessageRow, SubmessageRow};
 use crate::BoardConfig;
-
-/// File categories that can be sent by users
-#[derive(PartialEq)]
-pub enum FileType {
-    Image,
-    Video,
-    Invalid,
-}
-
-impl Not for FileType {
-    type Output = bool;
-
-    fn not(self) -> Self::Output {
-        matches!(self, FileType::Invalid)
-    }
-}
 
 /// Message types that can be formatted by `format_into_message`
 #[derive(PartialEq)]
@@ -48,34 +30,6 @@ pub fn get_time(since_epoch: i64) -> String {
     dt[..dt.len() - 7].to_string() // 7 was chosen experimentally
 }
 
-/// Validates images sent by users using libmagic
-pub fn valid_file(image: &str) -> FileType {
-    if image.is_empty() {
-        return FileType::Invalid;
-    }
-
-    let mut image_fs_path = image.to_string();
-    image_fs_path = image_fs_path[..image_fs_path.len()].to_string(); // path ends with "\" for some reason
-
-    // libmagic image validation
-    let cookie = magic::Cookie::open(magic::cookie::Flags::ERROR).unwrap();
-    let database = Default::default();
-    let cookie = cookie.load(&database).unwrap();
-    let file_type = cookie.file(&image_fs_path);
-
-    if let Ok(raw_type) = file_type {
-        if Path::new(&image_fs_path).exists() {
-            if raw_type.contains("image data") {
-                return FileType::Image;
-            } else if raw_type.contains("MP4 Base Media") || raw_type.contains("WebM") {
-                return FileType::Video;
-            }
-        }
-    }
-
-    FileType::Invalid
-}
-
 /// Gets seconds elapsed since Unix epoch.
 pub fn since_epoch() -> i64 {
     match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
@@ -84,8 +38,8 @@ pub fn since_epoch() -> i64 {
     }
 }
 
-/// Struct containing data necessary for data formatting, such as chosen frontend directory,
-/// templating engine and list of regular expressions
+/// Container for data necessary for formatting, such as chosen frontend directory,
+/// templating engine and a list of formatting regex
 pub struct HtmlFormatter<'a> {
     pub work_dir: String,
     handle: Handlebars<'a>,
@@ -102,7 +56,10 @@ impl HtmlFormatter<'_> {
 
         let rules = match obj.load_rules() {
             Ok(r) => r,
-            Err(_) => IndexMap::new(),
+            Err(_) => {
+                log::error!("Failed to load formatting rules, using an empty IndexMap instead");
+                IndexMap::new()
+            }
         };
 
         obj.formatting_rules = rules;
@@ -111,7 +68,6 @@ impl HtmlFormatter<'_> {
 
     /// Returns contents of specified file from `work_dir` or its subdirectories
     fn get_file(&self, rel_path: &str) -> String {
-        // TODO: rework this to include include_dir capabilities
         read_to_string(format!("{}/{}", &self.work_dir, rel_path))
             .unwrap_or_else(|_| panic!("Can't read {}/{}", &self.work_dir, rel_path))
     }
@@ -126,8 +82,8 @@ impl HtmlFormatter<'_> {
     pub fn process_image_data(&self, images: &str, message_type: &BoardMessageType) -> String {
         let mut image_container = String::new();
         for image in images.split(';') {
-            let file_type = valid_file(image);
-            if file_type != FileType::Invalid {
+            let file_type = crate::routes::valid_file(image);
+            if file_type != crate::routes::FileType::Invalid {
                 let image_web_path: String = if message_type == &BoardMessageType::ParentMessage
                     || message_type == &BoardMessageType::Submessage
                 {
@@ -138,8 +94,8 @@ impl HtmlFormatter<'_> {
                 };
 
                 let template_path = match file_type {
-                    FileType::Image => "templates/message_contents/image_block.html",
-                    FileType::Video => "templates/message_contents/video_block.html",
+                    crate::routes::FileType::Image => "templates/message_contents/image_block.html",
+                    crate::routes::FileType::Video => "templates/message_contents/video_block.html",
                     _ => "templates/message_contents/image_block.html",
                 };
 
@@ -157,7 +113,7 @@ impl HtmlFormatter<'_> {
         image_container
     }
 
-    /// Fits form data into submessage HTML template. Accepts `SubmessageRow` structs.
+    /// Fits form data into submessage HTML template. Only accepts `SubmessageRow` structs.
     pub async fn format_into_submessage(&self, db_row: SubmessageRow) -> String {
         let msg = self.create_formatting(&db_row.submsg).await;
 
@@ -269,7 +225,7 @@ impl HtmlFormatter<'_> {
 
     /// Formats board data into dashboard block
     pub async fn format_into_board_data(&self, data: Vec<(String, i64, i64, i64, i64)>) -> String {
-        let mut res = String::new(); 
+        let mut res = String::new();
         for i in data {
             res.push_str("<tr>");
             res.push_str(format!("<td><a href=\"/{}\">/{}/</a></td>\n<td>{}</td>\n<td>{}</td>\n<td>{}</td>\n<td>{}</td>\n", i.0, i.0, i.1, i.2, i.3, i.4).as_str());
@@ -279,7 +235,9 @@ impl HtmlFormatter<'_> {
         self.handle
             .render_template(
                 &self.get_file("templates/message_blocks/dashboard_data.html"),
-                &json!({"board_data": res})).unwrap()
+                &json!({"board_data": res}),
+            )
+            .unwrap()
     }
 
     /// Formats data into `board.html` (board pages)
@@ -419,14 +377,14 @@ impl HtmlFormatter<'_> {
             .unwrap()
     }
 
-    /// Removes HTML tags from strings. Called when writing data to database
+    /// Removes HTML tags from strings
     pub async fn filter_tags(&self, inp_string: &str) -> String {
         let filter = Regex::new(r##"<.*?>"##).unwrap();
         String::from(filter.replace_all(inp_string, ""))
     }
 
     /// Turns raw message text pulled from the database into workable HTML,
-    /// which is later piped into other functions. Called when loading data from database
+    /// which is later piped into other functions
     pub async fn create_formatting(&self, inp_string: &str) -> String {
         let mut result = String::from(inp_string);
 

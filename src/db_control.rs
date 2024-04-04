@@ -1,9 +1,9 @@
-//! Struct used for handling connection and queries
-//! to PostgreSQL database used by ACSIM.
+//! Contains struct used for handling connection and queries
+//! to PostgreSQL/SQLite database used by ACSIM
 
 use sqlx::{any::AnyPoolOptions, AnyPool, Row};
 
-/// Struct used to deserialize messages from DB rows
+/// Deserialized DB row containing a message (thread)
 #[derive(Debug, sqlx::FromRow)]
 pub struct MessageRow {
     pub msgid: i64,
@@ -15,7 +15,7 @@ pub struct MessageRow {
     pub latest_submsg: i64,
 }
 
-/// Struct used to deserialize submessages from DB rows
+/// Deserialized DB row containing a submessage (post)
 #[derive(Debug, sqlx::FromRow)]
 pub struct SubmessageRow {
     pub parent_msg: i64,
@@ -27,7 +27,7 @@ pub struct SubmessageRow {
     pub image: String,
 }
 
-/// Struct used to deserialize flagged messages and submessages
+/// Deserialized data about flagged messages/submessages
 #[derive(Debug, sqlx::FromRow)]
 pub struct FlaggedRow {
     pub entry_id: i64,
@@ -104,7 +104,11 @@ impl DatabaseWrapper {
             .await
     }
 
-    pub async fn get_posting_rate(&self, board: &str, time_period: i64) -> Result<i64, sqlx::Error> {
+    pub async fn get_posting_rate(
+        &self,
+        board: &str,
+        time_period: i64,
+    ) -> Result<i64, sqlx::Error> {
         let count_struct = sqlx::query("SELECT COUNT(*) FROM (SELECT board, time FROM messages UNION SELECT board, time FROM submessages) WHERE board=$1 AND time > $2")
             .bind(board)
             // now we select all messages sent later than "current time" - `time_period` seconds ago
