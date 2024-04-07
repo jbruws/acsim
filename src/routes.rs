@@ -20,6 +20,7 @@ pub mod error;
 pub mod index;
 pub mod report;
 pub mod topic;
+pub mod disambiguation;
 
 /// Multipart form template for sending messages with file attachments
 #[derive(MultipartForm)]

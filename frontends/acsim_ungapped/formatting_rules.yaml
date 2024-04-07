@@ -14,9 +14,9 @@
 # block quotes (greentext)
 '${nl}<span class="quote">${text}</span>${nl}': '(^|(?<nl>\n))(?<text>>[^\n]+)'
 
-# 2+ and single newlines. 2+ newlines are collapsed into two
-'<br><br>': '(\r(\s|\r)+)'
-'<br>': '(\r(\s|\r){2,})'
+# newlines
+'<br><br>': '(\n|\r){3,}'
+'<br>': '(\n|\r){2,}'
 
 # headings (<h3> to <h6> are compressed into <h3>)
 '${h_head}<h1>${head_text}</h1>': '(?<h_head>^|<br>)#\ (?<head_text>.+?)(?<h_trail><br>)'
@@ -27,7 +27,7 @@
 '<br><hr>': '(<br>)(?<hr_block>[\*|_|\-]{3})(<br>)'
 
 # links to other messages and external websites
-'<a target="_blank" rel="noopener noreferrer" class="msglink" href="/${board}/topic/${msg}#${submsg}">${board}>${msg}${dotted}</a>': '(?<board>\w{1,16})>(?<msg>\d+)(?<dotted>\.(?<submsg>\d+))?'
+'<a target="_blank" rel="noopener noreferrer" class="msglink" href="/to_msg?idpair=${msg}${dotted}">>>${msg}${dotted}</a>': '>>(?<msg>\d+)(?<dotted>\.(?<submsg>\d+))?'
 '<a target="_blank" rel="noopener noreferrer" href="${text}">${text}</a>': '(?<text>https?:\/\/[\w-]*?\.[a-z]{2,}(\/\S*)?)'
 
 # misc text formatting

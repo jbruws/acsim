@@ -172,6 +172,7 @@ async fn main() -> std::io::Result<()> {
             ))
             .service(routes::index::root)
             .service(routes::error::error_page)
+            .service(routes::disambiguation::to_msg)
             .service(routes::report::report_msg)
             .service(routes::dashboard::view_dashboard)
             .service(routes::dashboard::delete_msg)
