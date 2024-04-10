@@ -248,6 +248,7 @@ impl HtmlFormatter<'_> {
         inserted_msg: &String,
         query_prev: &String,
         query_next: &String,
+        captcha_hashed: Option<&String>,
     ) -> String {
         // getting data about visited board
         let empty = String::from("");
@@ -272,6 +273,7 @@ impl HtmlFormatter<'_> {
                 "random_tagline": random_tagline,
                 "board_links": board_links,
                 "messages": inserted_msg,
+                "captcha_hash": captcha_hashed.unwrap_or(&"".to_string()),
                 "query_prev": query_prev,
                 "query_next": query_next,
                     }),
@@ -319,6 +321,7 @@ impl HtmlFormatter<'_> {
         head_message: &String,
         submessages: &String,
         board_designation: &String,
+        captcha_hash: Option<&String>,
     ) -> String {
         self.handle
             .render_template(
@@ -327,7 +330,8 @@ impl HtmlFormatter<'_> {
             "board_designation": board_designation,
             "topic_number": topic_number,
             "head_message": head_message,
-            "submessages": submessages}),
+            "submessages": submessages,
+            "captcha_hash": captcha_hash.unwrap_or(&"".to_string())}),
             )
             .unwrap()
     }
@@ -352,14 +356,29 @@ impl HtmlFormatter<'_> {
             .unwrap()
     }
 
-    /// Formats data into simple 'report accepted' page
-    pub async fn format_into_report(&self, backlink: String) -> String {
+    /// Formats data into report confirmation page
+    pub async fn format_into_report_captcha(
+        &self,
+        backlink: String,
+        captcha_hash: String,
+        id: i64,
+        subid: Option<i64>,
+    ) -> String {
+        let subid_opt = match subid {
+            Some(v) => format!("<input type=\"hidden\" name=\"subid\" value=\"{}\"/>", v),
+            None => "".to_string(),
+        };
         self.handle
             .render_template(
                 &self.get_file("web_data/report.html"),
-                &json!({"backlink": backlink}),
+                &json!({"backlink": backlink, "captcha_hash": captcha_hash, "id": id, "subid_opt": subid_opt}),
             )
             .unwrap()
+    }
+
+    /// Gets the 'report accepted' page
+    pub async fn format_into_report_accepted(&self) -> String {
+        self.get_file("web_data/report_accepted.html")
     }
 
     /// Loads the login page for admin dashboard

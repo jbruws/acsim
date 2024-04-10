@@ -22,7 +22,10 @@
 			<form enctype="multipart/form-data" id="message_form" action="/{{board_designation}}" method="post" autocomplete="off">
 				<textarea placeholder="Author" type="text" name="author" maxlength="62"></textarea>
 				<textarea placeholder="Message" type="text" name="message" maxlength="4093" required></textarea>
-				<input type="file" accept="image/*, .mp4, .webm" multiple name="files[]">
+				<input type="file" accept="image/*, .mp4, .webm" multiple name="files[]"/>
+				<img src="/captcha/ACSIM_CAPTCHA_{{captcha_hash}}.png"/>
+				<input id="captcha_in" name="captcha_answer" placeholder="CAPTCHA answer" required>
+				<input type="hidden" value="{{captcha_hash}}" name="captcha_hash"/>
 				<p>
 					<input type="checkbox" name="sage"> Sage
 				</p>

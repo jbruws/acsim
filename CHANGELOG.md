@@ -7,6 +7,7 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 ### Added
 
 - Added a function that blocks messages if it detects a banned word
+- Added simple CAPTCHA for message sending and reporting
 
 ### Changed
 

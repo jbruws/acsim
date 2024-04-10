@@ -49,6 +49,8 @@ pub async fn topic(
         inserted_submsg.push_str(data.formatter.format_into_submessage(row).await.as_str());
     }
 
+    let captcha_value = sha256::digest(crate::routes::create_new_captcha().await);
+
     HttpResponse::Ok().body(
         data.formatter
             .format_into_topic(
@@ -57,6 +59,7 @@ pub async fn topic(
                 &head_msg,
                 &inserted_submsg,
                 &info.board.to_string(),
+                Some(&captcha_value),
             )
             .await,
     )
@@ -103,6 +106,25 @@ pub async fn topic_process_form(
             || contains_banned_words(&filtered_msg).await
         {
             return web::Redirect::to("/error?error_code=403").see_other();
+        }
+
+        // checking for correct captcha
+        let hash_true = form.captcha_hash.to_string();
+        let hash_sent = sha256::digest(form.captcha_answer.to_string());
+        if hash_true != hash_sent {
+            return web::Redirect::to("/error?error_code=403").see_other();
+        }
+
+        // delete captcha image after usage
+        // does not delete image if user got the captcha wrong... bug or feature? idk
+        if delete_captcha_image(form.captcha_answer.to_string())
+            .await
+            .is_err()
+        {
+            log::error!(
+                "Failed to delete used CAPTCHA: ./data/captcha/ACSIM_CAPTCHA_{}.png",
+                form.captcha_hash.to_string()
+            );
         }
 
         // Checking against the last message (to prevent spam)

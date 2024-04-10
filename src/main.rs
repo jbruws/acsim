@@ -170,10 +170,12 @@ async fn main() -> std::io::Result<()> {
                 "/user_images",
                 "./data/user_images",
             ))
+            .service(actix_files::Files::new("/captcha", "./data/captcha"))
             .service(routes::index::root)
             .service(routes::error::error_page)
             .service(routes::disambiguation::to_msg)
             .service(routes::report::report_msg)
+            .service(routes::report::report_process_captcha)
             .service(routes::dashboard::view_dashboard)
             .service(routes::dashboard::delete_msg)
             .service(routes::dashboard::login_page)

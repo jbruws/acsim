@@ -10,6 +10,11 @@ if [ ! -d ./data/user_images ]; then
 	mkdir ./data/user_images
 fi
 
+if [ ! -d ./data/captcha ]; then
+	echo 'Creating directory temporary captcha storage'
+	mkdir ./data/captcha
+fi
+
 if [ ! -f "./data/banlist.yaml" ]; then
 	echo 'Creating empty banword list'
 	echo '# This is a global list of banned words in YAML format. Expect regex support sometime in the future.\n' > ./data/banlist.yaml

@@ -1,0 +1,33 @@
+/* Header */
+
+h1 {
+	text-align: center;
+	font-size: 300%;
+}
+
+hr {
+	margin-top: 1rem;
+	margin-bottom: 2rem;
+	width: 80%;
+}
+
+/* Report form */
+
+form#report_form, form#report_form > * {
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+form#report_form {
+	width: 60%;
+}
+
+form#report_form > input {
+	margin-top: 1rem;
+	margin-bottom: 1rem;
+}
+
+form#report_form > img {
+	width: 50%;
+}

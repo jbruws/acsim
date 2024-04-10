@@ -7,8 +7,8 @@ use crate::BoardConfig;
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use serde::Deserialize;
 use std::fmt;
-use std::path::Path;
 use std::ops::Not;
+use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -16,11 +16,11 @@ use tokio::sync::Mutex;
 pub mod board;
 pub mod catalog;
 pub mod dashboard;
+pub mod disambiguation;
 pub mod error;
 pub mod index;
 pub mod report;
 pub mod topic;
-pub mod disambiguation;
 
 /// Multipart form template for sending messages with file attachments
 #[derive(MultipartForm)]
@@ -30,6 +30,8 @@ pub struct MsgForm {
     sage: Option<Text<String>>, // what has my life come to
     #[multipart(limit = "50 MiB", rename = "files[]")]
     files: Vec<TempFile>,
+    captcha_answer: Text<String>,
+    captcha_hash: Text<String>,
 }
 
 /// Information about board URL
@@ -146,6 +148,42 @@ pub fn valid_file(image: &str) -> FileType {
     FileType::Invalid
 }
 
+/// Creates a captcha image, saves it to /tmp and returns the characters it contains
+pub async fn create_new_captcha() -> String {
+    let mut captcha = captcha::Captcha::new();
+    captcha
+        .add_chars(6)
+        .apply_filter(captcha::filters::Noise::new(f32::max(
+            rand::random::<f32>() * 0.5,
+            0.3,
+        )))
+        .apply_filter(captcha::filters::Wave::new(
+            f64::max(rand::random::<f64>() * 4.0, 2.0),
+            f64::max(rand::random::<f64>() * 7.0, 4.0),
+        ))
+        .apply_filter(captcha::filters::Dots::new(15).min_radius(3).max_radius(10))
+        .view(300, 150);
+    let captcha_contents = captcha.chars_as_string();
+
+    let captcha_save_path = format!(
+        "./data/captcha/ACSIM_CAPTCHA_{}.png",
+        sha256::digest(&captcha_contents)
+    );
+    let save_result = captcha.save(std::path::Path::new(&captcha_save_path));
+    if save_result.is_err() {
+        log::error!("Failed to save captcha: {}", &captcha_save_path);
+    }
+    captcha_contents
+}
+
+/// Deletes a used captcha
+pub async fn delete_captcha_image(captcha_value: String) -> std::io::Result<()> {
+    let path = format!(
+        "./data/captcha/ACSIM_CAPTCHA_{}.png",
+        sha256::digest(captcha_value)
+    );
+    std::fs::remove_file(path)
+}
 
 /// Handler for files in multipart forms
 pub async fn process_files(files: &Vec<TempFile>) -> String {
