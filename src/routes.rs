@@ -7,7 +7,6 @@ use crate::BoardConfig;
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use serde::Deserialize;
 use std::fmt;
-use std::ops::Not;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -89,14 +88,6 @@ pub enum FileType {
     Invalid,
 }
 
-impl Not for FileType {
-    type Output = bool;
-
-    fn not(self) -> Self::Output {
-        matches!(self, FileType::Invalid)
-    }
-}
-
 /// Container for essential parts of the web app, such as a database client and config file
 pub struct ApplicationState<'a> {
     pub db_client: Arc<Mutex<db_control::DatabaseWrapper>>,
@@ -148,7 +139,7 @@ pub fn valid_file(image: &str) -> FileType {
     FileType::Invalid
 }
 
-/// Creates a captcha image, saves it to /tmp and returns the characters it contains
+/// Creates a captcha image, saves it to ./data/captcha and returns the characters it contains
 pub async fn create_new_captcha() -> String {
     let mut captcha = captcha::Captcha::new();
     captcha
@@ -203,7 +194,7 @@ pub async fn process_files(files: &Vec<TempFile>) -> String {
             continue;
         }
         // test to see if it is an actual image/video
-        if !valid_file(temp_file_path.to_str().unwrap()) {
+        if valid_file(temp_file_path.to_str().unwrap()) == FileType::Invalid {
             continue;
         }
         let orig_name = f

@@ -157,6 +157,7 @@ pub async fn delete_msg(
         let image_paths = row.image.split(';').collect::<Vec<&str>>();
         purge_images(image_paths);
         client.delete_submsg(query.msgid, submsgid).await;
+        web::Redirect::to("/dashboard?flagged_type=submsg").see_other()
     } else {
         let row = client.get_single_message(query.msgid).await.unwrap();
         let submsg_vec = client.get_submessages(query.msgid).await;
@@ -169,12 +170,15 @@ pub async fn delete_msg(
         let image_paths = row.image.split(';').collect::<Vec<&str>>();
         purge_images(image_paths);
         client.delete_msg(query.msgid).await;
+        web::Redirect::to("/dashboard?flagged_type=msg").see_other()
     }
-    web::Redirect::to("/dashboard").see_other()
 }
 
 /// Removes all specified file paths
 fn purge_images(paths: Vec<&str>) {
+    if paths == Vec::from([""]) {
+        return ();
+    }
     for i in paths {
         match std::fs::remove_file(std::path::Path::new(&format!(
             "{}/{}",
