@@ -58,6 +58,11 @@ requests_limit: 90
 # Enables debug logs, for example database query logging. Can bloat log files very fast.
 log_debug_data: false
 
+# Max number of captcha images in ./data/captcha
+# When it is reached, least used images will be deleted
+# 200 images is about ~7.5 megabytes
+captcha_num_limit: 200
+
 # Displays log level at the start of each log line
 display_log_level: true
 

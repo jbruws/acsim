@@ -9,15 +9,15 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 - Added a function that blocks messages if it detects a banned word
 - Added simple CAPTCHA for message sending and reporting
 
+### Fixed
+
+- `purge_images` no longer attempts to delete empty filepaths
+
 ### Changed
 
 - Improved documentation comments in code (somewhat)
 - Removed unneeded `Not` implementation on `FileType` enum
 - Admins are now redirected back to a relevant page when deleting messages
-
-### Fixed
-
-- `purge_images` no longer attempts to delete empty filepaths
 
 ## v1.0.0 - 08.03.2024
 

@@ -50,7 +50,7 @@ pub async fn board(
     }
 
     let link_queries = page_data.into_inner().get_neighbour_pages();
-    let captcha_value = sha256::digest(crate::routes::create_new_captcha().await);
+    let captcha_value = sha256::digest(crate::routes::create_new_captcha(data.config.captcha_num_limit).await);
 
     HttpResponse::Ok().body(
         data.formatter
@@ -115,16 +115,7 @@ pub async fn board_process_form(
         }
 
         // delete captcha image after usage
-        // does not delete image if user got the captcha wrong... bug or feature? idk
-        if delete_captcha_image(form.captcha_answer.to_string())
-            .await
-            .is_err()
-        {
-            log::error!(
-                "Failed to delete used CAPTCHA: ./data/captcha/ACSIM_CAPTCHA_{}.png",
-                form.captcha_hash.to_string()
-            );
-        }
+        delete_captcha_image(form.captcha_answer.to_string()).await;
 
         // Checking against the last message (to prevent spam)
         if let Ok(last_msg) = client.get_last_message(&info.board).await {

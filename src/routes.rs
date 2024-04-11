@@ -140,7 +140,7 @@ pub fn valid_file(image: &str) -> FileType {
 }
 
 /// Creates a captcha image, saves it to ./data/captcha and returns the characters it contains
-pub async fn create_new_captcha() -> String {
+pub async fn create_new_captcha(limit: u16) -> String {
     let mut captcha = captcha::Captcha::new();
     captcha
         .add_chars(6)
@@ -157,23 +157,52 @@ pub async fn create_new_captcha() -> String {
     let captcha_contents = captcha.chars_as_string();
 
     let captcha_save_path = format!(
-        "./data/captcha/ACSIM_CAPTCHA_{}.png",
+        "./data/captcha/{}.png",
         sha256::digest(&captcha_contents)
     );
     let save_result = captcha.save(std::path::Path::new(&captcha_save_path));
     if save_result.is_err() {
         log::error!("Failed to save captcha: {}", &captcha_save_path);
     }
+    
+    // Now, we delete the least-used captcha image if the directory is too bloated
+    let captcha_files: Vec<std::io::Result<std::fs::DirEntry>> = std::fs::read_dir("./data/captcha").unwrap().collect();
+    let captcha_count: i64 = captcha_files.len().try_into().unwrap();
+    if captcha_count > limit as i64 {
+        // we start with current time and find the oldest image
+        // god this is horrific
+        let mut least_accessed_time = std::time::SystemTime::now();
+        let mut least_accessed_filename = "default".to_string();
+
+        for i in captcha_files {
+            let metadata = i.as_ref().unwrap().metadata().unwrap();
+            let time_metadata = metadata.accessed().unwrap();
+            if time_metadata < least_accessed_time {
+                least_accessed_time = time_metadata;
+                least_accessed_filename = i.unwrap().file_name().into_string().unwrap();
+            }
+        }
+
+        if std::fs::remove_file(format!("./data/captcha/{}", least_accessed_filename)).is_err() {
+            log::error!("Failed to delete old CAPTCHA: ./data/captcha/{}", least_accessed_filename);
+        }
+    }
+
     captcha_contents
 }
 
 /// Deletes a used captcha
-pub async fn delete_captcha_image(captcha_value: String) -> std::io::Result<()> {
+pub async fn delete_captcha_image(captcha_hash: String) {
     let path = format!(
-        "./data/captcha/ACSIM_CAPTCHA_{}.png",
-        sha256::digest(captcha_value)
+        "./data/captcha/{}.png",
+        sha256::digest(captcha_hash.clone())
     );
-    std::fs::remove_file(path)
+    if std::fs::remove_file(path).is_err() {
+        log::error!(
+            "Failed to delete used CAPTCHA: ./data/captcha/{}.png",
+            captcha_hash
+        );
+    }
 }
 
 /// Handler for files in multipart forms

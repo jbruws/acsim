@@ -25,7 +25,7 @@ pub async fn report_msg(
     data: web::Data<ApplicationState<'_>>,
     page_data: web::Query<ReportQueryOptions>,
 ) -> impl Responder {
-    let captcha_hash = sha256::digest(crate::routes::create_new_captcha().await);
+    let captcha_hash = sha256::digest(crate::routes::create_new_captcha(data.config.captcha_num_limit).await);
     HttpResponse::Ok().body(
         data.formatter
             .format_into_report_captcha("".to_string(), captcha_hash, page_data.id, page_data.subid)
@@ -48,16 +48,7 @@ pub async fn report_process_captcha(
     }
 
     // delete captcha image after usage
-    // does not delete image if user got the captcha wrong... bug or feature? idk
-    if crate::routes::delete_captcha_image(form.captcha_answer.to_string())
-        .await
-        .is_err()
-    {
-        log::error!(
-            "Failed to delete used CAPTCHA: ./data/captcha/ACSIM_CAPTCHA_{}.png",
-            form.captcha_hash.to_string()
-        );
-    }
+    crate::routes::delete_captcha_image(form.captcha_answer.to_string()).await;
 
     let client = data.db_client.lock().await;
     let message_type = match form.subid {

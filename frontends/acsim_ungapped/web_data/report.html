@@ -12,7 +12,7 @@
 	<h1>Report Submission</h1>
 	<hr>
 	<form id="report_form" action="/report" method="post" autocomplete="off">
-		<img src="/captcha/ACSIM_CAPTCHA_{{captcha_hash}}.png"/>
+		<img src="/captcha/{{captcha_hash}}.png"/>
 		<input type="text" id="captcha_in" name="captcha_answer" placeholder="CAPTCHA answer" required>
 		<input type="hidden" value="{{captcha_hash}}" name="captcha_hash"/>
 		<input type="hidden" value="{{id}}" name="id"/>

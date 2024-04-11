@@ -27,6 +27,7 @@ pub struct BoardConfig {
     page_limit: u16,
     requests_limit: u16,
     log_debug_data: bool,
+    captcha_num_limit: u16,
     display_log_level: bool,
     admin_password: String,
     site_name: String,
