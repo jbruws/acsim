@@ -20,11 +20,11 @@ A Docker image is available for ACSIM. You can use it to test the engine or quic
 
 ### Data persistency
 
-You can make message data persist between container restarts by creating a Docker volume (through `# docker volume create your_volume_name`) and running:
+You can make message data persist between container restarts by creating a Docker volume by running:
 
-`# docker run --net=host --mount source=your_volume_name,target=/acsim/data jbruws/acsim:latest`
+`# docker run --net=host --mount source=acsim_volume_name,target=/acsim/data jbruws/acsim:latest`
 
-Server data will be stored in `/var/lib/docker/volumes/your_volume_name/_data`. To change said data, edit the relevant files then restart the container. **If you left the admin password as default, don't forget to change it by generating a sha256 hash from your new password and pasting it into `config.yaml`!**
+The volume will be created automatically; just make sure to always use the same volume name when running this command. Server data will be stored in `/var/lib/docker/volumes/acsim_volume_name/_data`. To change said data, edit the relevant files then restart the container. **If you left the admin password as default, don't forget to change it by generating a sha256 hash from your new password and pasting it into `config.yaml`!**
 
 ## Manual installation
 
