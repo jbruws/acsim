@@ -1,4 +1,4 @@
-//! Module containing common functions and structs
+//! Common functions and structs
 //! used in handling user requests
 
 use crate::db_control;
@@ -104,7 +104,8 @@ pub async fn contains_banned_words(checked: &str) -> bool {
         .unwrap_or_else(|_| panic!("Can't read ./data/banlist.yaml. Is it there?"));
     let banlist: Vec<String> = serde_yaml::from_str(&raw_banlist).unwrap();
     for word in banlist {
-        if check_lower.contains(&word) {
+        let reg = regex::Regex::new(&word).unwrap();
+        if reg.is_match(&check_lower) {
             return true;
         }
     }

@@ -17,7 +17,12 @@ fi
 
 if [ ! -f "./data/banlist.yaml" ]; then
 	echo 'Creating empty banword list'
-	echo '# This is a global list of banned words in YAML format. Expect regex support sometime in the future.\n' > ./data/banlist.yaml
+	echo '
+---
+# This is a global list of banned words in YAML format.
+# You can enter actual words or Regex wrapped in single quotes.
+# Format the file as a YAML list.
+' > ./data/banlist.yaml
 fi
 
 if [[ -z "${acsim_pass}" ]]; then
