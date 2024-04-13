@@ -15,9 +15,10 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 
 ### Changed
 
+- Links to other messages no longer require the user to specify a board
 - Improved documentation comments in code (somewhat)
 - Removed unneeded `Not` implementation on `FileType` enum
-- Admins are now redirected back to a relevant page when deleting messages
+- Admins are now redirected back to the relevant dashboard page when deleting messages
 
 ## v1.0.0 - 08.03.2024
 

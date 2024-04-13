@@ -1,5 +1,5 @@
 /target
-/user_images/*
+/data
 config.yaml
 acsim.log
 *.png

@@ -1,31 +1,32 @@
+#!/bin/bash
+
 # Setting up environment for the server
 
-if [ ! -d ./data ]; then
+if [ ! -d "./data" ]; then
 	echo 'Creating directory for persistent data'
 	mkdir ./data
 fi
 
-if [ ! -d ./data/user_images ]; then
+if [ ! -d "./data/user_images" ]; then
 	echo 'Creating directory for user images'
 	mkdir ./data/user_images
 fi
 
-if [ ! -d ./data/captcha ]; then
-	echo 'Creating directory temporary captcha storage'
+if [ ! -d "./data/captcha" ]; then
+	echo 'Creating directory for temporary captcha storage'
 	mkdir ./data/captcha
 fi
 
 if [ ! -f "./data/banlist.yaml" ]; then
 	echo 'Creating empty banword list'
-	echo '
----
+	echo '---
 # This is a global list of banned words in YAML format.
 # You can enter actual words or Regex wrapped in single quotes.
 # Format the file as a YAML list.
 ' > ./data/banlist.yaml
 fi
 
-if [[ -z "${acsim_pass}" ]]; then
+if [ -z "${acsim_pass}" ]; then
 	echo -n "Enter the password that will be used for admin dashboard: "
 	read acsim_pass
 fi
@@ -34,8 +35,7 @@ passhashed=$(echo -n $acsim_pass | sha256sum | head -c 64)
 
 if [ ! -f "./data/config.yaml" ]; then
 	echo 'Creating default config file for server'
-	echo "
----
+	echo "---
 # IP addresses and port used to serve the imageboard itself
 server_ipv4: 127.0.0.1
 server_ipv6: ::1
