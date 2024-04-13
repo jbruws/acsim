@@ -42,8 +42,10 @@ The volume will be created automatically; just make sure to always use the same 
    `git clone https://github.com/jbruws/acsim.git`
     
    `cd acsim`
+
+   **DO NOT** change directory afterwards, as this will break relative paths in `setup.sh` script. Just launch everything from the `acsim` directory.
     
-3. Once you're in the `acsim` directory, run the `setup.sh` script, either with `SQLITE` argument and no username or `POSTGRES` argument and username you wish to use to connect to the database. Here's examples:
+4. Once you're in the `acsim` directory, run the `setup.sh` script, either with `SQLITE` argument and no username or `POSTGRES` argument and username you wish to use to connect to the database. Here's examples:
 
     - `./setup.sh POSTGRES postgres`
     
@@ -53,7 +55,7 @@ The volume will be created automatically; just make sure to always use the same 
 
     View `.env` and `data/config.yaml` files and check them for any errors.
     
-4. Finally, run the program:
+5. Finally, run the program:
     
     `cargo run`
     
