@@ -92,81 +92,22 @@ fi
 
 # matching database type argument
 if [ "$1" = "POSTGRES" ]; then
-	echo 'Creating database'
-	createdb -U $2 acsim_db
-
-	echo 'Creating table scheme'
-	echo 'CREATE TABLE IF NOT EXISTS messages (
-			msgid BIGSERIAL PRIMARY KEY,
-			board TEXT NOT NULL,
-			time BIGINT NOT NULL,
-			author TEXT NOT NULL,
-			msg TEXT NOT NULL,
-			image TEXT NOT NULL,
-			latest_submsg BIGINT NOT NULL
-		);
-		CREATE TABLE IF NOT EXISTS submessages (
-			parent_msg BIGINT NOT NULL,
-			submsg_id BIGINT NOT NULL,
-			board TEXT NOT NULL,
-			time BIGINT NOT NULL,
-			author TEXT NOT NULL,
-			submsg TEXT NOT NULL,
-			image TEXT NOT NULL,
-			CONSTRAINT bind_msg
-				FOREIGN KEY(parent_msg)
-					REFERENCES messages(msgid)
-					ON DELETE CASCADE
-		);
-		CREATE TABLE IF NOT EXISTS flagged_messages (
-			entry_id BIGSERIAL PRIMARY KEY,
-			msg_type TEXT NOT NULL,
-			msgid BIGINT NOT NULL UNIQUE,
-			submsg_index BIGINT,
-			UNIQUE(msgid,submsg_index),
-			CONSTRAINT bind_msg
-				FOREIGN KEY(msgid)
-					REFERENCES messages(msgid)
-					ON DELETE CASCADE
-		);' | psql -U $2 -d acsim_db;
 	echo "Writing database URL to .env"
-	echo "DATABASE_URL=\"postgres://$2@localhost:5432/acsim_db\"" > .env
+	if [ -z "${acsim_compose}" ]; then
+		echo 'Creating database'
+		createdb -U $2 acsim_db
+		echo 'Creating table scheme'
+		echo ./pg_init.sql | psql -U $2 -d acsim_db;
+		echo "DATABASE_URL=\"postgres://$2@localhost:5432/acsim_db\"" > .env
+	else
+		echo 'Database setup rests on Compose'
+		echo "DATABASE_URL=\"postgres://postgres:generic@db:5432/acsim_db\"" > .env
+	fi
+
 elif [ "$1" = "SQLITE" ]; then
 	echo "Creating database"
 	echo "Creating table scheme" # same thing here
-	sqlite3 -line ./data/acsim.db 'CREATE TABLE IF NOT EXISTS messages (
-			msgid INTEGER PRIMARY KEY,
-			board TEXT NOT NULL,
-			time BIGINT NOT NULL,
-			author TEXT NOT NULL,
-			msg TEXT NOT NULL,
-			image TEXT NOT NULL,
-			latest_submsg BIGINT NOT NULL
-		);
-		CREATE TABLE IF NOT EXISTS submessages (
-			parent_msg BIGINT NOT NULL,
-			submsg_id BIGINT NOT NULL,
-			board TEXT NOT NULL,
-			time BIGINT NOT NULL,
-			author TEXT NOT NULL,
-			submsg TEXT NOT NULL,
-			image TEXT NOT NULL,
-			CONSTRAINT bind_msg
-				FOREIGN KEY(parent_msg)
-					REFERENCES messages(msgid)
-					ON DELETE CASCADE
-			);
-			CREATE TABLE IF NOT EXISTS flagged_messages (
-				entry_id INTEGER PRIMARY KEY,
-				msg_type TEXT NOT NULL,
-				msgid BIGINT NOT NULL,
-				submsg_index BIGINT,
-				UNIQUE(msgid,submsg_index),
-				CONSTRAINT bind_msg
-					FOREIGN KEY(msgid)
-						REFERENCES messages(msgid)
-						ON DELETE CASCADE
-			);'
+	sqlite3 ./data/acsim.db < ./sqlite_init.sql
 	echo "Writing database URL to .env"
 	echo 'DATABASE_URL="sqlite://data/acsim.db"' > .env
 else

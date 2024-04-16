@@ -17,6 +17,6 @@ COPY --from=builder /usr/src/acsim/README.md /acsim/README.md
 COPY --from=builder /usr/src/acsim/LICENSE /acsim/LICENSE
 WORKDIR "/acsim"
 EXPOSE 8080
-RUN acsim_pass=CHANGE_THIS ./setup.sh SQLITE
+RUN acsim_pass=CHANGE_THIS acsim_compose=1 ./setup.sh POSTGRES postgres
 
 CMD ["/acsim/acsim"]

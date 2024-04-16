@@ -1,11 +1,5 @@
 /target
 /data
-config.yaml
-acsim.log
-*.png
-*.jpg
-*.gif
-*.jpeg
-/keys/*
+/keys
 .env
 acsim.db

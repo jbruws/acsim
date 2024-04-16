@@ -1,8 +1,5 @@
 /target
-*.png
-*.jpg
-*.gif
-*.jpeg
+/data
+/keys
 .env
 acsim.db
-/data

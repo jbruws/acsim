@@ -1,0 +1,35 @@
+---
+volumes:
+  board_data:
+  db_data:
+
+services:
+  board:
+    build:
+      dockerfile: acsim-postgres.Dockerfile
+    restart: always
+    ports:
+      - "8080:8080"
+    expose:
+      - "8080"
+    links:
+      - db
+    environment:
+      PGHOST: 'db'
+      PGDATABASE: 'acsim_db'
+      PGUSER: 'postgres'
+      PGPASSWORD: 'generic'
+      acsim_compose: 1
+    volumes:
+      - board_data:/acsim/data
+
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: 'postgres'
+      POSTGRES_PASSWORD: 'generic'
+      POSTGRES_DB: 'acsim_db'
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./pg_init.sql:/docker-entrypoint-initdb.d/0_init.sql

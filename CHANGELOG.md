@@ -8,6 +8,7 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 
 - Added a function that blocks messages if it detects a banned word
 - Added simple CAPTCHA for message sending and reporting
+- Added a Docker Compose config and appropriate images
 
 ### Fixed
 
@@ -18,6 +19,7 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 
 ### Changed
 
+- Split SQL commands from `setup.sh` into separate scripts
 - Links to other messages no longer require the user to specify a board
 - Improved documentation comments in code (somewhat)
 - Removed unneeded `Not` implementation on `FileType` enum
