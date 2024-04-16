@@ -49,7 +49,8 @@ pub async fn topic(
         inserted_submsg.push_str(data.formatter.format_into_submessage(row).await.as_str());
     }
 
-    let captcha_value = sha256::digest(crate::routes::create_new_captcha(data.config.captcha_num_limit).await);
+    let captcha_value =
+        sha256::digest(crate::routes::create_new_captcha(data.config.captcha_num_limit).await);
 
     HttpResponse::Ok().body(
         data.formatter

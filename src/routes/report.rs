@@ -25,7 +25,8 @@ pub async fn report_msg(
     data: web::Data<ApplicationState<'_>>,
     page_data: web::Query<ReportQueryOptions>,
 ) -> impl Responder {
-    let captcha_hash = sha256::digest(crate::routes::create_new_captcha(data.config.captcha_num_limit).await);
+    let captcha_hash =
+        sha256::digest(crate::routes::create_new_captcha(data.config.captcha_num_limit).await);
     HttpResponse::Ok().body(
         data.formatter
             .format_into_report_captcha("".to_string(), captcha_hash, page_data.id, page_data.subid)

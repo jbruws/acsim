@@ -36,6 +36,26 @@ pub struct FlaggedRow {
     pub submsg_index: Option<i64>,
 }
 
+/// Removes all specified file paths
+pub fn purge_images(paths: Vec<&str>) {
+    if paths == Vec::from([""]) {
+        return ();
+    }
+    for i in paths {
+        if i == "" {
+            continue;
+        }
+        match std::fs::remove_file(std::path::Path::new(&format!(
+            "{}/{}",
+            env!("CARGO_MANIFEST_DIR"),
+            i
+        ))) {
+            Ok(_) => log::debug!("Deleted media file: {}", i),
+            Err(_) => log::error!("Media file deletion failed: {}", i),
+        };
+    }
+}
+
 /// Wrapper for the DB client
 pub struct DatabaseWrapper {
     db_pool: AnyPool,
@@ -85,15 +105,20 @@ impl DatabaseWrapper {
             .bind(msgid)
             .fetch_one(&self.db_pool)
             .await;
-        Ok(count_struct.unwrap().try_get(0).unwrap())
+        Ok(count_struct?.try_get(0)?)
     }
 
     pub async fn delete_least_active(&self, board: &str) {
-        DatabaseWrapper::log_query_status(
-            sqlx::query("DELETE FROM messages WHERE latest_submsg = (SELECT MIN(latest_submsg) FROM messages WHERE board=$1)")
+        let selected: MessageRow = sqlx::query_as::<_, MessageRow>("SELECT * FROM messages WHERE latest_submsg = (SELECT MIN(latest_submsg) FROM messages WHERE board=$1)")
             .bind(String::from(board))
-            .execute(&self.db_pool).await,
-            "Deleting least active message"
+            .fetch_one(&self.db_pool).await.unwrap();
+        purge_images(selected.image.split(';').collect());
+        DatabaseWrapper::log_query_status(
+            sqlx::query("DELETE FROM messages WHERE msgid = $1")
+                .bind(selected.msgid.to_string())
+                .execute(&self.db_pool)
+                .await,
+            "Deleting least active message",
         );
     }
 
@@ -213,6 +238,14 @@ impl DatabaseWrapper {
     }
 
     pub async fn delete_msg(&self, msgid: i64) {
+        let selected = self.get_single_message(msgid).await.unwrap();
+        purge_images(selected.image.split(';').collect());
+        // getting all submessages so that we can delete their assigned files
+        let submsgs = self.get_submessages(msgid).await.unwrap();
+        for i in submsgs {
+            purge_images(i.image.split(';').collect());
+        }
+        // the submessages themselves are deleted by cascade
         DatabaseWrapper::log_query_status(
             sqlx::query("DELETE FROM messages WHERE msgid=$1")
                 .bind(msgid)
@@ -223,6 +256,8 @@ impl DatabaseWrapper {
     }
 
     pub async fn delete_submsg(&self, msgid: i64, submsgid: i64) {
+        let selected = self.get_single_submessage(msgid, submsgid).await.unwrap();
+        purge_images(selected.image.split(';').collect());
         DatabaseWrapper::log_query_status(
             sqlx::query("DELETE FROM submessages WHERE parent_msg=$1 AND submsg_id=$2")
                 .bind(msgid)

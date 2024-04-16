@@ -50,7 +50,8 @@ pub async fn board(
     }
 
     let link_queries = page_data.into_inner().get_neighbour_pages();
-    let captcha_value = sha256::digest(crate::routes::create_new_captcha(data.config.captcha_num_limit).await);
+    let captcha_value =
+        sha256::digest(crate::routes::create_new_captcha(data.config.captcha_num_limit).await);
 
     HttpResponse::Ok().body(
         data.formatter

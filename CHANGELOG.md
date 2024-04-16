@@ -12,6 +12,9 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 ### Fixed
 
 - `purge_images` no longer attempts to delete empty filepaths
+- Fixed images not being deleted when threads are removed due to board limit
+- Fixed false positive error messages when deleting media files
+- Fixed autoincrement issue with `flagged_messages` in Postgres
 
 ### Changed
 

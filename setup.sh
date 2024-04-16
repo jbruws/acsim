@@ -119,7 +119,7 @@ if [ "$1" = "POSTGRES" ]; then
 					ON DELETE CASCADE
 		);
 		CREATE TABLE IF NOT EXISTS flagged_messages (
-			entry_id INTEGER PRIMARY KEY,
+			entry_id BIGSERIAL PRIMARY KEY,
 			msg_type TEXT NOT NULL,
 			msgid BIGINT NOT NULL UNIQUE,
 			submsg_index BIGINT,

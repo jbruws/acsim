@@ -150,43 +150,10 @@ pub async fn delete_msg(
     }
     let client = data.db_client.lock().await;
     if let Some(submsgid) = query.submsgid {
-        let row = client
-            .get_single_submessage(query.msgid, submsgid)
-            .await
-            .unwrap();
-        let image_paths = row.image.split(';').collect::<Vec<&str>>();
-        purge_images(image_paths);
         client.delete_submsg(query.msgid, submsgid).await;
         web::Redirect::to("/dashboard?flagged_type=submsg").see_other()
     } else {
-        let row = client.get_single_message(query.msgid).await.unwrap();
-        let submsg_vec = client.get_submessages(query.msgid).await;
-        if let Ok(v) = submsg_vec {
-            for i in v {
-                let image_paths_sub = i.image.split(';').collect::<Vec<&str>>();
-                purge_images(image_paths_sub);
-            }
-        }
-        let image_paths = row.image.split(';').collect::<Vec<&str>>();
-        purge_images(image_paths);
         client.delete_msg(query.msgid).await;
         web::Redirect::to("/dashboard?flagged_type=msg").see_other()
-    }
-}
-
-/// Removes all specified file paths
-fn purge_images(paths: Vec<&str>) {
-    if paths == Vec::from([""]) {
-        return ();
-    }
-    for i in paths {
-        match std::fs::remove_file(std::path::Path::new(&format!(
-            "{}/{}",
-            env!("CARGO_MANIFEST_DIR"),
-            i
-        ))) {
-            Ok(_) => log::debug!("Deleted media file: {}", i),
-            Err(_) => log::error!("Media file deletion failed: {}", i),
-        };
     }
 }

@@ -157,17 +157,15 @@ pub async fn create_new_captcha(limit: u16) -> String {
         .view(300, 150);
     let captcha_contents = captcha.chars_as_string();
 
-    let captcha_save_path = format!(
-        "./data/captcha/{}.png",
-        sha256::digest(&captcha_contents)
-    );
+    let captcha_save_path = format!("./data/captcha/{}.png", sha256::digest(&captcha_contents));
     let save_result = captcha.save(std::path::Path::new(&captcha_save_path));
     if save_result.is_err() {
         log::error!("Failed to save captcha: {}", &captcha_save_path);
     }
-    
+
     // Now, we delete the least-used captcha image if the directory is too bloated
-    let captcha_files: Vec<std::io::Result<std::fs::DirEntry>> = std::fs::read_dir("./data/captcha").unwrap().collect();
+    let captcha_files: Vec<std::io::Result<std::fs::DirEntry>> =
+        std::fs::read_dir("./data/captcha").unwrap().collect();
     let captcha_count: i64 = captcha_files.len().try_into().unwrap();
     if captcha_count > limit as i64 {
         // we start with current time and find the oldest image
@@ -185,7 +183,10 @@ pub async fn create_new_captcha(limit: u16) -> String {
         }
 
         if std::fs::remove_file(format!("./data/captcha/{}", least_accessed_filename)).is_err() {
-            log::error!("Failed to delete old CAPTCHA: ./data/captcha/{}", least_accessed_filename);
+            log::error!(
+                "Failed to delete old CAPTCHA: ./data/captcha/{}",
+                least_accessed_filename
+            );
         }
     }
 
