@@ -9,6 +9,7 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 - Added a function that blocks messages if it detects a banned word
 - Added simple CAPTCHA for message sending and reporting
 - Added a Docker Compose config and appropriate images
+- Added dashboard password override environment variable
 
 ### Fixed
 

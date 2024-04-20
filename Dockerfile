@@ -1,3 +1,5 @@
+# Dockerfile for self-contained images using SQLite
+
 FROM rust:latest AS builder
 
 WORKDIR "/usr/src/acsim"
@@ -11,12 +13,13 @@ RUN apt-get update && apt-get install -y vim sqlite3 libssl3 libmagic1 && rm -rf
 RUN ldconfig
 RUN mkdir -p /acsim
 COPY --from=builder /usr/src/acsim/target/release/acsim /acsim/acsim
+COPY --from=builder /usr/src/acsim/sqlite_init.sql /acsim/sqlite_init.sql
 COPY --from=builder /usr/src/acsim/setup.sh /acsim/setup.sh
 COPY --from=builder /usr/src/acsim/frontends /acsim/frontends
 COPY --from=builder /usr/src/acsim/README.md /acsim/README.md
 COPY --from=builder /usr/src/acsim/LICENSE /acsim/LICENSE
 WORKDIR "/acsim"
 EXPOSE 8080
-RUN acsim_pass=CHANGE_THIS ./setup.sh SQLITE
+RUN acsim_docker=1 ./setup.sh SQLITE
 
 CMD ["/acsim/acsim"]

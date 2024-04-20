@@ -121,8 +121,7 @@ pub async fn login_page(
     form: web::Form<LoginForm>,
 ) -> impl Responder {
     // the password is stored as a hash. no im not hashing it client-side.
-    let hashed = sha256::digest(&form.password);
-    if hashed == data.config.admin_password {
+    if sha256::digest(&form.password) == data.config.admin_password {
         let session_insert_result = session.insert("logged_in", true);
         match session_insert_result {
             Ok(_) => log::info!("Admin successfully authorized"),

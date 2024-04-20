@@ -90,59 +90,59 @@ pub async fn board_process_form(
     let trimmed_author = form.author.trim();
     let trimmed_message = form.message.trim();
 
-    // if fits, run some checks and push new message into DB and vector
-    if trimmed_author.len() < MAX_AUTHOR_LENGTH
-        && !trimmed_message.is_empty()
-        && trimmed_message.len() < MAX_MESSAGE_LENGTH
+    // message/author name length checks
+    if trimmed_author.len() > MAX_AUTHOR_LENGTH
+        || trimmed_message.is_empty()
+        || trimmed_message.len() > MAX_MESSAGE_LENGTH
     {
-        let filtered_author = match trimmed_author.len() {
-            0 => "Anonymous".to_string(),
-            _ => data.formatter.filter_tags(trimmed_author).await,
-        };
-        let filtered_msg = data.formatter.filter_tags(trimmed_message).await;
+        return web::Redirect::to("/error?error_code=403").see_other();
+    }
 
-        // checking for banned words
-        if contains_banned_words(&filtered_author).await
-            || contains_banned_words(&filtered_msg).await
-        {
+    let filtered_author = match trimmed_author.len() {
+        0 => "Anonymous".to_string(), // automatically set if no author name
+        _ => data.formatter.filter_tags(trimmed_author).await,
+    };
+    let filtered_msg = data.formatter.filter_tags(trimmed_message).await;
+
+    // checking for banned words
+    if contains_banned_words(&filtered_author).await || contains_banned_words(&filtered_msg).await {
+        return web::Redirect::to("/error?error_code=403").see_other();
+    }
+
+    // checking for correct captcha
+    let hash_true = form.captcha_hash.to_string();
+    let hash_sent = sha256::digest(form.captcha_answer.to_string());
+    if hash_true != hash_sent {
+        return web::Redirect::to("/error?error_code=403").see_other();
+    }
+
+    // delete captcha image after usage
+    delete_captcha_image(form.captcha_answer.to_string()).await;
+
+    // Checking against the last message (to prevent spam)
+    if let Ok(last_msg) = client.get_last_message(&info.board).await {
+        if last_msg.msg == filtered_msg {
             return web::Redirect::to("/error?error_code=403").see_other();
         }
+    }
 
-        // checking for correct captcha
-        let hash_true = form.captcha_hash.to_string();
-        let hash_sent = sha256::digest(form.captcha_answer.to_string());
-        if hash_true != hash_sent {
-            return web::Redirect::to("/error?error_code=403").see_other();
-        }
+    client
+        .insert_to_messages(
+            &info.board,
+            since_epoch,
+            &filtered_author,
+            &filtered_msg,
+            &filepath_collection,
+            since_epoch,
+        )
+        .await;
 
-        // delete captcha image after usage
-        delete_captcha_image(form.captcha_answer.to_string()).await;
+    // after sending, get number of messages on the board
+    let msg_count = client.count_messages(&info.board).await.unwrap();
 
-        // Checking against the last message (to prevent spam)
-        if let Ok(last_msg) = client.get_last_message(&info.board).await {
-            if last_msg.msg == filtered_msg {
-                return web::Redirect::to("/error?error_code=403").see_other();
-            }
-        }
-
-        client
-            .insert_to_messages(
-                &info.board,
-                since_epoch,
-                &filtered_author,
-                &filtered_msg,
-                &filepath_collection,
-                since_epoch,
-            )
-            .await;
-
-        // after sending, get number of messages on the board
-        let msg_count = client.count_messages(&info.board).await.unwrap();
-
-        // delete a message if total message number is over the hard limit
-        if msg_count > data.config.hard_limit.into() {
-            client.delete_least_active(&info.board).await;
-        }
+    // delete a message if total message number is over the hard limit
+    if msg_count > data.config.hard_limit.into() {
+        client.delete_least_active(&info.board).await;
     }
 
     web::Redirect::to(format!("/{}", info.board)).see_other()

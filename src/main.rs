@@ -67,11 +67,18 @@ async fn main() -> std::io::Result<()> {
     };
 
     // reading board config
-    let raw_config: BoardConfig = serde_yaml::from_str(
+    let mut raw_config: BoardConfig = serde_yaml::from_str(
         &read_to_string("./data/config.yaml")
             .unwrap_or_else(|_| panic!("Critical: can't read data/config.yaml")),
     )
     .expect("Critical: can't parse data/config.yaml");
+
+    // overriding password in the config if relevant env var is present
+    // doesn't work when using compile-time macros. don't try it
+    let opt_override = std::env::var("ACSIM_PASS_OVERRIDE");
+    if opt_override.is_ok() {
+        raw_config.admin_password = sha256::digest(opt_override.unwrap());
+    }
 
     // starting the logger
     let display_option = raw_config.display_log_level;

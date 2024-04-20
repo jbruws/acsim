@@ -1,3 +1,5 @@
+# Dockerfile used for generating Compose postgres images
+
 FROM rust:latest AS builder
 
 WORKDIR "/usr/src/acsim"
@@ -11,12 +13,13 @@ RUN apt-get update && apt-get install -y vim sqlite3 libssl3 libmagic1 && rm -rf
 RUN ldconfig
 RUN mkdir -p /acsim
 COPY --from=builder /usr/src/acsim/target/release/acsim /acsim/acsim
+COPY --from=builder /usr/src/acsim/pg_init.sql /acsim/pg_init.sql
 COPY --from=builder /usr/src/acsim/setup.sh /acsim/setup.sh
 COPY --from=builder /usr/src/acsim/frontends /acsim/frontends
 COPY --from=builder /usr/src/acsim/README.md /acsim/README.md
 COPY --from=builder /usr/src/acsim/LICENSE /acsim/LICENSE
 WORKDIR "/acsim"
 EXPOSE 8080
-RUN acsim_pass=CHANGE_THIS acsim_compose=1 ./setup.sh POSTGRES postgres
+RUN acsim_compose=1 ./setup.sh POSTGRES postgres
 
 CMD ["/acsim/acsim"]

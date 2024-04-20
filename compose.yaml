@@ -1,6 +1,7 @@
 ---
 volumes:
   board_data:
+  frontend_data:
   db_data:
 
 services:
@@ -22,6 +23,7 @@ services:
       acsim_compose: 1
     volumes:
       - board_data:/acsim/data
+      - frontend_data:/acsim/frontends
 
   db:
     image: postgres

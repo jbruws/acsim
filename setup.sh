@@ -26,12 +26,15 @@ if [ ! -f "./data/banlist.yaml" ]; then
 ' > ./data/banlist.yaml
 fi
 
-if [ -z "${acsim_pass}" ]; then
+# if not running in container, prompt for dashboard password
+if [ -z "${acsim_compose}" ] && [ -z "${acsim_docker}" ]; then
 	echo -n "Enter the password that will be used for admin dashboard: "
 	read acsim_pass
+else
+	acsim_pass=$(cat /dev/random | head -c 20 | sha256sum | head -c 8 | xargs)
 fi
 
-passhashed=$(echo -n $acsim_pass | sha256sum | head -c 64)
+passhashed=$(echo -n $acsim_pass | sha256sum | head -c 64 | xargs)
 
 if [ ! -f "./data/config.yaml" ]; then
 	echo 'Creating default config file for server'
@@ -92,17 +95,24 @@ fi
 
 # matching database type argument
 if [ "$1" = "POSTGRES" ]; then
-	echo "Writing database URL to .env"
+	if [ -z $2 ]; then
+		echo "Please specify username for Postgres DB"
+		exit
+	fi
+	# if not in Compose, create the db and tables
 	if [ -z "${acsim_compose}" ]; then
 		echo 'Creating database'
 		createdb -U $2 acsim_db
 		echo 'Creating table scheme'
 		echo ./pg_init.sql | psql -U $2 -d acsim_db;
-		echo "DATABASE_URL=\"postgres://$2@localhost:5432/acsim_db\"" > .env
+		pg_connect_string="DATABASE_URL=\"postgres://$2@localhost:5432/acsim_db\""
+	# otherwise, leave db/table creation to Postgres image
 	else
-		echo 'Database setup rests on Compose'
-		echo "DATABASE_URL=\"postgres://postgres:generic@db:5432/acsim_db\"" > .env
+		echo 'Database setup rests on Compose image'
+		pg_connect_string="DATABASE_URL=\"postgres://postgres:generic@db:5432/acsim_db\""
 	fi
+	echo "Writing database URL to .env"
+	echo $pg_connect_string > .env
 
 elif [ "$1" = "SQLITE" ]; then
 	echo "Creating database"
