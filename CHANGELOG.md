@@ -2,7 +2,7 @@
 
 Changelog may get imprecise in earlier versions, since I started writing it at version 0.10; apologies in advance for any inaccuracies (although it hardly matters for early versions).
 
-## Unreleased
+## v1.1.0 - 22.04.2024
 
 ### Added
 

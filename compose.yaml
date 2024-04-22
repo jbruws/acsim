@@ -6,8 +6,9 @@ volumes:
 
 services:
   board:
-    build:
-      dockerfile: acsim-postgres.Dockerfile
+    #build:
+      #dockerfile: acsim-postgres.Dockerfile
+    image: jbruws/acsim:latest-postgres
     restart: always
     ports:
       - "8080:8080"
