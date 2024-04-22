@@ -10,21 +10,13 @@ Features:
 
 # Installation
 
-## Docker container
+## Standalone Docker container
 
-A Docker image is available for ACSIM. You can use it to test the engine or quickly spin up an instance. Run:
+A Docker image is available for ACSIM.
 
-`# docker run --net=host jbruws/acsim:latest`
+`# docker run --net=host -e ACSIM_PASS_OVERRIDE=YOURADMINPASSWORD --mount source=acs_data,target=/acsim/data --mount source=acs_frontends,target=/acsim/frontends jbruws/acsim:latest`
 
-***WARNING! If you use this method, the admin password will be left as default. Consider using the method described below.***
-
-### Data persistency
-
-You can make message data persist between container restarts by creating a Docker volume by running:
-
-`# docker run --net=host --mount source=acsim_volume_name,target=/acsim/data jbruws/acsim:latest`
-
-The volume will be created automatically; just make sure to always use the same volume name when running this command. Server data will be stored in `/var/lib/docker/volumes/acsim_volume_name/_data`. To change said data, edit the relevant files then restart the container. **If you left the admin password as default, don't forget to change it by generating a sha256 hash from your new password and pasting it into `config.yaml`!**
+This command will set up an SQLite-based instance with two Docker volumes for web frontend and board backend data, as well as a unique password for admin dashboard (available at `127.0.0.1:8080/dashboard`). This is probably the fastest way to spin up an instance.
 
 ## Manual installation
 
