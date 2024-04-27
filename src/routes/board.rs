@@ -82,10 +82,6 @@ pub async fn board_process_form(
     }
 
     let client = data.db_client.lock().await;
-    let filepath_collection = process_files(&form.files).await;
-
-    // getting time
-    let since_epoch = html_proc::since_epoch();
 
     let trimmed_author = form.author.trim();
     let trimmed_message = form.message.trim();
@@ -125,6 +121,12 @@ pub async fn board_process_form(
             return web::Redirect::to("/error?error_code=403").see_other();
         }
     }
+
+    // we can now begin to actually process the message
+    // getting time
+    let since_epoch = html_proc::since_epoch();
+
+    let filepath_collection = process_files(&form.files).await;
 
     client
         .insert_to_messages(

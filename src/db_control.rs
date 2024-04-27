@@ -38,21 +38,20 @@ pub struct FlaggedRow {
 
 /// Removes all specified file paths
 pub fn purge_images(paths: Vec<&str>) {
-    if paths == Vec::from([""]) {
-        return ();
-    }
-    for i in paths {
-        if i == "" {
-            continue;
+    if paths != [""] {
+        for i in paths {
+            if i.is_empty() {
+                continue;
+            }
+            match std::fs::remove_file(std::path::Path::new(&format!(
+                "{}/{}",
+                env!("CARGO_MANIFEST_DIR"),
+                i
+            ))) {
+                Ok(_) => log::debug!("Deleted media file: {}", i),
+                Err(_) => log::error!("Media file deletion failed: {}", i),
+            };
         }
-        match std::fs::remove_file(std::path::Path::new(&format!(
-            "{}/{}",
-            env!("CARGO_MANIFEST_DIR"),
-            i
-        ))) {
-            Ok(_) => log::debug!("Deleted media file: {}", i),
-            Err(_) => log::error!("Media file deletion failed: {}", i),
-        };
     }
 }
 
@@ -105,7 +104,7 @@ impl DatabaseWrapper {
             .bind(msgid)
             .fetch_one(&self.db_pool)
             .await;
-        Ok(count_struct?.try_get(0)?)
+        count_struct?.try_get(0)
     }
 
     pub async fn delete_least_active(&self, board: &str) {

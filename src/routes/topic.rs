@@ -83,69 +83,73 @@ pub async fn topic_process_form(
     }
 
     let client = data.db_client.lock().await;
-    let filepath_collection = process_files(&form.files).await;
-
-    // getting time
-    let since_epoch = html_proc::since_epoch();
 
     let trimmed_author = form.author.trim();
     let trimmed_message = form.message.trim();
 
     // if fits, push new message into DB
-    if trimmed_author.len() < MAX_AUTHOR_LENGTH
-        && !trimmed_message.is_empty()
-        && trimmed_message.len() < MAX_MESSAGE_LENGTH
+    if trimmed_author.len() > MAX_AUTHOR_LENGTH
+        || trimmed_message.is_empty()
+        || trimmed_message.len() > MAX_MESSAGE_LENGTH
     {
-        let filtered_author = match trimmed_author.len() {
-            0 => "Anonymous".to_string(),
-            _ => data.formatter.filter_tags(trimmed_author).await,
-        };
-        let filtered_msg = data.formatter.filter_tags(trimmed_message).await;
+        return web::Redirect::to("/error?error_code=403").see_other();
+    }
 
-        // checking for banned words
-        if contains_banned_words(&filtered_author).await
-            || contains_banned_words(&filtered_msg).await
-        {
+    let filtered_author = match trimmed_author.len() {
+        0 => "Anonymous".to_string(),
+        _ => data.formatter.filter_tags(trimmed_author).await,
+    };
+    let filtered_msg = data.formatter.filter_tags(trimmed_message).await;
+
+    // checking for banned words
+    if contains_banned_words(&filtered_author).await
+        || contains_banned_words(&filtered_msg).await
+    {
+        return web::Redirect::to("/error?error_code=403").see_other();
+    }
+
+    // checking for correct captcha
+    let hash_true = form.captcha_hash.to_string();
+    let hash_sent = sha256::digest(form.captcha_answer.to_string());
+    if hash_true != hash_sent {
+        return web::Redirect::to("/error?error_code=403").see_other();
+    }
+
+    // delete captcha image after usage
+    delete_captcha_image(form.captcha_answer.to_string()).await;
+
+    // Checking against the last message (to prevent spam)
+    if let Ok(last_msg) = client.get_last_submessage(&message_num).await {
+        if last_msg.submsg == filtered_msg {
             return web::Redirect::to("/error?error_code=403").see_other();
-        }
-
-        // checking for correct captcha
-        let hash_true = form.captcha_hash.to_string();
-        let hash_sent = sha256::digest(form.captcha_answer.to_string());
-        if hash_true != hash_sent {
-            return web::Redirect::to("/error?error_code=403").see_other();
-        }
-
-        // delete captcha image after usage
-        delete_captcha_image(form.captcha_answer.to_string()).await;
-
-        // Checking against the last message (to prevent spam)
-        if let Ok(last_msg) = client.get_last_submessage(&message_num).await {
-            if last_msg.submsg == filtered_msg {
-                return web::Redirect::to("/error?error_code=403").see_other();
-            }
-        }
-
-        let submsg_count = client.count_submessages(message_num).await.unwrap();
-
-        client
-            .insert_to_submessages(
-                message_num,
-                submsg_count + 1,
-                &info.board,
-                since_epoch,
-                &filtered_author,
-                &filtered_msg,
-                &filepath_collection,
-            )
-            .await;
-
-        if submsg_count < data.config.bumplimit.into() && form.sage.is_none() {
-            client
-                .update_message_activity(since_epoch, message_num)
-                .await;
         }
     }
+
+    // getting time
+    let since_epoch = html_proc::since_epoch();
+
+    let filepath_collection = process_files(&form.files).await;
+
+    let submsg_count = client.count_submessages(message_num).await.unwrap();
+
+    client
+        .insert_to_submessages(
+            message_num,
+            submsg_count + 1,
+            &info.board,
+            since_epoch,
+            &filtered_author,
+            &filtered_msg,
+            &filepath_collection,
+        )
+        .await;
+
+    if submsg_count < data.config.bumplimit.into() && form.sage.is_none() {
+        client
+            .update_message_activity(since_epoch, message_num)
+            .await;
+    }
+
     web::Redirect::to(format!(
         "/{}/topic/{}{}",
         info.board,
