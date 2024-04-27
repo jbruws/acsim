@@ -2,7 +2,7 @@
 
 Changelog may get imprecise in earlier versions, since I started writing it at version 0.10; apologies in advance for any inaccuracies (although it hardly matters for early versions).
 
-## v1.1.0 - 22.04.2024
+## v1.1.0 - 27.04.2024
 
 ### Added
 
@@ -29,7 +29,7 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 
 ### Removed
 
-- Removed separate config options for binding IPv4 and IPv6 addresses
+- Removed separate config options for binding IPv4 and IPv6 addresses and `bind_to_one_ip` option
 
 ## v1.0.0 - 08.03.2024
 
