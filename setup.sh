@@ -39,13 +39,9 @@ passhashed=$(echo -n $acsim_pass | sha256sum | head -c 64 | xargs)
 if [ ! -f "./data/config.yaml" ]; then
 	echo 'Creating default config file for server'
 	echo "---
-# IP addresses and port used to serve the imageboard itself
-server_ipv4: 127.0.0.1
-server_ipv6: ::1
-server_port: 8080
-
-# If set to true, only binds to addresses specified above, otherwise binds to 0.0.0.0
-bind_to_one_ip: false
+# IP address and port used to serve the imageboard itself
+bind_addr: 127.0.0.1
+bind_port: 8080
 
 # Use HTTPS. Only enable if you have cert.pem and key.pem in keys/ directory in project root!
 use_https: false

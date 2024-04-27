@@ -26,6 +26,10 @@ Changelog may get imprecise in earlier versions, since I started writing it at v
 - Removed unneeded `Not` implementation on `FileType` enum
 - Admins are now redirected back to the relevant dashboard page when deleting messages
 
+### Removed
+
+- Removed separate config options for binding IPv4 and IPv6 addresses
+
 ## v1.0.0 - 08.03.2024
 
 ### Added

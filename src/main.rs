@@ -17,10 +17,8 @@ mod routes;
 /// Deserialized version of config.yaml file
 #[derive(Deserialize, Clone)]
 pub struct BoardConfig {
-    server_ipv4: String,
-    server_ipv6: String,
-    server_port: u16,
-    bind_to_one_ip: bool,
+    bind_addr: String,
+    bind_port: u16,
     use_https: bool,
     bumplimit: u16,
     hard_limit: u16,
@@ -194,30 +192,25 @@ async fn main() -> std::io::Result<()> {
             .service(routes::catalog::board_catalog)
     });
 
-    let mut bind_ipv4: &str = "0.0.0.0";
-    let mut bind_ipv6: &str = "::1";
+    let bind_string = if config.bind_addr.contains(':') {
+        format!("[{}]:{}", config.bind_addr, config.bind_port)
+    } else {
+        format!("{}:{}", config.bind_addr, config.bind_port)
+    };
 
-    if config.bind_to_one_ip {
-        bind_ipv4 = &config.server_ipv4;
-        bind_ipv6 = &config.server_ipv6;
-    }
+    log::info!("Binding to address: {}", bind_string);
 
     if config.use_https {
         server
             .bind_openssl(
-                format!("{}:{}", bind_ipv4, config.server_port).as_str(),
-                create_ssl_acceptor(),
-            )?
-            .bind_openssl(
-                format!("[{}]:{}", bind_ipv6, config.server_port).as_str(),
+                bind_string.as_str(),
                 create_ssl_acceptor(),
             )?
             .run()
             .await
     } else {
         server
-            .bind((bind_ipv4, config.server_port))?
-            .bind(format!("[{}]:{}", bind_ipv6, config.server_port).as_str())?
+            .bind(bind_string.as_str())?
             .run()
             .await
     }
