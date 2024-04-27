@@ -40,7 +40,7 @@ if [ ! -f "./data/config.yaml" ]; then
 	echo 'Creating default config file for server'
 	echo "---
 # IP address and port used to serve the imageboard itself
-bind_addr: 127.0.0.1
+bind_addr: 0.0.0.0
 bind_port: 8080
 
 # Use HTTPS. Only enable if you have cert.pem and key.pem in keys/ directory in project root!
