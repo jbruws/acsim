@@ -26,6 +26,8 @@ You can also set up a Postgres-based instance via Compose.
 
    `curl -L http://github.com/jbruws/acsim/raw/master/compose.yaml > compose.yaml`
 
+   `curl -L http://github.com/jbruws/acsim/raw/master/pg_init.sql > pg_init.sql`
+   
 2. Use your preferred text editor to add an `ACSIM_PASS_OVERRIDE` env variable to the `board.environment` section in order to set the password to ACSIM's admin dashboard. Said section should look like this afterwards:
 
    ```
@@ -39,8 +41,10 @@ You can also set up a Postgres-based instance via Compose.
    ```
 
 3. Launch the cluster:
-
+   
    `sudo docker compose up`
+
+   If the board fails to start due to database connection error, just wait for the database to finish initializing and restart the entire cluster.
 
 That should service the board at `localhost:8080`, with admin dashboard available at `localhost:8080/dashboard`. Docker volumes for board data, board frontend and Postgres data will also be automatically created.
 
