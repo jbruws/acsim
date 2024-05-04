@@ -22,13 +22,13 @@ This command will set up an SQLite-based instance with two Docker volumes for we
 
 You can also set up a Postgres-based instance via Compose.
 
-1. Download the `compose.yaml` file:
+1. Download the `compose.yaml` and `pg_init.sql` files:
 
    `curl -L http://github.com/jbruws/acsim/raw/master/compose.yaml > compose.yaml`
 
    `curl -L http://github.com/jbruws/acsim/raw/master/pg_init.sql > pg_init.sql`
    
-2. Use your preferred text editor to add an `ACSIM_PASS_OVERRIDE` env variable to the `board.environment` section in order to set the password to ACSIM's admin dashboard. Said section should look like this afterwards:
+2. Use your preferred text editor to add an `ACSIM_PASS_OVERRIDE` env variable to the `board.environment` section in `compose.yaml` in order to set the password to ACSIM's admin dashboard. Said section should look like this afterwards:
 
    ```
     environment:
