@@ -67,7 +67,7 @@ That should service the board at `localhost:8080`, with admin dashboard availabl
 
    **DO NOT** change directory afterwards, as this will break relative paths in `setup.sh` script. Just launch everything from the `acsim` directory.
     
-4. Once you're in the `acsim` directory, run the `setup.sh` script, either with `SQLITE` argument and no username or `POSTGRES` argument and username you wish to use to connect to the database. Here's examples:
+3. Once you're in the `acsim` directory, run the `setup.sh` script, either with `SQLITE` argument and no username or `POSTGRES` argument and username you wish to use to connect to the database. Here's examples:
 
     - `./setup.sh POSTGRES postgres`
     
@@ -77,7 +77,7 @@ That should service the board at `localhost:8080`, with admin dashboard availabl
 
     View `.env` and `data/config.yaml` files and check them for any errors.
     
-5. Finally, run the program:
+4. Finally, run the program **using the stable toolchain**:
     
     `cargo run`
     
